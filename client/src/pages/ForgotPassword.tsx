@@ -2,9 +2,10 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { AlertCircle, ArrowLeft, CheckCircle, Mail } from "lucide-react";
+import { AlertCircle, ArrowLeft, CheckCircle, Mail, Loader2 } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { toast } from "sonner";
+import { trpc } from "@/lib/trpc";
 
 interface ForgotPasswordProps {
   onBack: () => void;
@@ -14,54 +15,41 @@ const SUPPORT_EMAIL = "contact.lesbatisseursengages@gmail.com";
 
 export default function ForgotPassword({ onBack }: ForgotPasswordProps) {
   const [email, setEmail] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const resetPasswordMutation = trpc.email.resetPassword.useMutation();
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsLoading(true);
     setError(null);
 
     // Valider l'email
     if (!email) {
       setError("Veuillez entrer votre adresse email");
-      setIsLoading(false);
       return;
     }
 
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
       setError("Veuillez entrer une adresse email valide");
-      setIsLoading(false);
       return;
     }
 
     try {
-      // Envoyer un email à l'adresse de support
-      const subject = encodeURIComponent("Réinitialisation de mot de passe");
-      const body = encodeURIComponent(
-        `Demande de réinitialisation de mot de passe\n\n` +
-        `Email utilisateur: ${email}\n` +
-        `Date: ${new Date().toLocaleString("fr-FR")}\n\n` +
-        `Veuillez générer un nouveau mot de passe pour cet utilisateur et l'envoyer à l'adresse email fournie.`
-      );
-
-      // Créer un lien mailto
-      const mailtoLink = `mailto:${SUPPORT_EMAIL}?subject=${subject}&body=${body}`;
+      const result = await resetPasswordMutation.mutateAsync({ email });
       
-      // Ouvrir le client email par défaut
-      window.location.href = mailtoLink;
-
-      // Afficher le message de succès après un court délai
-      setTimeout(() => {
+      if (result.success) {
         setIsSubmitted(true);
-        setIsLoading(false);
-        toast.success("Demande de réinitialisation envoyée");
-      }, 500);
+        toast.success(result.message);
+      } else {
+        setError(result.error || "Une erreur s'est produite");
+        toast.error(result.error || "Erreur lors de l'envoi");
+      }
     } catch (err) {
-      setError("Une erreur s'est produite. Veuillez réessayer.");
-      setIsLoading(false);
+      const errorMessage = err instanceof Error ? err.message : "Une erreur s'est produite";
+      setError(errorMessage);
+      toast.error(errorMessage);
     }
   };
 
@@ -146,7 +134,7 @@ export default function ForgotPassword({ onBack }: ForgotPasswordProps) {
                   placeholder="votre.email@example.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  disabled={isLoading}
+                  disabled={resetPasswordMutation.isPending}
                   className="pl-10"
                   autoFocus
                 />
@@ -159,10 +147,17 @@ export default function ForgotPassword({ onBack }: ForgotPasswordProps) {
             <Button
               type="submit"
               className="w-full"
-              disabled={isLoading || !email}
+              disabled={resetPasswordMutation.isPending || !email}
               size="lg"
             >
-              {isLoading ? "Envoi en cours..." : "Demander une réinitialisation"}
+              {resetPasswordMutation.isPending ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Envoi en cours...
+                </>
+              ) : (
+                "Demander une réinitialisation"
+              )}
             </Button>
 
             <Button
@@ -170,7 +165,7 @@ export default function ForgotPassword({ onBack }: ForgotPasswordProps) {
               variant="ghost"
               className="w-full"
               onClick={onBack}
-              disabled={isLoading}
+              disabled={resetPasswordMutation.isPending}
             >
               <ArrowLeft className="mr-2 h-4 w-4" />
               Retour à la connexion

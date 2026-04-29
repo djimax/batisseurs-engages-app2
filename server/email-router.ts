@@ -1,4 +1,3 @@
-import { protectedProcedure, router } from "./_core/trpc";
 import { z } from "zod";
 import {
   getEmailTemplates, getEmailTemplateById, createEmailTemplate, updateEmailTemplate, deleteEmailTemplate,
@@ -8,6 +7,7 @@ import {
 } from "./db";
 import { logAudit } from "./audit";
 import { notifyOwner } from "./_core/notification";
+import { publicProcedure, protectedProcedure, router } from "./_core/trpc";
 
 export const emailRouter = router({
   // Email Templates
@@ -205,6 +205,7 @@ export const emailRouter = router({
       }
     }),
 
+
   // Email history
   history: router({
     list: protectedProcedure
@@ -226,4 +227,23 @@ export const emailRouter = router({
         return { ...history, recipients };
       }),
   }),
+
+  // Password reset
+  resetPassword: publicProcedure
+    .input(z.object({
+      email: z.string().email(),
+    }))
+    .mutation(async ({ input }) => {
+      try {
+        const title = "Demande de reinitialisation de mot de passe";
+        const content = `Un utilisateur a demande une reinitialisation de mot de passe.\n\nEmail: ${input.email}\nDate: ${new Date().toLocaleString("fr-FR")}\n\nVeuillez generer un nouveau mot de passe et l'envoyer a cet utilisateur.`;
+        
+        await notifyOwner({ title, content });
+
+        return { success: true, message: "Demande de reinitialisation envoyee" };
+      } catch (error) {
+        console.error("Error sending password reset notification:", error);
+        return { success: false, error: "Erreur lors de l'envoi de la demande" };
+      }
+    }),
 });

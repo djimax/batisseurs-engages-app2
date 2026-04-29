@@ -1146,3 +1146,11 @@
 - [x] Mettre à jour GlobalSettings.tsx pour utiliser tRPC
 - [x] Tester la synchronisation et les performances
 - [x] Tous les 97 tests passent sans régression
+
+
+## Phase 37 - Correction du Bouton Réinitialisation Mot de Passe
+
+- [x] Identifier le problème du bouton de réinitialisation du mot de passe (window.location.href mailto)
+- [x] Corriger la fonctionnalité avec tRPC pour envoyer une notification à l'administrateur
+- [x] Mettre à jour ForgotPassword.tsx pour utiliser tRPC
+- [x] Tester la correction - Tous les 97 tests passent sans régression
