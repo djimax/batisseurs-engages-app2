@@ -33,6 +33,7 @@ import CRMContacts from "./pages/CRMContacts";
 import CRMActivities from "./pages/CRMActivities";
 import CRMReports from "./pages/CRMReports";
 import GlobalSettings from "./pages/GlobalSettings";
+import { AdminPasswordResets } from "./pages/AdminPasswordResets";
 import { usePasswordAuth } from "./hooks/usePasswordAuth";
 import { useState, useEffect } from "react";
 
@@ -73,6 +74,7 @@ function OnlineRouter({ isAuthenticated, error, onLogin, onLogout, onForgotPassw
         <Route path="/crm/reports" component={CRMReports} />
         <Route path="/settings" component={Settings} />
         <Route path="/global-settings" component={GlobalSettings} />
+        <Route path="/admin/password-resets" component={AdminPasswordResets} />
         <Route path="/404" component={NotFound} />
         <Route component={NotFound} />
       </Switch>

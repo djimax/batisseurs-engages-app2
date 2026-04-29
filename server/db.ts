@@ -21,7 +21,8 @@ import {
   adhesionPipeline, InsertAdhesionPipeline, AdhesionPipeline,
   crmReports, InsertCrmReport, CrmReport,
   crmEmailIntegration, InsertCrmEmailIntegration, CrmEmailIntegration,
-  globalSettings, InsertGlobalSettings, GlobalSettings
+  globalSettings, InsertGlobalSettings, GlobalSettings,
+  passwordResetRequests, InsertPasswordResetRequest, PasswordResetRequest
 } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
@@ -48,7 +49,8 @@ const schema = {
   adhesionPipeline,
   crmReports,
   crmEmailIntegration,
-  globalSettings
+  globalSettings,
+  passwordResetRequests
 };
 
 export async function getDb() {
@@ -780,4 +782,66 @@ export async function initializeGlobalSettings() {
     });
   }
   return getGlobalSettings();
+}
+
+// ============ PASSWORD RESET REQUESTS ============
+
+export async function createPasswordResetRequest(data: InsertPasswordResetRequest) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  const result = await db.insert(passwordResetRequests).values(data);
+  const id = result[0].insertId;
+  
+  const rows = await db.select().from(passwordResetRequests).where(eq(passwordResetRequests.id, Number(id)));
+  return rows[0];
+}
+
+export async function getPasswordResetRequest(id: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  const rows = await db.select().from(passwordResetRequests).where(eq(passwordResetRequests.id, id));
+  return rows[0];
+}
+
+export async function getPasswordResetRequestByEmail(email: string) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  const rows = await db.select().from(passwordResetRequests).where(eq(passwordResetRequests.email, email));
+  return rows[0];
+}
+
+export async function getPasswordResetRequestByToken(token: string) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  const rows = await db.select().from(passwordResetRequests).where(eq(passwordResetRequests.token, token));
+  return rows[0];
+}
+
+export async function listPasswordResetRequests(limit = 50, offset = 0) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  const rows = await db.select().from(passwordResetRequests).orderBy(desc(passwordResetRequests.createdAt)).limit(limit).offset(offset);
+  return rows;
+}
+
+export async function updatePasswordResetRequest(id: number, data: Partial<InsertPasswordResetRequest>) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  await db.update(passwordResetRequests).set(data).where(eq(passwordResetRequests.id, id));
+  
+  return getPasswordResetRequest(id);
+}
+
+export async function deletePasswordResetRequest(id: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  await db.delete(passwordResetRequests).where(eq(passwordResetRequests.id, id));
+  return { success: true };
 }

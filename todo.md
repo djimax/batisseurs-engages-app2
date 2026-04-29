@@ -1156,3 +1156,13 @@
 - [x] Ajouter le lien "Réinitialiser" sur la page Login.tsx
 - [x] Ajouter la navigation vers ForgotPassword dans App.tsx
 - [x] Tester la correction - Tous les 97 tests passent sans régression
+
+
+## Phase 38 - Gestion des Demandes de Réinitialisation de Mot de Passe
+
+- [x] Créer une table pour stocker les demandes de réinitialisation
+- [x] Ajouter les procédures tRPC pour gérer les demandes
+- [x] Créer une page d'administration pour gérer les demandes
+- [x] Ajouter la génération de mots de passe temporaires
+- [x] Envoyer le mot de passe temporaire par email
+- [x] Tester et valider le flux complet

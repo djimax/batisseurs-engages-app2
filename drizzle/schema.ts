@@ -696,3 +696,22 @@ export const globalSettings = mysqlTable("global_settings", {
 
 export type GlobalSettings = typeof globalSettings.$inferSelect;
 export type InsertGlobalSettings = typeof globalSettings.$inferInsert;
+
+
+/**
+ * Password Reset Requests - track password reset requests
+ */
+export const passwordResetRequests = mysqlTable("password_reset_requests", {
+  id: int("id").autoincrement().primaryKey(),
+  email: varchar("email", { length: 320 }).notNull(),
+  token: varchar("token", { length: 255 }).notNull().unique(),
+  temporaryPassword: varchar("temporaryPassword", { length: 255 }),
+  status: mysqlEnum("status", ["pending", "completed", "expired"]).default("pending").notNull(),
+  expiresAt: timestamp("expiresAt").notNull(),
+  completedAt: timestamp("completedAt"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type PasswordResetRequest = typeof passwordResetRequests.$inferSelect;
+export type InsertPasswordResetRequest = typeof passwordResetRequests.$inferInsert;

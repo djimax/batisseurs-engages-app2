@@ -4,6 +4,7 @@ import {
   getEmailHistory, getEmailHistoryById, createEmailHistory, updateEmailHistory,
   getEmailRecipients, createEmailRecipient, updateEmailRecipient,
   getAllMembers,
+  createPasswordResetRequest, listPasswordResetRequests, updatePasswordResetRequest, getPasswordResetRequest,
 } from "./db";
 import { logAudit } from "./audit";
 import { notifyOwner } from "./_core/notification";
@@ -235,6 +236,20 @@ export const emailRouter = router({
     }))
     .mutation(async ({ input }) => {
       try {
+        // Generate a unique token
+        const token = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+        
+        // Create password reset request
+        const expiresAt = new Date();
+        expiresAt.setHours(expiresAt.getHours() + 24); // Expire in 24 hours
+        
+        await createPasswordResetRequest({
+          email: input.email,
+          token,
+          status: "pending",
+          expiresAt,
+        });
+        
         const title = "Demande de reinitialisation de mot de passe";
         const content = `Un utilisateur a demande une reinitialisation de mot de passe.\n\nEmail: ${input.email}\nDate: ${new Date().toLocaleString("fr-FR")}\n\nVeuillez generer un nouveau mot de passe et l'envoyer a cet utilisateur.`;
         
@@ -246,4 +261,144 @@ export const emailRouter = router({
         return { success: false, error: "Erreur lors de l'envoi de la demande" };
       }
     }),
+
+  // Admin procedures for managing password reset requests
+  passwordResets: router({
+    // List all pending password reset requests
+    list: protectedProcedure
+      .input(z.object({
+        limit: z.number().default(50),
+        offset: z.number().default(0),
+        status: z.enum(["pending", "completed", "expired"]).optional(),
+      }))
+      .query(async ({ input, ctx }) => {
+        // Only admins can list password reset requests
+        if (ctx.user?.role !== "admin") {
+          throw new Error("Unauthorized");
+        }
+        
+        const requests = await listPasswordResetRequests(input.limit, input.offset);
+        
+        // Filter by status if provided
+        if (input.status) {
+          return requests.filter(r => r.status === input.status);
+        }
+        
+        return requests;
+      }),
+
+    // Get a specific password reset request
+    getById: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .query(async ({ input, ctx }) => {
+        if (ctx.user?.role !== "admin") {
+          throw new Error("Unauthorized");
+        }
+        
+        return await getPasswordResetRequest(input.id);
+      }),
+
+    // Generate and send temporary password
+    generatePassword: protectedProcedure
+      .input(z.object({
+        id: z.number(),
+        temporaryPassword: z.string().min(8),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        if (ctx.user?.role !== "admin") {
+          throw new Error("Unauthorized");
+        }
+        
+        const request = await getPasswordResetRequest(input.id);
+        if (!request) {
+          throw new Error("Password reset request not found");
+        }
+        
+        // Update the request with the temporary password
+        await updatePasswordResetRequest(input.id, {
+          temporaryPassword: input.temporaryPassword,
+          status: "completed",
+          completedAt: new Date(),
+        });
+        
+        // Send email with temporary password
+        const title = "Votre mot de passe temporaire";
+        const content = `Bonjour,\n\nVoici votre mot de passe temporaire: ${input.temporaryPassword}\n\nVeuillez vous connecter et changer votre mot de passe immediatement.\n\nCordialement,\nLes Bâtisseurs Engagés`;
+        
+        await notifyOwner({ 
+          title: `${title} - ${request.email}`, 
+          content 
+        });
+        
+        await logAudit({
+          userId: ctx.user?.id,
+          action: "UPDATE",
+          entityType: "password_reset_request",
+          entityId: input.id,
+          description: `Generated temporary password for ${request.email}`,
+          status: "success",
+        });
+        
+        return { success: true, message: "Mot de passe temporaire genere et envoye" };
+      }),
+
+    // Approve a password reset request (without generating password)
+    approve: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input, ctx }) => {
+        if (ctx.user?.role !== "admin") {
+          throw new Error("Unauthorized");
+        }
+        
+        const request = await getPasswordResetRequest(input.id);
+        if (!request) {
+          throw new Error("Password reset request not found");
+        }
+        
+        await updatePasswordResetRequest(input.id, {
+          status: "completed",
+          completedAt: new Date(),
+        });
+        
+        await logAudit({
+          userId: ctx.user?.id,
+          action: "UPDATE",
+          entityType: "password_reset_request",
+          entityId: input.id,
+          description: `Approved password reset for ${request.email}`,
+          status: "success",
+        });
+        
+        return { success: true, message: "Demande approuvee" };
+      }),
+
+    // Reject a password reset request
+    reject: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input, ctx }) => {
+        if (ctx.user?.role !== "admin") {
+          throw new Error("Unauthorized");
+        }
+        
+        const request = await getPasswordResetRequest(input.id);
+        if (!request) {
+          throw new Error("Password reset request not found");
+        }
+        
+        await updatePasswordResetRequest(input.id, {
+          status: "expired",
+        });
+        
+        await logAudit({
+          userId: ctx.user?.id,
+          action: "UPDATE",
+          entityType: "password_reset_request",
+          entityId: input.id,
+          description: `Rejected password reset for ${request.email}`,
+          status: "success",
+        });
+        
+        return { success: true, message: "Demande rejetee" };
+      }),
+  }),
 });

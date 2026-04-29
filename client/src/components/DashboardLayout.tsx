@@ -43,7 +43,8 @@ import {
   BarChart3,
   PhoneCall,
   Globe,
-  Cog
+  Cog,
+  Lock
 } from "lucide-react";
 import { CSSProperties, useEffect, useRef, useState } from "react";
 import { useLocation } from "wouter";
@@ -73,6 +74,7 @@ const menuItems = [
   { icon: Shield, label: "Gestion des Rôles", path: "/admin/roles", adminOnly: true },
   { icon: Eye, label: "Journaux d'Audit", path: "/admin/audit-logs", adminOnly: true },
   { icon: Settings, label: "Paramètres Globaux", path: "/global-settings", adminOnly: true },
+  { icon: Shield, label: "Réinitialisations MDP", path: "/admin/password-resets", adminOnly: true },
 ];
 
 const SIDEBAR_WIDTH_KEY = "sidebar-width";
