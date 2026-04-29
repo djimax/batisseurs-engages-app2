@@ -37,8 +37,13 @@ import { usePasswordAuth } from "./hooks/usePasswordAuth";
 import { useState, useEffect } from "react";
 
 function OnlineRouter({ isAuthenticated, error, onLogin, onLogout, onForgotPassword }: any) {
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
+
   if (!isAuthenticated) {
-    return <Login onLogin={onLogin} error={error} onForgotPassword={onForgotPassword} />;
+    if (showForgotPassword) {
+      return <ForgotPassword onBack={() => setShowForgotPassword(false)} />;
+    }
+    return <Login onLogin={onLogin} error={error} onForgotPassword={() => setShowForgotPassword(true)} />;
   }
 
   return (

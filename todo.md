@@ -1153,4 +1153,6 @@
 - [x] Identifier le problème du bouton de réinitialisation du mot de passe (window.location.href mailto)
 - [x] Corriger la fonctionnalité avec tRPC pour envoyer une notification à l'administrateur
 - [x] Mettre à jour ForgotPassword.tsx pour utiliser tRPC
+- [x] Ajouter le lien "Réinitialiser" sur la page Login.tsx
+- [x] Ajouter la navigation vers ForgotPassword dans App.tsx
 - [x] Tester la correction - Tous les 97 tests passent sans régression
