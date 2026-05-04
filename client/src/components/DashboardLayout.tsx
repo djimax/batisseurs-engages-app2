@@ -1,4 +1,3 @@
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -45,38 +44,81 @@ import {
   Globe,
   Cog,
   Lock,
-  Briefcase
+  Briefcase,
+  ChevronDown
 } from "lucide-react";
 import { CSSProperties, useEffect, useRef, useState } from "react";
 import { useLocation } from "wouter";
 import { DashboardLayoutSkeleton } from './DashboardLayoutSkeleton';
 import { Button } from "./ui/button";
 import { useAuth as useAuthHook } from "@/_core/hooks/useAuth";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 
-const menuItems = [
+type MenuItem = {
+  icon?: any;
+  label: string;
+  path?: string;
+  adminOnly?: boolean;
+  isGroup?: boolean;
+  items?: MenuItem[];
+};
+
+const menuItems: MenuItem[] = [
   { icon: LayoutDashboard, label: "Tableau de bord", path: "/" },
-  { icon: FileText, label: "Documents", path: "/documents" },
-  { icon: FolderOpen, label: "Catégories", path: "/categories" },
-  { icon: Users, label: "Membres", path: "/members" },
-  { icon: DollarSign, label: "Finance", path: "/finance" },
-  { icon: Megaphone, label: "Campagnes", path: "/campaigns" },
-  { icon: UserCheck, label: "Adhésions", path: "/adhesions" },
-  { icon: Calendar, label: "Événements", path: "/events" },
-  { icon: Megaphone, label: "Annonces", path: "/announcements" },
-  { icon: Mail, label: "Emails", path: "/email-composer" },
-  { icon: Briefcase, label: "Projets", path: "/projects" },
-  { icon: Users, label: "CRM", path: "/crm", adminOnly: true },
-  { icon: Users, label: "Contacts CRM", path: "/crm/contacts", adminOnly: true },
-  { icon: PhoneCall, label: "Activités CRM", path: "/crm/activities", adminOnly: true },
-  { icon: BarChart3, label: "Rapports CRM", path: "/crm/reports", adminOnly: true },
-  { icon: Activity, label: "Activité", path: "/activity" },
-  { icon: Archive, label: "Archives", path: "/archives" },
-  { icon: Users, label: "Utilisateurs", path: "/users" },
-  { icon: History, label: "Historique d'audit", path: "/audit-history" },
-  { icon: Shield, label: "Gestion des Rôles", path: "/admin/roles", adminOnly: true },
-  { icon: Eye, label: "Journaux d'Audit", path: "/admin/audit-logs", adminOnly: true },
-  { icon: Settings, label: "Paramètres Globaux", path: "/global-settings", adminOnly: true },
-  { icon: Shield, label: "Réinitialisations MDP", path: "/admin/password-resets", adminOnly: true },
+  
+  // Gestion Documentaire
+  { label: "📁 Gestion Documentaire", isGroup: true, items: [
+    { icon: FileText, label: "Documents", path: "/documents" },
+    { icon: FolderOpen, label: "Catégories", path: "/categories" },
+    { icon: Archive, label: "Archives", path: "/archives" },
+  ]},
+  
+  // Gestion des Membres
+  { label: "👥 Gestion des Membres", isGroup: true, items: [
+    { icon: Users, label: "Membres", path: "/members" },
+    { icon: UserCheck, label: "Adhésions", path: "/adhesions" },
+    { icon: Shield, label: "Gestion des Rôles", path: "/admin/roles", adminOnly: true },
+  ]},
+  
+  // Projets & Événements
+  { label: "💼 Projets & Événements", isGroup: true, items: [
+    { icon: Briefcase, label: "Projets", path: "/projects" },
+    { icon: Calendar, label: "Événements", path: "/events" },
+    { icon: Megaphone, label: "Campagnes", path: "/campaigns" },
+  ]},
+  
+  // Finances
+  { label: "💰 Finances", isGroup: true, items: [
+    { icon: DollarSign, label: "Finance", path: "/finance" },
+  ]},
+  
+  // CRM
+  { label: "📞 CRM", isGroup: true, adminOnly: true, items: [
+    { icon: Users, label: "Tableau de Bord CRM", path: "/crm", adminOnly: true },
+    { icon: Users, label: "Contacts", path: "/crm/contacts", adminOnly: true },
+    { icon: PhoneCall, label: "Activités", path: "/crm/activities", adminOnly: true },
+    { icon: BarChart3, label: "Rapports", path: "/crm/reports", adminOnly: true },
+  ]},
+  
+  // Communication
+  { label: "📢 Communication", isGroup: true, items: [
+    { icon: Megaphone, label: "Annonces", path: "/announcements" },
+    { icon: Mail, label: "Emails", path: "/email-composer" },
+  ]},
+  
+  // Administration
+  { label: "⚙️ Administration", isGroup: true, adminOnly: true, items: [
+    { icon: Settings, label: "Paramètres Globaux", path: "/global-settings", adminOnly: true },
+    { icon: Users, label: "Utilisateurs", path: "/users", adminOnly: true },
+    { icon: Eye, label: "Journaux d'Audit", path: "/admin/audit-logs", adminOnly: true },
+    { icon: Shield, label: "Réinitialisations MDP", path: "/admin/password-resets", adminOnly: true },
+  ]},
+  
+  // Activité & Logs
+  { label: "📊 Activité & Logs", isGroup: true, items: [
+    { icon: Activity, label: "Activité", path: "/activity" },
+    { icon: History, label: "Historique d'audit", path: "/audit-history" },
+  ]},
 ];
 
 const SIDEBAR_WIDTH_KEY = "sidebar-width";
@@ -166,8 +208,8 @@ function DashboardLayoutContent({
   const { state, toggleSidebar } = useSidebar();
   const isCollapsed = state === "collapsed";
   const [isResizing, setIsResizing] = useState(false);
+  const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
   const sidebarRef = useRef<HTMLDivElement>(null);
-  const activeMenuItem = menuItems.find(item => item.path === location);
   const isMobile = useIsMobile();
 
   useEffect(() => {
@@ -206,6 +248,78 @@ function DashboardLayoutContent({
     };
   }, [isResizing, setSidebarWidth]);
 
+  const toggleGroup = (groupLabel: string) => {
+    const newExpanded = new Set(expandedGroups);
+    if (newExpanded.has(groupLabel)) {
+      newExpanded.delete(groupLabel);
+    } else {
+      newExpanded.add(groupLabel);
+    }
+    setExpandedGroups(newExpanded);
+  };
+
+  const isItemActive = (path?: string) => location === path;
+
+  const renderMenuItems = (items: MenuItem[], level = 0) => {
+    return items
+      .filter(item => {
+        if (item.adminOnly && user?.role !== "admin") {
+          return false;
+        }
+        return true;
+      })
+      .map((item, index) => {
+        if (item.isGroup && item.items) {
+          const isExpanded = expandedGroups.has(item.label);
+          return (
+            <div key={`group-${index}`}>
+              <button
+                onClick={() => toggleGroup(item.label)}
+                className="w-full flex items-center gap-2 px-2 py-2 text-xs font-semibold text-white/70 hover:text-white transition-colors group-data-[collapsible=icon]:hidden"
+              >
+                <span>{item.label}</span>
+                <ChevronDown
+                  className={`h-3 w-3 ml-auto transition-transform ${
+                    isExpanded ? "rotate-180" : ""
+                  }`}
+                />
+              </button>
+              {isExpanded && (
+                <div className="space-y-1">
+                  {renderMenuItems(item.items, level + 1)}
+                </div>
+              )}
+            </div>
+          );
+        }
+
+        if (item.path) {
+          const isActive = isItemActive(item.path);
+          return (
+            <SidebarMenuItem key={item.path}>
+              <SidebarMenuButton
+                isActive={isActive}
+                onClick={() => setLocation(item.path!)}
+                tooltip={item.label}
+                className={`h-10 transition-all font-normal ${
+                  level > 0 ? "pl-6" : ""
+                } ${
+                  isActive
+                    ? "bg-accent text-primary hover:bg-accent"
+                    : "text-white/80 hover:bg-primary/80 hover:text-white"
+                }`}
+              >
+                {item.icon && <item.icon className="h-4 w-4" />}
+                <span>{item.label}</span>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+          );
+        }
+
+        return null;
+      });
+  };
+
   return (
     <>
       <div className="relative" ref={sidebarRef}>
@@ -236,32 +350,9 @@ function DashboardLayoutContent({
 
           <SidebarContent className="gap-0 pt-2">
             <SidebarMenu className="px-2 py-1">
-              {menuItems.filter(item => {
-                if (item.adminOnly && user?.role !== "admin") {
-                  return false;
-                }
-                return true;
-              }).map(item => {
-                const isActive = location === item.path;
-                return (
-                  <SidebarMenuItem key={item.path}>
-                    <SidebarMenuButton
-                      isActive={isActive}
-                      onClick={() => setLocation(item.path)}
-                      tooltip={item.label}
-                      className={`h-10 transition-all font-normal ${
-                        isActive
-                          ? "bg-accent text-primary hover:bg-accent"
-                          : "text-white/80 hover:bg-primary/80 hover:text-white"
-                      }`}
-                    >
-                      <item.icon className="h-4 w-4" />
-                      <span>{item.label}</span>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                );
-              })}
-            </SidebarMenu>          </SidebarContent>
+              {renderMenuItems(menuItems)}
+            </SidebarMenu>
+          </SidebarContent>
 
           <SidebarFooter className="p-3 border-t border-primary/20">
             <DropdownMenu>
@@ -282,60 +373,44 @@ function DashboardLayoutContent({
                   </div>
                 </button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-48">
-                <DropdownMenuItem
-                  onClick={() => setLocation("/settings")}
-                  className="cursor-pointer"
-                >
+              <DropdownMenuContent align="end" className="w-56">
+                <DropdownMenuItem onClick={() => setLocation("/settings")}>
                   <Settings className="mr-2 h-4 w-4" />
-                  <span>Parametres</span>
+                  <span>Paramètres Utilisateur</span>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem
-                  onClick={() => window.open("https://www.lesbatisseursengages.com/", "_blank")}
-                  className="cursor-pointer"
-                >
-                  <Globe className="mr-2 h-4 w-4" />
-                  <span>Site Officiel</span>
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem
-                  onClick={handleLogout}
-                  className="cursor-pointer text-destructive focus:text-destructive"
+                  onClick={() => {
+                    handleLogout();
+                  }}
                 >
                   <LogOut className="mr-2 h-4 w-4" />
-                  <span>Se deconnecter</span>
+                  <span>Se déconnecter</span>
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
           </SidebarFooter>
+
+          {!isCollapsed && (
+            <div
+              onMouseDown={() => setIsResizing(true)}
+              className="absolute right-0 top-0 bottom-0 w-1 hover:bg-accent/50 cursor-col-resize transition-colors"
+            />
+          )}
         </Sidebar>
-        <div
-          className={`absolute top-0 right-0 w-1 h-full cursor-col-resize hover:bg-primary/20 transition-colors ${isCollapsed ? "hidden" : ""}`}
-          onMouseDown={() => {
-            if (isCollapsed) return;
-            setIsResizing(true);
-          }}
-          style={{ zIndex: 50 }}
-        />
       </div>
 
       <SidebarInset>
-        {isMobile && (
-          <div className="flex border-b h-14 items-center justify-between bg-background/95 px-2 backdrop-blur supports-[backdrop-filter]:backdrop-blur sticky top-0 z-40">
-            <div className="flex items-center gap-2">
-              <SidebarTrigger className="h-9 w-9 rounded-lg bg-background" />
-              <div className="flex items-center gap-3">
-                <div className="flex flex-col gap-1">
-                  <span className="tracking-tight text-foreground font-medium">
-                    {activeMenuItem?.label ?? "Menu"}
-                  </span>
-                </div>
-              </div>
-            </div>
+        <div className="flex flex-col h-full">
+          <div className="flex items-center gap-2 border-b border-border/50 px-4 py-3 h-16">
+            <SidebarTrigger className="-ml-1" />
           </div>
-        )}
-        <main className="flex-1 p-4 md:p-6">{children}</main>
+          <main className="flex-1 overflow-auto">
+            <div className="p-6">
+              {children}
+            </div>
+          </main>
+        </div>
       </SidebarInset>
     </>
   );

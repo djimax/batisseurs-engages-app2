@@ -1246,3 +1246,14 @@
 - [ ] Créer les tests vitest pour les procédures de projets
 - [ ] Implémenter les rapports et statistiques de projets
 - [ ] Ajouter la collaboration en temps réel (commentaires, mises à jour)
+
+
+## Phase 40 - Restructuration du Menu de Navigation
+
+- [x] Modifier DashboardLayout pour ajouter les groupes de menu
+- [x] Créer les groupes logiques (Gestion Documentaire, Gestion des Membres, Projets & Événements, etc.)
+- [x] Déplacer Gestion des Rôles dans Gestion des Membres
+- [x] Déplacer Utilisateurs dans Administration
+- [x] Ajouter les sous-menus déroulants
+- [x] Tester la navigation et l'UX
+- [x] Valider que tous les liens fonctionnent correctement
