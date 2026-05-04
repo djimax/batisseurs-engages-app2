@@ -18,7 +18,13 @@ import {
   createTransaction, getTransactions,
   getFinancialStats,
   getGlobalSettings, updateGlobalSettings, initializeGlobalSettings,
-  getDb
+  getDb,
+  createProject, getProject, listProjects, updateProject, deleteProject,
+  addProjectMember, getProjectMembers, removeProjectMember,
+  createProjectTask, getProjectTasks, updateProjectTask, deleteProjectTask,
+  createProjectMilestone, getProjectMilestones, updateProjectMilestone, deleteProjectMilestone,
+  createProjectUpdate, getProjectUpdates,
+  getProjectBudgetItems, createProjectBudgetItem, updateProjectBudgetItem, deleteProjectBudgetItem
 } from "./db";
 import { roles, permissions, auditLogs, emailTemplates, emailHistory, emailRecipients } from "../drizzle/schema";
 import { eq, desc } from "drizzle-orm";
@@ -597,6 +603,250 @@ export const appRouter = router({
         });
         
         return result;
+      }),
+  }),
+
+  // ============ PROJECTS ============
+  projects: router({
+    list: protectedProcedure
+      .input(z.object({ limit: z.number().default(50), offset: z.number().default(0), status: z.string().optional() }))
+      .query(async ({ input }) => {
+        return await listProjects(input.limit, input.offset, input.status);
+      }),
+
+    get: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .query(async ({ input }) => {
+        return await getProject(input.id);
+      }),
+
+    create: protectedProcedure
+      .input(z.object({
+        name: z.string(),
+        description: z.string().optional(),
+        status: z.enum(["planning", "in-progress", "on-hold", "completed", "archived"]).default("planning"),
+        startDate: z.date().optional(),
+        endDate: z.date().optional(),
+        budget: z.string().optional(),
+        leaderId: z.number(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        const project = await createProject({
+          ...input,
+          createdBy: ctx.user?.id || 0,
+        });
+
+        await logAudit({
+          userId: ctx.user?.id,
+          action: "CREATE",
+          entityType: "project",
+          entityName: input.name,
+          description: `Created project: ${input.name}`,
+          status: "success",
+        });
+
+        return project;
+      }),
+
+    update: protectedProcedure
+      .input(z.object({
+        id: z.number(),
+        name: z.string().optional(),
+        description: z.string().optional(),
+        status: z.enum(["planning", "in-progress", "on-hold", "completed", "archived"]).optional(),
+        startDate: z.date().optional(),
+        endDate: z.date().optional(),
+        budget: z.string().optional(),
+        leaderId: z.number().optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        const { id, ...data } = input;
+        const project = await updateProject(id, data);
+
+        await logAudit({
+          userId: ctx.user?.id,
+          action: "UPDATE",
+          entityType: "project",
+          entityName: project?.name || "Unknown",
+          description: `Updated project: ${project?.name}`,
+          status: "success",
+        });
+
+        return project;
+      }),
+
+    delete: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input, ctx }) => {
+        const project = await getProject(input.id);
+        await deleteProject(input.id);
+
+        await logAudit({
+          userId: ctx.user?.id,
+          action: "DELETE",
+          entityType: "project",
+          entityName: project?.name || "Unknown",
+          description: `Deleted project: ${project?.name}`,
+          status: "success",
+        });
+
+        return { success: true };
+      }),
+
+    // Project Members
+    addMember: protectedProcedure
+      .input(z.object({ projectId: z.number(), memberId: z.number(), role: z.enum(["project-lead", "member", "observer"]).default("member") }))
+      .mutation(async ({ input }) => {
+        return await addProjectMember(input);
+      }),
+
+    getMembers: protectedProcedure
+      .input(z.object({ projectId: z.number() }))
+      .query(async ({ input }) => {
+        return await getProjectMembers(input.projectId);
+      }),
+
+    removeMember: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input }) => {
+        return await removeProjectMember(input.id);
+      }),
+
+    // Project Tasks
+    createTask: protectedProcedure
+      .input(z.object({
+        projectId: z.number(),
+        title: z.string(),
+        description: z.string().optional(),
+        status: z.enum(["todo", "in-progress", "in-review", "completed"]).default("todo"),
+        priority: z.enum(["low", "medium", "high", "critical"]).default("medium"),
+        assignedTo: z.number().optional(),
+        dueDate: z.date().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        return await createProjectTask(input);
+      }),
+
+    getTasks: protectedProcedure
+      .input(z.object({ projectId: z.number() }))
+      .query(async ({ input }) => {
+        return await getProjectTasks(input.projectId);
+      }),
+
+    updateTask: protectedProcedure
+      .input(z.object({
+        id: z.number(),
+        title: z.string().optional(),
+        description: z.string().optional(),
+        status: z.enum(["todo", "in-progress", "in-review", "completed"]).optional(),
+        priority: z.enum(["low", "medium", "high", "critical"]).optional(),
+        assignedTo: z.number().optional(),
+        dueDate: z.date().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const { id, ...data } = input;
+        return await updateProjectTask(id, data);
+      }),
+
+    deleteTask: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input }) => {
+        return await deleteProjectTask(input.id);
+      }),
+
+    // Project Milestones
+    createMilestone: protectedProcedure
+      .input(z.object({
+        projectId: z.number(),
+        title: z.string(),
+        description: z.string().optional(),
+        dueDate: z.date(),
+        status: z.enum(["pending", "in-progress", "completed", "delayed"]).default("pending"),
+      }))
+      .mutation(async ({ input }) => {
+        return await createProjectMilestone(input);
+      }),
+
+    getMilestones: protectedProcedure
+      .input(z.object({ projectId: z.number() }))
+      .query(async ({ input }) => {
+        return await getProjectMilestones(input.projectId);
+      }),
+
+    updateMilestone: protectedProcedure
+      .input(z.object({
+        id: z.number(),
+        title: z.string().optional(),
+        description: z.string().optional(),
+        dueDate: z.date().optional(),
+        status: z.enum(["pending", "in-progress", "completed", "delayed"]).optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const { id, ...data } = input;
+        return await updateProjectMilestone(id, data);
+      }),
+
+    deleteMilestone: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input }) => {
+        return await deleteProjectMilestone(input.id);
+      }),
+
+    // Project Updates
+    createUpdate: protectedProcedure
+      .input(z.object({
+        projectId: z.number(),
+        title: z.string(),
+        content: z.string(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        return await createProjectUpdate({
+          ...input,
+          createdBy: ctx.user?.id || 0,
+        });
+      }),
+
+    getUpdates: protectedProcedure
+      .input(z.object({ projectId: z.number() }))
+      .query(async ({ input }) => {
+        return await getProjectUpdates(input.projectId);
+      }),
+
+    // Project Budget
+    getBudgetItems: protectedProcedure
+      .input(z.object({ projectId: z.number() }))
+      .query(async ({ input }) => {
+        return await getProjectBudgetItems(input.projectId);
+      }),
+
+    createBudgetItem: protectedProcedure
+      .input(z.object({
+        projectId: z.number(),
+        category: z.string(),
+        amount: z.string(),
+        description: z.string().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        return await createProjectBudgetItem(input);
+      }),
+
+    updateBudgetItem: protectedProcedure
+      .input(z.object({
+        id: z.number(),
+        category: z.string().optional(),
+        amount: z.string().optional(),
+        spent: z.string().optional(),
+        description: z.string().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const { id, ...data } = input;
+        return await updateProjectBudgetItem(id, data);
+      }),
+
+    deleteBudgetItem: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input }) => {
+        return await deleteProjectBudgetItem(input.id);
       }),
   }),
 });

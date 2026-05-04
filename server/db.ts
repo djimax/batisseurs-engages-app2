@@ -22,7 +22,13 @@ import {
   crmReports, InsertCrmReport, CrmReport,
   crmEmailIntegration, InsertCrmEmailIntegration, CrmEmailIntegration,
   globalSettings, InsertGlobalSettings, GlobalSettings,
-  passwordResetRequests, InsertPasswordResetRequest, PasswordResetRequest
+  passwordResetRequests, InsertPasswordResetRequest, PasswordResetRequest,
+  projects, InsertProject, Project,
+  projectMembers, InsertProjectMember, ProjectMember,
+  projectTasks, InsertProjectTask, ProjectTask,
+  projectMilestones, InsertProjectMilestone, ProjectMilestone,
+  projectUpdates, InsertProjectUpdate, ProjectUpdate,
+  projectBudgetItems, InsertProjectBudgetItem, ProjectBudgetItem
 } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
@@ -843,5 +849,213 @@ export async function deletePasswordResetRequest(id: number) {
   if (!db) throw new Error("Database not available");
   
   await db.delete(passwordResetRequests).where(eq(passwordResetRequests.id, id));
+  return { success: true };
+}
+
+// ============ PROJECTS ============
+
+export async function createProject(data: InsertProject) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  const result = await db.insert(projects).values(data);
+  const id = result[0].insertId;
+  
+  const rows = await db.select().from(projects).where(eq(projects.id, Number(id)));
+  return rows[0];
+}
+
+export async function getProject(id: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  const rows = await db.select().from(projects).where(eq(projects.id, id));
+  return rows[0];
+}
+
+export async function listProjects(limit = 50, offset = 0, status?: string) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  let query: any = db.select().from(projects).orderBy(desc(projects.createdAt));
+  
+  if (status) {
+    query = db.select().from(projects).where(eq(projects.status, status as any)).orderBy(desc(projects.createdAt));
+  }
+  
+  return await query.limit(limit).offset(offset);
+}
+
+export async function updateProject(id: number, data: Partial<InsertProject>) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  await db.update(projects).set(data).where(eq(projects.id, id));
+  
+  return getProject(id);
+}
+
+export async function deleteProject(id: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  await db.delete(projects).where(eq(projects.id, id));
+  return { success: true };
+}
+
+// Project Members
+export async function addProjectMember(data: InsertProjectMember) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  const result = await db.insert(projectMembers).values(data);
+  const id = result[0].insertId;
+  
+  const rows = await db.select().from(projectMembers).where(eq(projectMembers.id, Number(id)));
+  return rows[0];
+}
+
+export async function getProjectMembers(projectId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  return await db.select().from(projectMembers).where(eq(projectMembers.projectId, projectId));
+}
+
+export async function removeProjectMember(id: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  await db.delete(projectMembers).where(eq(projectMembers.id, id));
+  return { success: true };
+}
+
+// Project Tasks
+export async function createProjectTask(data: InsertProjectTask) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  const result = await db.insert(projectTasks).values(data);
+  const id = result[0].insertId;
+  
+  const rows = await db.select().from(projectTasks).where(eq(projectTasks.id, Number(id)));
+  return rows[0];
+}
+
+export async function getProjectTasks(projectId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  return await db.select().from(projectTasks).where(eq(projectTasks.projectId, projectId)).orderBy(desc(projectTasks.createdAt));
+}
+
+export async function updateProjectTask(id: number, data: Partial<InsertProjectTask>) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  await db.update(projectTasks).set(data).where(eq(projectTasks.id, id));
+  
+  const rows = await db.select().from(projectTasks).where(eq(projectTasks.id, id));
+  return rows[0];
+}
+
+export async function deleteProjectTask(id: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  await db.delete(projectTasks).where(eq(projectTasks.id, id));
+  return { success: true };
+}
+
+// Project Milestones
+export async function createProjectMilestone(data: InsertProjectMilestone) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  const result = await db.insert(projectMilestones).values(data);
+  const id = result[0].insertId;
+  
+  const rows = await db.select().from(projectMilestones).where(eq(projectMilestones.id, Number(id)));
+  return rows[0];
+}
+
+export async function getProjectMilestones(projectId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  return await db.select().from(projectMilestones).where(eq(projectMilestones.projectId, projectId)).orderBy(projectMilestones.dueDate);
+}
+
+export async function updateProjectMilestone(id: number, data: Partial<InsertProjectMilestone>) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  await db.update(projectMilestones).set(data).where(eq(projectMilestones.id, id));
+  
+  const rows = await db.select().from(projectMilestones).where(eq(projectMilestones.id, id));
+  return rows[0];
+}
+
+export async function deleteProjectMilestone(id: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  await db.delete(projectMilestones).where(eq(projectMilestones.id, id));
+  return { success: true };
+}
+
+// Project Updates
+export async function createProjectUpdate(data: InsertProjectUpdate) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  const result = await db.insert(projectUpdates).values(data);
+  const id = result[0].insertId;
+  
+  const rows = await db.select().from(projectUpdates).where(eq(projectUpdates.id, Number(id)));
+  return rows[0];
+}
+
+export async function getProjectUpdates(projectId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  return await db.select().from(projectUpdates).where(eq(projectUpdates.projectId, projectId)).orderBy(desc(projectUpdates.createdAt));
+}
+
+// Project Budget Items
+export async function getProjectBudgetItems(projectId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  return await db.select().from(projectBudgetItems).where(eq(projectBudgetItems.projectId, projectId));
+}
+
+export async function createProjectBudgetItem(data: InsertProjectBudgetItem) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  const result = await db.insert(projectBudgetItems).values(data);
+  const id = result[0].insertId;
+  
+  const rows = await db.select().from(projectBudgetItems).where(eq(projectBudgetItems.id, Number(id)));
+  return rows[0];
+}
+
+export async function updateProjectBudgetItem(id: number, data: Partial<InsertProjectBudgetItem>) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  await db.update(projectBudgetItems).set(data).where(eq(projectBudgetItems.id, id));
+  
+  const rows = await db.select().from(projectBudgetItems).where(eq(projectBudgetItems.id, id));
+  return rows[0];
+}
+
+export async function deleteProjectBudgetItem(id: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  await db.delete(projectBudgetItems).where(eq(projectBudgetItems.id, id));
   return { success: true };
 }

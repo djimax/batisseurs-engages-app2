@@ -44,7 +44,8 @@ import {
   PhoneCall,
   Globe,
   Cog,
-  Lock
+  Lock,
+  Briefcase
 } from "lucide-react";
 import { CSSProperties, useEffect, useRef, useState } from "react";
 import { useLocation } from "wouter";
@@ -63,6 +64,7 @@ const menuItems = [
   { icon: Calendar, label: "Événements", path: "/events" },
   { icon: Megaphone, label: "Annonces", path: "/announcements" },
   { icon: Mail, label: "Emails", path: "/email-composer" },
+  { icon: Briefcase, label: "Projets", path: "/projects" },
   { icon: Users, label: "CRM", path: "/crm", adminOnly: true },
   { icon: Users, label: "Contacts CRM", path: "/crm/contacts", adminOnly: true },
   { icon: PhoneCall, label: "Activités CRM", path: "/crm/activities", adminOnly: true },

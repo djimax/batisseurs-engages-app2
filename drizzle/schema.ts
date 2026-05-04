@@ -715,3 +715,106 @@ export const passwordResetRequests = mysqlTable("password_reset_requests", {
 
 export type PasswordResetRequest = typeof passwordResetRequests.$inferSelect;
 export type InsertPasswordResetRequest = typeof passwordResetRequests.$inferInsert;
+
+/**
+ * Projects table - project management
+ */
+export const projects = mysqlTable("projects", {
+  id: int("id").autoincrement().primaryKey(),
+  name: varchar("name", { length: 255 }).notNull(),
+  description: text("description"),
+  status: mysqlEnum("status", ["planning", "in-progress", "on-hold", "completed", "archived"]).default("planning").notNull(),
+  startDate: timestamp("startDate"),
+  endDate: timestamp("endDate"),
+  budget: varchar("budget", { length: 20 }),
+  leaderId: int("leaderId").notNull(), // Reference to members table
+  createdBy: int("createdBy").notNull(), // Reference to users table
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type Project = typeof projects.$inferSelect;
+export type InsertProject = typeof projects.$inferInsert;
+
+/**
+ * Project Members - team members assigned to projects
+ */
+export const projectMembers = mysqlTable("project_members", {
+  id: int("id").autoincrement().primaryKey(),
+  projectId: int("projectId").notNull(),
+  memberId: int("memberId").notNull(),
+  role: mysqlEnum("role", ["project-lead", "member", "observer"]).default("member").notNull(),
+  joinedAt: timestamp("joinedAt").defaultNow().notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type ProjectMember = typeof projectMembers.$inferSelect;
+export type InsertProjectMember = typeof projectMembers.$inferInsert;
+
+/**
+ * Project Tasks - individual tasks within projects
+ */
+export const projectTasks = mysqlTable("project_tasks", {
+  id: int("id").autoincrement().primaryKey(),
+  projectId: int("projectId").notNull(),
+  title: varchar("title", { length: 255 }).notNull(),
+  description: text("description"),
+  status: mysqlEnum("status", ["todo", "in-progress", "in-review", "completed"]).default("todo").notNull(),
+  priority: mysqlEnum("priority", ["low", "medium", "high", "critical"]).default("medium").notNull(),
+  assignedTo: int("assignedTo"), // Reference to members table
+  dueDate: timestamp("dueDate"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type ProjectTask = typeof projectTasks.$inferSelect;
+export type InsertProjectTask = typeof projectTasks.$inferInsert;
+
+/**
+ * Project Milestones - key milestones in project timeline
+ */
+export const projectMilestones = mysqlTable("project_milestones", {
+  id: int("id").autoincrement().primaryKey(),
+  projectId: int("projectId").notNull(),
+  title: varchar("title", { length: 255 }).notNull(),
+  description: text("description"),
+  dueDate: timestamp("dueDate").notNull(),
+  status: mysqlEnum("status", ["pending", "in-progress", "completed", "delayed"]).default("pending").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type ProjectMilestone = typeof projectMilestones.$inferSelect;
+export type InsertProjectMilestone = typeof projectMilestones.$inferInsert;
+
+/**
+ * Project Updates - project status updates and timeline
+ */
+export const projectUpdates = mysqlTable("project_updates", {
+  id: int("id").autoincrement().primaryKey(),
+  projectId: int("projectId").notNull(),
+  title: varchar("title", { length: 255 }).notNull(),
+  content: text("content").notNull(),
+  createdBy: int("createdBy").notNull(), // Reference to users table
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type ProjectUpdate = typeof projectUpdates.$inferSelect;
+export type InsertProjectUpdate = typeof projectUpdates.$inferInsert;
+
+/**
+ * Project Budget Items - budget tracking for projects
+ */
+export const projectBudgetItems = mysqlTable("project_budget_items", {
+  id: int("id").autoincrement().primaryKey(),
+  projectId: int("projectId").notNull(),
+  category: varchar("category", { length: 100 }).notNull(),
+  amount: varchar("amount", { length: 20 }).notNull(),
+  spent: varchar("spent", { length: 20 }).default("0").notNull(),
+  description: text("description"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type ProjectBudgetItem = typeof projectBudgetItems.$inferSelect;
+export type InsertProjectBudgetItem = typeof projectBudgetItems.$inferInsert;

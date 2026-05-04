@@ -1166,3 +1166,83 @@
 - [x] Ajouter la génération de mots de passe temporaires
 - [x] Envoyer le mot de passe temporaire par email
 - [x] Tester et valider le flux complet
+
+
+## Phase 11 - Gestion Complète des Projets
+
+### Modèle de Données Projets
+- [ ] Créer table projects (id, name, description, status, startDate, endDate, budget, leaderId, createdAt)
+- [ ] Créer table projectMembers (id, projectId, memberId, role, joinedAt)
+- [ ] Créer table projectTasks (id, projectId, title, description, status, priority, assignedTo, dueDate, createdAt)
+- [ ] Créer table projectMilestones (id, projectId, title, description, dueDate, status, createdAt)
+- [ ] Créer table projectUpdates (id, projectId, title, content, createdBy, createdAt)
+- [ ] Créer table projectBudgetItems (id, projectId, category, amount, spent, description)
+
+### Routes tRPC Projets
+- [ ] Procédure pour créer un projet
+- [ ] Procédure pour lister les projets avec filtrage
+- [ ] Procédure pour obtenir les détails d'un projet
+- [ ] Procédure pour mettre à jour un projet
+- [ ] Procédure pour supprimer un projet
+- [ ] Procédure pour ajouter des membres au projet
+- [ ] Procédure pour retirer des membres du projet
+- [ ] Procédure pour créer une tâche
+- [ ] Procédure pour mettre à jour une tâche
+- [ ] Procédure pour supprimer une tâche
+- [ ] Procédure pour créer un jalon
+- [ ] Procédure pour mettre à jour un jalon
+- [ ] Procédure pour créer une mise à jour de projet
+- [ ] Procédure pour obtenir les statistiques du projet
+
+### Interface Utilisateur Projets
+- [ ] Page liste des projets avec recherche et filtrage
+- [ ] Page détail du projet avec onglets (aperçu, tâches, jalons, équipe, budget, mises à jour)
+- [ ] Formulaire de création/édition de projet
+- [ ] Tableau des tâches avec statut et priorité
+- [ ] Formulaire d'ajout de tâche
+- [ ] Tableau des jalons avec barre de progression
+- [ ] Formulaire d'ajout de jalon
+- [ ] Section gestion de l'équipe du projet
+- [ ] Section budget du projet avec suivi des dépenses
+- [ ] Section mises à jour du projet (timeline)
+- [ ] Lien Projets dans le menu de navigation
+
+### Fonctionnalités Projets
+- [ ] Statuts de projet (planification, en cours, en pause, terminé, archivé)
+- [ ] Priorités de tâche (basse, moyenne, haute, critique)
+- [ ] Statuts de tâche (à faire, en cours, en révision, terminée)
+- [ ] Assignation de tâches aux membres
+- [ ] Suivi de la progression du projet
+- [ ] Gestion de l'équipe avec rôles (chef de projet, membre, observateur)
+- [ ] Budget du projet avec suivi des dépenses
+- [ ] Jalons avec dates et statuts
+- [ ] Mises à jour du projet (timeline)
+- [ ] Notifications pour changements de tâche/jalon
+
+### Rapports et Statistiques Projets
+- [ ] Graphique de progression du projet (Gantt simplifié)
+- [ ] Statistiques de tâches (total, complétées, en retard)
+- [ ] Statut du budget (dépensé vs budget)
+- [ ] Activité du projet (dernières mises à jour)
+- [ ] Rapport d'avancement du projet
+- [ ] Export PDF du rapport de projet
+
+### Tests Projets
+- [ ] Tests unitaires pour les procédures tRPC
+- [ ] Tests pour la création/modification/suppression de projets
+- [ ] Tests pour la gestion des tâches
+- [ ] Tests pour la gestion des jalons
+- [ ] Tests pour les permissions (seul chef de projet peut modifier)
+
+
+## Phase 39 - Gestion Complète des Projets
+
+- [x] Créer le schéma Drizzle pour les projets (projects, projectMembers, projectTasks, projectMilestones, projectUpdates, projectBudgetItems)
+- [x] Implémenter les fonctions de base de données pour les projets
+- [x] Ajouter les procédures tRPC pour la gestion complète des projets
+- [x] Créer la page Projects.tsx pour lister les projets avec recherche, filtrage et pagination
+- [x] Créer la page ProjectDetail.tsx pour voir les détails, tâches, jalons et budget
+- [x] Ajouter le lien Projets au menu de navigation
+- [ ] Créer les tests vitest pour les procédures de projets
+- [ ] Implémenter les rapports et statistiques de projets
+- [ ] Ajouter la collaboration en temps réel (commentaires, mises à jour)

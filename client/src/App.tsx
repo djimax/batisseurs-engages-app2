@@ -34,6 +34,8 @@ import CRMActivities from "./pages/CRMActivities";
 import CRMReports from "./pages/CRMReports";
 import GlobalSettings from "./pages/GlobalSettings";
 import { AdminPasswordResets } from "./pages/AdminPasswordResets";
+import { Projects } from "./pages/Projects";
+import { ProjectDetail } from "./pages/ProjectDetail";
 import { usePasswordAuth } from "./hooks/usePasswordAuth";
 import { useState, useEffect } from "react";
 
@@ -75,6 +77,8 @@ function OnlineRouter({ isAuthenticated, error, onLogin, onLogout, onForgotPassw
         <Route path="/settings" component={Settings} />
         <Route path="/global-settings" component={GlobalSettings} />
         <Route path="/admin/password-resets" component={AdminPasswordResets} />
+        <Route path="/projects" component={Projects} />
+        <Route path="/projects/:id" component={ProjectDetail} />
         <Route path="/404" component={NotFound} />
         <Route component={NotFound} />
       </Switch>
