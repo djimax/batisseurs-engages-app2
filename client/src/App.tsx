@@ -36,6 +36,7 @@ import GlobalSettings from "./pages/GlobalSettings";
 import { AdminPasswordResets } from "./pages/AdminPasswordResets";
 import { Projects } from "./pages/Projects";
 import { ProjectDetail } from "./pages/ProjectDetail";
+import Dashboard from "./pages/Dashboard";
 import { usePasswordAuth } from "./hooks/usePasswordAuth";
 import { useState, useEffect } from "react";
 
@@ -52,6 +53,7 @@ function OnlineRouter({ isAuthenticated, error, onLogin, onLogout, onForgotPassw
   return (
     <DashboardLayout onLogout={onLogout}>
       <Switch>
+        <Route path="/dashboard" component={Dashboard} />
         <Route path="/" component={Home} />
         <Route path="/documents" component={Documents} />
         <Route path="/categories" component={Categories} />

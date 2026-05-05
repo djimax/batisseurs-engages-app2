@@ -64,7 +64,7 @@ type MenuItem = {
 };
 
 const menuItems: MenuItem[] = [
-  { icon: LayoutDashboard, label: "Tableau de bord", path: "/" },
+  { icon: LayoutDashboard, label: "Tableau de bord", path: "/dashboard" },
   
   // Gestion Documentaire
   { label: "📁 Gestion Documentaire", isGroup: true, items: [

@@ -24,7 +24,8 @@ import {
   createProjectTask, getProjectTasks, updateProjectTask, deleteProjectTask,
   createProjectMilestone, getProjectMilestones, updateProjectMilestone, deleteProjectMilestone,
   createProjectUpdate, getProjectUpdates,
-  getProjectBudgetItems, createProjectBudgetItem, updateProjectBudgetItem, deleteProjectBudgetItem
+  getProjectBudgetItems, createProjectBudgetItem, updateProjectBudgetItem, deleteProjectBudgetItem,
+  getDashboardStatistics, getProjectsStatistics, getTasksStatistics, getFinanceStatistics, getMembersStatistics
 } from "./db";
 import { roles, permissions, auditLogs, emailTemplates, emailHistory, emailRecipients } from "../drizzle/schema";
 import { eq, desc } from "drizzle-orm";
@@ -848,6 +849,28 @@ export const appRouter = router({
       .mutation(async ({ input }) => {
         return await deleteProjectBudgetItem(input.id);
       }),
+  }),
+
+  dashboard: router({
+    statistics: protectedProcedure.query(async () => {
+      return await getDashboardStatistics();
+    }),
+
+    projects: protectedProcedure.query(async () => {
+      return await getProjectsStatistics();
+    }),
+
+    tasks: protectedProcedure.query(async () => {
+      return await getTasksStatistics();
+    }),
+
+    finance: protectedProcedure.query(async () => {
+      return await getFinanceStatistics();
+    }),
+
+    members: protectedProcedure.query(async () => {
+      return await getMembersStatistics();
+    }),
   }),
 });
 export type AppRouter = typeof appRouter;

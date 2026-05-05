@@ -1,4 +1,4 @@
-import { eq, and, like, desc, asc, sql, or } from "drizzle-orm";
+import { eq, and, like, desc, asc, sql, or, inArray, lt, ne } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
 import { 
   InsertUser, users, 
@@ -1058,4 +1058,143 @@ export async function deleteProjectBudgetItem(id: number) {
   
   await db.delete(projectBudgetItems).where(eq(projectBudgetItems.id, id));
   return { success: true };
+}
+
+
+// Dashboard Statistics Functions
+export async function getDashboardStatistics() {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  const [
+    documentsCount,
+    membersCount,
+    projectsCount,
+    totalFinance,
+    recentDocuments,
+    urgentTasks,
+    activeProjects,
+  ] = await Promise.all([
+    db.select({ count: sql<number>`count(*)` }).from(documents).where(eq(documents.isArchived, false)),
+    db.select({ count: sql<number>`count(*)` }).from(members),
+    db.select({ count: sql<number>`count(*)` }).from(projects).where(inArray(projects.status, ["planning", "in-progress", "on-hold"])),
+    db.select({ total: sql<number>`COALESCE(SUM(CAST(montant AS DECIMAL(10,2))), 0)` }).from(cotisations).where(eq(cotisations.statut, "payée")),
+    db.select().from(documents).where(eq(documents.isArchived, false)).orderBy(desc(documents.createdAt)).limit(5),
+    db.select().from(projectTasks).where(eq(projectTasks.status, "todo")).orderBy(asc(projectTasks.dueDate)).limit(5),
+    db.select().from(projects).where(inArray(projects.status, ["planning", "in-progress"])).orderBy(desc(projects.startDate)).limit(5),
+  ]);
+
+  return {
+    documents: documentsCount[0]?.count || 0,
+    members: membersCount[0]?.count || 0,
+    projects: projectsCount[0]?.count || 0,
+    finance: totalFinance[0]?.total || 0,
+    recentDocuments: recentDocuments || [],
+    urgentTasks: urgentTasks || [],
+    activeProjects: activeProjects || [],
+  };
+}
+
+export async function getProjectsStatistics() {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  const [
+    totalProjects,
+    completedProjects,
+    inProgressProjects,
+    plannedProjects,
+  ] = await Promise.all([
+    db.select({ count: sql<number>`count(*)` }).from(projects),
+    db.select({ count: sql<number>`count(*)` }).from(projects).where(eq(projects.status, "completed")),
+    db.select({ count: sql<number>`count(*)` }).from(projects).where(eq(projects.status, "in-progress")),
+    db.select({ count: sql<number>`count(*)` }).from(projects).where(eq(projects.status, "planning")),
+  ]);
+
+  return {
+    total: totalProjects[0]?.count || 0,
+    completed: completedProjects[0]?.count || 0,
+    inProgress: inProgressProjects[0]?.count || 0,
+    planned: plannedProjects[0]?.count || 0,
+  };
+}
+
+export async function getTasksStatistics() {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  const [
+    totalTasks,
+    completedTasks,
+    inProgressTasks,
+    todoTasks,
+    overdueTasks,
+  ] = await Promise.all([
+    db.select({ count: sql<number>`count(*)` }).from(projectTasks),
+    db.select({ count: sql<number>`count(*)` }).from(projectTasks).where(eq(projectTasks.status, "completed")),
+    db.select({ count: sql<number>`count(*)` }).from(projectTasks).where(eq(projectTasks.status, "in-progress")),
+    db.select({ count: sql<number>`count(*)` }).from(projectTasks).where(eq(projectTasks.status, "todo")),
+    db.select({ count: sql<number>`count(*)` }).from(projectTasks).where(and(
+      lt(projectTasks.dueDate, new Date()),
+      ne(projectTasks.status, "completed")
+    )),
+  ]);
+
+  return {
+    total: totalTasks[0]?.count || 0,
+    completed: completedTasks[0]?.count || 0,
+    inProgress: inProgressTasks[0]?.count || 0,
+    todo: todoTasks[0]?.count || 0,
+    overdue: overdueTasks[0]?.count || 0,
+  };
+}
+
+
+export async function getFinanceStatistics() {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  const [
+    totalCotisations,
+    paidCotisations,
+    totalDons,
+    totalDepenses,
+  ] = await Promise.all([
+    db.select({ total: sql<number>`COALESCE(SUM(CAST(montant AS DECIMAL(10,2))), 0)` }).from(cotisations),
+    db.select({ total: sql<number>`COALESCE(SUM(CAST(montant AS DECIMAL(10,2))), 0)` }).from(cotisations).where(eq(cotisations.statut, "payée")),
+    db.select({ total: sql<number>`COALESCE(SUM(CAST(montant AS DECIMAL(10,2))), 0)` }).from(dons),
+    db.select({ total: sql<number>`COALESCE(SUM(CAST(montant AS DECIMAL(10,2))), 0)` }).from(depenses),
+  ]);
+
+  return {
+    totalCotisations: totalCotisations[0]?.total || 0,
+    paidCotisations: paidCotisations[0]?.total || 0,
+    totalDons: totalDons[0]?.total || 0,
+    totalDepenses: totalDepenses[0]?.total || 0,
+    balance: (paidCotisations[0]?.total || 0) + (totalDons[0]?.total || 0) - (totalDepenses[0]?.total || 0),
+  };
+}
+
+export async function getMembersStatistics() {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  const [
+    totalMembers,
+    adminMembers,
+    secretaryMembers,
+    regularMembers,
+  ] = await Promise.all([
+    db.select({ count: sql<number>`count(*)` }).from(members),
+    db.select({ count: sql<number>`count(*)` }).from(members).where(eq(members.role, "Président")),
+    db.select({ count: sql<number>`count(*)` }).from(members).where(like(members.role, "%Secrétaire%")),
+    db.select({ count: sql<number>`count(*)` }).from(members).where(eq(members.role, "Membre")),
+  ]);
+
+  return {
+    total: totalMembers[0]?.count || 0,
+    presidents: adminMembers[0]?.count || 0,
+    secretaries: secretaryMembers[0]?.count || 0,
+    regular: regularMembers[0]?.count || 0,
+  };
 }

@@ -1257,3 +1257,13 @@
 - [x] Ajouter les sous-menus déroulants
 - [x] Tester la navigation et l'UX
 - [x] Valider que tous les liens fonctionnent correctement
+
+
+## Phase 41 - Tableau de Bord Personnalisable
+
+- [x] Planifier l'architecture du tableau de bord et les widgets
+- [x] Créer les procédures tRPC pour les statistiques
+- [x] Implémenter les composants de widgets réutilisables
+- [x] Créer la page du tableau de bord avec système de personnalisation
+- [x] Ajouter la persistance et la configuration des widgets
+- [x] Tester et valider le tableau de bord
