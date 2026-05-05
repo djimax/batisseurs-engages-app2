@@ -1267,3 +1267,12 @@
 - [x] Créer la page du tableau de bord avec système de personnalisation
 - [x] Ajouter la persistance et la configuration des widgets
 - [x] Tester et valider le tableau de bord
+
+
+## Phase 42 - Changement de Rôle des Utilisateurs
+
+- [x] Ajouter un bouton "Modifier le rôle" dans la table des utilisateurs
+- [x] Créer un dialogue pour sélectionner le nouveau rôle
+- [x] Implémenter la protection pour éviter de supprimer le dernier administrateur
+- [x] Ajouter les confirmations avant changement de rôle
+- [x] Tester et valider la fonctionnalité

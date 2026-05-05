@@ -74,6 +74,8 @@ export default function UserManagement() {
     fullName: "",
     role: "membre" as const,
   });
+  const [editingRoleUserId, setEditingRoleUserId] = useState<number | null>(null);
+  const [editingRole, setEditingRole] = useState<"admin" | "membre">("membre");
 
   // Charger les utilisateurs depuis localStorage au montage
   useEffect(() => {
@@ -156,6 +158,25 @@ export default function UserManagement() {
       )
     );
     toast.success("Statut mis à jour");
+  };
+
+  const handleChangeRole = (id: number, newRole: "admin" | "membre") => {
+    // Vérifier qu'il y a au moins un administrateur
+    const adminCount = users.filter((u) => u.role === "admin").length;
+    const userToChange = users.find((u) => u.id === id);
+
+    if (userToChange?.role === "admin" && newRole === "membre" && adminCount === 1) {
+      toast.error("Il doit y avoir au moins un administrateur");
+      return;
+    }
+
+    setUsers(
+      users.map((u) =>
+        u.id === id ? { ...u, role: newRole } : u
+      )
+    );
+    setEditingRoleUserId(null);
+    toast.success(`Rôle changé en ${newRole === "admin" ? "Administrateur" : "Membre"}`);
   };
 
   const handleResetPassword = (id: number) => {
@@ -335,6 +356,52 @@ export default function UserManagement() {
                               </div>
                               <Button onClick={() => handleResetPassword(user.id)} className="w-full">
                                 Générer un nouveau mot de passe
+                              </Button>
+                            </div>
+                          </DialogContent>
+                        </Dialog>
+
+                        <Dialog open={editingRoleUserId === user.id} onOpenChange={(open) => {
+                          if (!open) setEditingRoleUserId(null);
+                        }}>
+                          <DialogTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => {
+                                setEditingRoleUserId(user.id);
+                                setEditingRole(user.role);
+                              }}
+                              title="Changer le rôle"
+                            >
+                              <Edit2 className="h-4 w-4" />
+                            </Button>
+                          </DialogTrigger>
+                          <DialogContent>
+                            <DialogHeader>
+                              <DialogTitle>Changer le rôle de {user.email}</DialogTitle>
+                              <DialogDescription>
+                                Sélectionnez le nouveau rôle pour cet utilisateur
+                              </DialogDescription>
+                            </DialogHeader>
+                            <div className="space-y-4">
+                              <div>
+                                <label className="text-sm font-medium">Rôle actuel: {user.role === "admin" ? "Administrateur" : "Membre"}</label>
+                                <Select value={editingRole} onValueChange={(value: any) => setEditingRole(value)}>
+                                  <SelectTrigger>
+                                    <SelectValue />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="admin">Administrateur</SelectItem>
+                                    <SelectItem value="membre">Membre</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                              </div>
+                              <Button
+                                onClick={() => handleChangeRole(user.id, editingRole)}
+                                className="w-full"
+                              >
+                                Confirmer le changement
                               </Button>
                             </div>
                           </DialogContent>
