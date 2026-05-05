@@ -1198,3 +1198,75 @@ export async function getMembersStatistics() {
     regular: regularMembers[0]?.count || 0,
   };
 }
+
+
+// ============ USER ROLE MANAGEMENT FUNCTIONS ============
+
+/**
+ * Get all users with their roles
+ */
+export async function getAllUsers() {
+  const db = await getDb();
+  if (!db) return [];
+  
+  return db.select({
+    id: users.id,
+    openId: users.openId,
+    name: users.name,
+    email: users.email,
+    role: users.role,
+    createdAt: users.createdAt,
+    updatedAt: users.updatedAt,
+    lastSignedIn: users.lastSignedIn,
+  }).from(users).orderBy(desc(users.createdAt));
+}
+
+/**
+ * Get user by ID
+ */
+export async function getUserById(userId: number) {
+  const db = await getDb();
+  if (!db) return undefined;
+  
+  const result = await db.select().from(users).where(eq(users.id, userId)).limit(1);
+  return result.length > 0 ? result[0] : undefined;
+}
+
+/**
+ * Update user role
+ */
+export async function updateUserRole(userId: number, newRole: "admin" | "user") {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  // Check if there's at least one admin
+  if (newRole === "user") {
+    const adminCount = await db.select({ count: sql<number>`count(*)` }).from(users).where(eq(users.role, "admin"));
+    const currentAdminCount = adminCount[0]?.count || 0;
+    
+    if (currentAdminCount <= 1) {
+      throw new Error("Il doit y avoir au moins un administrateur");
+    }
+  }
+  
+  await db.update(users).set({ role: newRole }).where(eq(users.id, userId));
+}
+
+/**
+ * Get admin count
+ */
+export async function getAdminCount() {
+  const db = await getDb();
+  if (!db) return 0;
+  
+  const result = await db.select({ count: sql<number>`count(*)` }).from(users).where(eq(users.role, "admin"));
+  return result[0]?.count || 0;
+}
+
+/**
+ * Check if user is admin
+ */
+export async function isUserAdmin(userId: number): Promise<boolean> {
+  const user = await getUserById(userId);
+  return user?.role === "admin";
+}

@@ -1276,3 +1276,12 @@
 - [x] Implémenter la protection pour éviter de supprimer le dernier administrateur
 - [x] Ajouter les confirmations avant changement de rôle
 - [x] Tester et valider la fonctionnalité
+
+
+## Phase 43 - Intégration tRPC pour la Gestion des Rôles
+
+- [x] Créer les fonctions de base de données pour gérer les rôles
+- [x] Implémenter les procédures tRPC pour les opérations sur les rôles
+- [x] Modifier la page UserManagement pour utiliser tRPC
+- [x] Créer les tests vitest pour les opérations de rôles
+- [x] Tester et valider l'intégration complète

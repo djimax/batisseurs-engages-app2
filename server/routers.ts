@@ -25,7 +25,8 @@ import {
   createProjectMilestone, getProjectMilestones, updateProjectMilestone, deleteProjectMilestone,
   createProjectUpdate, getProjectUpdates,
   getProjectBudgetItems, createProjectBudgetItem, updateProjectBudgetItem, deleteProjectBudgetItem,
-  getDashboardStatistics, getProjectsStatistics, getTasksStatistics, getFinanceStatistics, getMembersStatistics
+  getDashboardStatistics, getProjectsStatistics, getTasksStatistics, getFinanceStatistics, getMembersStatistics,
+  getAllUsers, getUserById, updateUserRole, getAdminCount, isUserAdmin
 } from "./db";
 import { roles, permissions, auditLogs, emailTemplates, emailHistory, emailRecipients } from "../drizzle/schema";
 import { eq, desc } from "drizzle-orm";
@@ -871,6 +872,64 @@ export const appRouter = router({
     members: protectedProcedure.query(async () => {
       return await getMembersStatistics();
     }),
+  }),
+
+  users: router({
+    list: protectedProcedure.query(async ({ ctx }) => {
+      if (ctx.user.role !== "admin") {
+        throw new Error("Vous n'avez pas la permission d'acceder a cette ressource");
+      }
+      return await getAllUsers();
+    }),
+
+    getById: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .query(async ({ input, ctx }) => {
+        if (ctx.user.role !== "admin" && ctx.user.id !== input.id) {
+          throw new Error("Vous n'avez pas la permission d'acceder a cette ressource");
+        }
+        return await getUserById(input.id);
+      }),
+
+    updateRole: protectedProcedure
+      .input(z.object({
+        userId: z.number(),
+        newRole: z.enum(["admin", "user"]),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        if (ctx.user.role !== "admin") {
+          throw new Error("Vous n'avez pas la permission d'effectuer cette action");
+        }
+
+        if (input.userId === ctx.user.id && input.newRole === "user") {
+          const adminCount = await getAdminCount();
+          if (adminCount <= 1) {
+            throw new Error("Il doit y avoir au moins un administrateur");
+          }
+        }
+
+        await updateUserRole(input.userId, input.newRole);
+        
+        await logActivity({
+          userId: ctx.user.id,
+          action: "update",
+          entityType: "user",
+          entityId: input.userId,
+          details: `Role de l'utilisateur change en ${input.newRole === "admin" ? "Administrateur" : "Utilisateur"}`,
+        });
+
+        return { success: true };
+      }),
+
+    getAdminCount: protectedProcedure.query(async () => {
+      return await getAdminCount();
+    }),
+
+    isAdmin: protectedProcedure
+      .input(z.object({ userId: z.number() }))
+      .query(async ({ input }) => {
+        return await isUserAdmin(input.userId);
+      }),
   }),
 });
 export type AppRouter = typeof appRouter;
