@@ -1270,3 +1270,59 @@ export async function isUserAdmin(userId: number): Promise<boolean> {
   const user = await getUserById(userId);
   return user?.role === "admin";
 }
+
+
+/**
+ * Generate member ID in format: [Gender]-[Month]-[Year]-[Order]
+ * Example: 1-05-26-0002 (Male, May 2026, 2nd member)
+ * Returns as concatenated number: 105260002
+ */
+export async function generateMemberId(gender: "1" | "2" | "3", joinedAt?: Date): Promise<string> {
+  const db = getDb();
+  if (!db) throw new Error("Database not available");
+  
+  const date = joinedAt || new Date();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const year = String(date.getFullYear()).slice(-2);
+  
+  // Count members with same gender, month, and year
+  const result = await db
+    .select({ count: sql<number>`count(*)` })
+    .from(members)
+    .where(
+      and(
+        eq(members.gender, gender),
+        sql`MONTH(${members.joinedAt}) = ${parseInt(month)}`,
+        sql`YEAR(${members.joinedAt}) = ${date.getFullYear()}`
+      )
+    );
+  
+  const orderNumber = (result[0]?.count || 0) + 1;
+  const orderStr = String(orderNumber).padStart(4, "0");
+  
+  // Format: 1-05-26-0002
+  const memberId = `${gender}-${month}-${year}-${orderStr}`;
+  
+  // Return as concatenated number: 105260002
+  return memberId.replace(/-/g, "");
+}
+
+/**
+ * Format member ID for display
+ * Input: 105260002 -> Output: 1-05-26-0002
+ */
+export function formatMemberId(memberId: string): string {
+  if (memberId.length !== 8) return memberId;
+  return `${memberId[0]}-${memberId.slice(1, 3)}-${memberId.slice(3, 5)}-${memberId.slice(5)}`;
+}
+
+/**
+ * Get member by memberID (the identification number)
+ */
+export async function getMemberByIdentificationNumber(memberId: string): Promise<typeof members.$inferSelect | undefined> {
+  const db = getDb();
+  if (!db) throw new Error("Database not available");
+  
+  const result = await db.select().from(members).where(eq(members.memberId, memberId));
+  return result[0];
+}

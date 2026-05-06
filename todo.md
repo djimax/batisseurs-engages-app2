@@ -1285,3 +1285,23 @@
 - [x] Modifier la page UserManagement pour utiliser tRPC
 - [x] Créer les tests vitest pour les opérations de rôles
 - [x] Tester et valider l'intégration complète
+
+
+## Phase 44 - Système de Numéro d'Identification des Membres
+
+- [ ] Ajouter le champ memberID au schéma Drizzle
+- [ ] Créer les migrations de base de données
+- [ ] Créer les fonctions pour générer l'ID automatiquement
+- [ ] Modifier le formulaire d'ajout de membre pour afficher l'ID
+- [ ] Ajouter le champ memberID dans la table des membres
+- [ ] Ajouter le champ memberID dans tous les tableaux de l'application
+- [ ] Tester et valider le système complet
+
+
+## Phase 44 - Système de Numéro d'Identification des Membres
+
+- [x] Créer les fonctions utilitaires pour générer le numéro d'identification
+- [x] Modifier le formulaire d'ajout de membre pour afficher et générer l'ID
+- [ ] Ajouter les procédures tRPC pour gérer l'ID
+- [ ] Afficher le numéro d'identification dans les tableaux
+- [ ] Tester et valider le système complet
