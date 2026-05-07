@@ -1,586 +1,820 @@
-import { mysqlTable, mysqlSchema, AnyMySqlColumn, int, varchar, text, timestamp, mysqlEnum, date, index, json, boolean, tinyint, decimal, unique } from "drizzle-orm/mysql-core"
-import { sql } from "drizzle-orm";
+import { int, mysqlEnum, mysqlTable, text, timestamp, varchar, boolean, decimal, date, json } from "drizzle-orm/mysql-core";
 
-export const activityLogs = mysqlTable("activity_logs", {
-	id: int().autoincrement().notNull(),
-	userId: int(),
-	action: varchar({ length: 100 }).notNull(),
-	entityType: varchar({ length: 50 }).notNull(),
-	entityId: int(),
-	details: text(),
-	createdAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
-});
-
-export const adhesionPipeline = mysqlTable("adhesion_pipeline", {
-	id: int().autoincrement().notNull(),
-	contactId: int().notNull(),
-	stage: mysqlEnum(['inquiry','application','review','approved','rejected','member']).default('inquiry').notNull(),
-	// you can use { mode: 'date' }, if you want to have Date as type for this column
-	applicationDate: date({ mode: 'string' }),
-	// you can use { mode: 'date' }, if you want to have Date as type for this column
-	approvalDate: date({ mode: 'string' }),
-	rejectionReason: text(),
-	notes: text(),
-	assignedTo: int(),
-	createdAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
-	updatedAt: timestamp({ mode: 'string' }).defaultNow().onUpdateNow().notNull(),
-});
-
-export const adhesions = mysqlTable("adhesions", {
-	id: int().autoincrement().notNull(),
-	memberId: int().notNull(),
-	annee: int().notNull(),
-	montant: varchar({ length: 20 }).notNull(),
-	dateAdhesion: timestamp({ mode: 'string' }).notNull(),
-	dateExpiration: timestamp({ mode: 'string' }).notNull(),
-	status: mysqlEnum(['active','expired','pending']).default('pending').notNull(),
-	createdAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
-	updatedAt: timestamp({ mode: 'string' }).defaultNow().onUpdateNow().notNull(),
-});
-
-export const announcements = mysqlTable("announcements", {
-	id: int().autoincrement().notNull(),
-	title: varchar({ length: 255 }).notNull(),
-	content: text().notNull(),
-	authorId: int().notNull(),
-	priority: mysqlEnum(['low','medium','high','urgent']).default('medium').notNull(),
-	status: mysqlEnum(['draft','published','archived']).default('draft').notNull(),
-	publishedAt: timestamp({ mode: 'string' }),
-	expiresAt: timestamp({ mode: 'string' }),
-	createdAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
-	updatedAt: timestamp({ mode: 'string' }).defaultNow().onUpdateNow().notNull(),
-});
-
-export const appSettings = mysqlTable("app_settings", {
-	id: int().autoincrement().notNull(),
-	key: varchar({ length: 100 }).notNull(),
-	value: text().notNull(),
-	description: text(),
-	type: mysqlEnum(['string','number','boolean','json']).default('string').notNull(),
-	updatedBy: int().notNull(),
-	updatedAt: timestamp({ mode: 'string' }).defaultNow().onUpdateNow().notNull(),
-	createdAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
-},
-(table) => [
-	index("app_settings_key_unique").on(table.key),
-]);
-
-export const appUsers = mysqlTable("app_users", {
-	id: int().autoincrement().notNull(),
-	username: varchar({ length: 100 }).notNull(),
-	password: text().notNull(),
-	email: varchar({ length: 320 }),
-	fullName: varchar({ length: 255 }),
-	role: mysqlEnum(['admin','membre']).default('membre').notNull(),
-	isActive: tinyint().default(1).notNull(),
-	lastLogin: timestamp({ mode: 'string' }),
-	createdBy: int(),
-	createdAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
-	updatedAt: timestamp({ mode: 'string' }).defaultNow().onUpdateNow().notNull(),
-},
-(table) => [
-	index("app_users_username_unique").on(table.username),
-]);
-
-export const associationInfo = mysqlTable("association_info", {
-	id: int().autoincrement().notNull(),
-	name: varchar({ length: 255 }).notNull(),
-	description: text(),
-	logo: text(),
-	email: varchar({ length: 320 }),
-	phone: varchar({ length: 20 }),
-	address: text(),
-	siret: varchar({ length: 20 }),
-	rib: varchar({ length: 50 }),
-	website: varchar({ length: 255 }),
-	foundedAt: timestamp({ mode: 'string' }),
-	createdAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
-	updatedAt: timestamp({ mode: 'string' }).defaultNow().onUpdateNow().notNull(),
-});
-
-export const auditLogs = mysqlTable("auditLogs", {
-	id: int().autoincrement().notNull(),
-	userId: int(),
-	userEmail: varchar({ length: 255 }),
-	action: varchar({ length: 50 }).notNull(),
-	entityType: varchar({ length: 50 }).notNull(),
-	entityId: int(),
-	entityName: varchar({ length: 255 }),
-	changes: text(),
-	oldValue: text(),
-	newValue: text(),
-	description: text(),
-	ipAddress: varchar({ length: 45 }),
-	userAgent: text(),
-	status: mysqlEnum(['success','failed']).default('success').notNull(),
-	errorMessage: text(),
-	createdAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
-});
-
-export const campaigns = mysqlTable("campaigns", {
-	id: int().autoincrement().notNull(),
-	title: varchar({ length: 255 }).notNull(),
-	description: text(),
-	objectif: varchar({ length: 20 }).notNull(),
-	montantCollecte: varchar({ length: 20 }).default('0').notNull(),
-	dateDebut: timestamp({ mode: 'string' }).notNull(),
-	dateFin: timestamp({ mode: 'string' }).notNull(),
-	status: mysqlEnum(['draft','active','completed','cancelled']).default('draft').notNull(),
-	image: text(),
-	createdBy: int().notNull(),
-	createdAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
-	updatedAt: timestamp({ mode: 'string' }).defaultNow().onUpdateNow().notNull(),
-});
-
-export const categories = mysqlTable("categories", {
-	id: int().autoincrement().notNull(),
-	name: varchar({ length: 100 }).notNull(),
-	slug: varchar({ length: 100 }).notNull(),
-	description: text(),
-	color: varchar({ length: 7 }).default('#1a4d2e'),
-	icon: varchar({ length: 50 }).default('folder'),
-	sortOrder: int().default(0),
-	createdAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
-},
-(table) => [
-	index("categories_slug_unique").on(table.slug),
-]);
-
-export const cotisations = mysqlTable("cotisations", {
-	id: int().autoincrement().notNull(),
-	memberId: int().notNull(),
-	montant: varchar({ length: 20 }).notNull(),
-	dateDebut: timestamp({ mode: 'string' }).notNull(),
-	dateFin: timestamp({ mode: 'string' }).notNull(),
-	statut: mysqlEnum(['payée','en attente','en retard']).default('en attente').notNull(),
-	datePayment: timestamp({ mode: 'string' }),
-	notes: text(),
-	createdAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
-	updatedAt: timestamp({ mode: 'string' }).defaultNow().onUpdateNow().notNull(),
-});
-
-export const crmActivities = mysqlTable("crm_activities", {
-	id: int().autoincrement().notNull(),
-	contactId: int().notNull(),
-	type: mysqlEnum(['call','email','meeting','task','note','event']).notNull(),
-	title: varchar({ length: 255 }).notNull(),
-	description: text(),
-	status: mysqlEnum(['pending','completed','cancelled']).default('pending').notNull(),
-	priority: mysqlEnum(['low','medium','high']).default('medium').notNull(),
-	dueDate: timestamp({ mode: 'string' }),
-	completedDate: timestamp({ mode: 'string' }),
-	assignedTo: int(),
-	createdBy: int().notNull(),
-	createdAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
-	updatedAt: timestamp({ mode: 'string' }).defaultNow().onUpdateNow().notNull(),
-});
-
-export const crmContacts = mysqlTable("crm_contacts", {
-	id: int().autoincrement().notNull(),
-	userId: int(),
-	firstName: varchar({ length: 100 }).notNull(),
-	lastName: varchar({ length: 100 }).notNull(),
-	email: varchar({ length: 320 }).notNull(),
-	phone: varchar({ length: 20 }),
-	company: varchar({ length: 255 }),
-	position: varchar({ length: 100 }),
-	address: text(),
-	city: varchar({ length: 100 }),
-	postalCode: varchar({ length: 20 }),
-	country: varchar({ length: 100 }),
-	// you can use { mode: 'date' }, if you want to have Date as type for this column
-	birthDate: date({ mode: 'string' }),
-	// you can use { mode: 'date' }, if you want to have Date as type for this column
-	joinDate: date({ mode: 'string' }),
-	segment: varchar({ length: 50 }).default('general'),
-	status: mysqlEnum(['prospect','active','inactive','archived']).default('prospect').notNull(),
-	notes: text(),
-	tags: varchar({ length: 500 }),
-	lastInteraction: timestamp({ mode: 'string' }),
-	engagementScore: int().default(0),
-	createdBy: int().notNull(),
-	createdAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
-	updatedAt: timestamp({ mode: 'string' }).defaultNow().onUpdateNow().notNull(),
-});
-
-export const crmEmailIntegration = mysqlTable("crm_email_integration", {
-	id: int().autoincrement().notNull(),
-	contactId: int().notNull(),
-	emailHistoryId: int(),
-	subject: varchar({ length: 255 }).notNull(),
-	content: text(),
-	direction: mysqlEnum(['sent','received']).notNull(),
-	status: mysqlEnum(['sent','failed','bounced','opened','clicked']).default('sent').notNull(),
-	sentBy: int(),
-	sentAt: timestamp({ mode: 'string' }),
-	createdAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
-});
-
-export const crmReports = mysqlTable("crm_reports", {
-	id: int().autoincrement().notNull(),
-	name: varchar({ length: 255 }).notNull(),
-	type: mysqlEnum(['engagement','pipeline','activity','segment','custom']).notNull(),
-	description: text(),
-	data: json(),
-	filters: json(),
-	generatedBy: int().notNull(),
-	generatedAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
-	expiresAt: timestamp({ mode: 'string' }),
-	createdAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
-	updatedAt: timestamp({ mode: 'string' }).defaultNow().onUpdateNow().notNull(),
-});
-
-export const depenses = mysqlTable("depenses", {
-	id: int().autoincrement().notNull(),
-	description: varchar({ length: 255 }).notNull(),
-	montant: varchar({ length: 20 }).notNull(),
-	categorie: varchar({ length: 100 }).notNull(),
-	date: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
-	approuvePar: int(),
-	notes: text(),
-	pieceJointe: text(),
-	createdAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
-	updatedAt: timestamp({ mode: 'string' }).defaultNow().onUpdateNow().notNull(),
-});
-
-export const documentNotes = mysqlTable("document_notes", {
-	id: int().autoincrement().notNull(),
-	documentId: int().notNull(),
-	userId: int().notNull(),
-	content: text().notNull(),
-	createdAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
-	updatedAt: timestamp({ mode: 'string' }).defaultNow().onUpdateNow().notNull(),
-});
-
-export const documentPermissions = mysqlTable("document_permissions", {
-	id: int().autoincrement().notNull(),
-	documentId: int().notNull(),
-	memberId: int().notNull(),
-	canView: tinyint().default(1),
-	canEdit: tinyint().default(0),
-	canDelete: tinyint().default(0),
-	createdAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
-});
-
-export const documents = mysqlTable("documents", {
-	id: int().autoincrement().notNull(),
-	title: varchar({ length: 255 }).notNull(),
-	description: text(),
-	categoryId: int().notNull(),
-	status: mysqlEnum(['pending','in-progress','completed']).default('pending').notNull(),
-	priority: mysqlEnum(['low','medium','high','urgent']).default('medium').notNull(),
-	fileUrl: text(),
-	fileKey: varchar({ length: 500 }),
-	fileName: varchar({ length: 255 }),
-	fileType: varchar({ length: 100 }),
-	fileSize: int(),
-	createdBy: int(),
-	updatedBy: int(),
-	createdAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
-	updatedAt: timestamp({ mode: 'string' }).defaultNow().onUpdateNow().notNull(),
-	dueDate: timestamp({ mode: 'string' }),
-	isArchived: tinyint().default(0),
-});
-
-export const dons = mysqlTable("dons", {
-	id: int().autoincrement().notNull(),
-	donateur: varchar({ length: 255 }).notNull(),
-	montant: varchar({ length: 20 }).notNull(),
-	description: text(),
-	email: varchar({ length: 320 }),
-	telephone: varchar({ length: 20 }),
-	date: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
-	createdAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
-});
-
-export const emailHistory = mysqlTable("email_history", {
-	id: int().autoincrement().notNull(),
-	templateId: int(),
-	subject: varchar({ length: 255 }).notNull(),
-	content: text().notNull(),
-	recipientCount: int().notNull(),
-	sentBy: int().notNull(),
-	status: mysqlEnum(['pending','sending','sent','failed']).default('pending').notNull(),
-	successCount: int().default(0),
-	failureCount: int().default(0),
-	errorMessage: text(),
-	sentAt: timestamp({ mode: 'string' }),
-	createdAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
-});
-
-export const emailRecipients = mysqlTable("email_recipients", {
-	id: int().autoincrement().notNull(),
-	emailHistoryId: int().notNull(),
-	recipientId: int().notNull(),
-	recipientEmail: varchar({ length: 320 }).notNull(),
-	status: mysqlEnum(['pending','sent','failed','bounced']).default('pending').notNull(),
-	errorMessage: text(),
-	sentAt: timestamp({ mode: 'string' }),
-	createdAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
-});
-
-export const emailTemplates = mysqlTable("email_templates", {
-	id: int().autoincrement().notNull(),
-	name: varchar({ length: 100 }).notNull(),
-	subject: varchar({ length: 255 }).notNull(),
-	content: text().notNull(),
-	description: text(),
-	category: varchar({ length: 50 }).default('general'),
-	variables: text(),
-	isSystem: tinyint().default(0),
-	createdBy: int().notNull(),
-	createdAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
-	updatedAt: timestamp({ mode: 'string' }).defaultNow().onUpdateNow().notNull(),
-});
-
-export const events = mysqlTable("events", {
-	id: int().autoincrement().notNull(),
-	title: varchar({ length: 255 }).notNull(),
-	description: text(),
-	location: varchar({ length: 255 }),
-	eventType: mysqlEnum(['reunion','formation','activite','evenement','autre']).default('autre').notNull(),
-	startDate: timestamp({ mode: 'string' }).notNull(),
-	endDate: timestamp({ mode: 'string' }).notNull(),
-	color: varchar({ length: 7 }).default('#1a4d2e'),
-	organizer: varchar({ length: 255 }),
-	attendees: int().default(0),
-	image: text(),
-	createdBy: int().notNull(),
-	createdAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
-	updatedAt: timestamp({ mode: 'string' }).defaultNow().onUpdateNow().notNull(),
-});
-
-export const globalSettings = mysqlTable("global_settings", {
-	id: int().autoincrement().notNull(),
-	associationName: varchar({ length: 255 }).default('Les Bâtisseurs Engagés').notNull(),
-	seatCity: varchar({ length: 255 }).default('N\'djaména-tchad').notNull(),
-	folio: varchar({ length: 100 }).default('10512').notNull(),
-	email: varchar({ length: 320 }).default('contact.lesbatisseursengages@gmail.com').notNull(),
-	website: varchar({ length: 500 }).default('www.lesbatisseursengage.com').notNull(),
-	phone: varchar({ length: 20 }),
-	logo: text(),
-	description: text(),
-	updatedBy: int(),
-	updatedAt: timestamp({ mode: 'string' }).defaultNow().onUpdateNow().notNull(),
-	createdAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
-});
-
-export const memberHistory = mysqlTable("member_history", {
-	id: int().autoincrement().notNull(),
-	memberId: int().notNull(),
-	fieldName: varchar({ length: 100 }).notNull(),
-	oldValue: text(),
-	newValue: text(),
-	changedBy: int(),
-	changedAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
-	createdAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
-});
-
-export const memberStatuses = mysqlTable("member_statuses", {
-	id: int().autoincrement().notNull(),
-	memberId: int().notNull(),
-	status: mysqlEnum(['active','inactive','suspended','resigned','deceased']).notNull(),
-	reason: text(),
-	changedBy: int(),
-	changedAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
-	createdAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
-});
-
-export const members = mysqlTable("members", {
-	id: int().autoincrement().notNull(),
-	userId: int(),
-	firstName: varchar({ length: 100 }).notNull(),
-	lastName: varchar({ length: 100 }).notNull(),
-	email: varchar({ length: 320 }),
-	phone: varchar({ length: 20 }),
-	role: varchar({ length: 100 }).default('Membre'),
-	function: varchar({ length: 100 }),
-	status: mysqlEnum(['active','inactive','pending']).default('active').notNull(),
-	joinedAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
-	createdAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
-	updatedAt: timestamp({ mode: 'string' }).defaultNow().onUpdateNow().notNull(),
-	memberRole: mysqlEnum(['admin','secretary','member']).default('member').notNull(),
-	gender: mysqlEnum(['1','2','3']).notNull(),
-	memberId: varchar({ length: 20 }).notNull(),
-});
-
-export const news = mysqlTable("news", {
-	id: int().autoincrement().notNull(),
-	title: varchar({ length: 255 }).notNull(),
-	content: text().notNull(),
-	excerpt: varchar({ length: 500 }),
-	authorId: int().notNull(),
-	category: varchar({ length: 100 }).default('general'),
-	status: mysqlEnum(['draft','published','archived']).default('draft').notNull(),
-	publishedAt: timestamp({ mode: 'string' }),
-	viewCount: int().default(0),
-	createdAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
-	updatedAt: timestamp({ mode: 'string' }).defaultNow().onUpdateNow().notNull(),
-});
-
-export const newsComments = mysqlTable("news_comments", {
-	id: int().autoincrement().notNull(),
-	newsId: int().notNull(),
-	authorId: int().notNull(),
-	content: text().notNull(),
-	createdAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
-	updatedAt: timestamp({ mode: 'string' }).defaultNow().onUpdateNow().notNull(),
-});
-
-export const notifications = mysqlTable("notifications", {
-	id: int().autoincrement().notNull(),
-	userId: int().notNull(),
-	title: varchar({ length: 255 }).notNull(),
-	message: text().notNull(),
-	type: mysqlEnum(['info','warning','error','success']).default('info').notNull(),
-	isRead: tinyint().default(0),
-	actionUrl: text(),
-	createdAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
-});
-
-export const passwordResetRequests = mysqlTable("password_reset_requests", {
-	id: int().autoincrement().notNull(),
-	email: varchar({ length: 320 }).notNull(),
-	token: varchar({ length: 255 }).notNull(),
-	temporaryPassword: varchar({ length: 255 }),
-	status: mysqlEnum(['pending','completed','expired']).default('pending').notNull(),
-	expiresAt: timestamp({ mode: 'string' }).notNull(),
-	completedAt: timestamp({ mode: 'string' }),
-	createdAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
-	updatedAt: timestamp({ mode: 'string' }).defaultNow().onUpdateNow().notNull(),
-},
-(table) => [
-	index("password_reset_requests_token_unique").on(table.token),
-]);
-
-export const permissions = mysqlTable("permissions", {
-	id: int().autoincrement().notNull(),
-	name: varchar({ length: 100 }).notNull(),
-	description: text(),
-	category: varchar({ length: 50 }).notNull(),
-	createdAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
-},
-(table) => [
-	index("permissions_name_unique").on(table.name),
-]);
-
-export const projectBudgetItems = mysqlTable("project_budget_items", {
-	id: int().autoincrement().notNull(),
-	projectId: int().notNull(),
-	category: varchar({ length: 100 }).notNull(),
-	amount: varchar({ length: 20 }).notNull(),
-	spent: varchar({ length: 20 }).default('0').notNull(),
-	description: text(),
-	createdAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
-	updatedAt: timestamp({ mode: 'string' }).defaultNow().onUpdateNow().notNull(),
-});
-
-export const projectMembers = mysqlTable("project_members", {
-	id: int().autoincrement().notNull(),
-	projectId: int().notNull(),
-	memberId: int().notNull(),
-	role: mysqlEnum(['project-lead','member','observer']).default('member').notNull(),
-	joinedAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
-	createdAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
-});
-
-export const projectMilestones = mysqlTable("project_milestones", {
-	id: int().autoincrement().notNull(),
-	projectId: int().notNull(),
-	title: varchar({ length: 255 }).notNull(),
-	description: text(),
-	dueDate: timestamp({ mode: 'string' }).notNull(),
-	status: mysqlEnum(['pending','in-progress','completed','delayed']).default('pending').notNull(),
-	createdAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
-	updatedAt: timestamp({ mode: 'string' }).defaultNow().onUpdateNow().notNull(),
-});
-
-export const projectTasks = mysqlTable("project_tasks", {
-	id: int().autoincrement().notNull(),
-	projectId: int().notNull(),
-	title: varchar({ length: 255 }).notNull(),
-	description: text(),
-	status: mysqlEnum(['todo','in-progress','in-review','completed']).default('todo').notNull(),
-	priority: mysqlEnum(['low','medium','high','critical']).default('medium').notNull(),
-	assignedTo: int(),
-	dueDate: timestamp({ mode: 'string' }),
-	createdAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
-	updatedAt: timestamp({ mode: 'string' }).defaultNow().onUpdateNow().notNull(),
-});
-
-export const projectUpdates = mysqlTable("project_updates", {
-	id: int().autoincrement().notNull(),
-	projectId: int().notNull(),
-	title: varchar({ length: 255 }).notNull(),
-	content: text().notNull(),
-	createdBy: int().notNull(),
-	createdAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
-});
-
-export const projects = mysqlTable("projects", {
-	id: int().autoincrement().notNull(),
-	name: varchar({ length: 255 }).notNull(),
-	description: text(),
-	status: mysqlEnum(['planning','in-progress','on-hold','completed','archived']).default('planning').notNull(),
-	startDate: timestamp({ mode: 'string' }),
-	endDate: timestamp({ mode: 'string' }),
-	budget: varchar({ length: 20 }),
-	leaderId: int().notNull(),
-	createdBy: int().notNull(),
-	createdAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
-	updatedAt: timestamp({ mode: 'string' }).defaultNow().onUpdateNow().notNull(),
-});
-
-export const rolePermissions = mysqlTable("role_permissions", {
-	id: int().autoincrement().notNull(),
-	roleId: int().notNull(),
-	permissionId: int().notNull(),
-	createdAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
-});
-
-export const roles = mysqlTable("roles", {
-	id: int().autoincrement().notNull(),
-	name: varchar({ length: 100 }).notNull(),
-	description: text(),
-	isSystem: tinyint().default(0),
-	createdAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
-	updatedAt: timestamp({ mode: 'string' }).defaultNow().onUpdateNow().notNull(),
-},
-(table) => [
-	index("roles_name_unique").on(table.name),
-]);
-
-export const transactions = mysqlTable("transactions", {
-	id: int().autoincrement().notNull(),
-	type: mysqlEnum(['cotisation','don','depense','autre']).notNull(),
-	montant: varchar({ length: 20 }).notNull(),
-	description: varchar({ length: 255 }).notNull(),
-	date: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
-	memberId: int(),
-	referenceId: int(),
-	createdAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
-});
-
-export const userRoles = mysqlTable("user_roles", {
-	id: int().autoincrement().notNull(),
-	userId: int().notNull(),
-	roleId: int().notNull(),
-	assignedBy: int(),
-	assignedAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
-	createdAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
-});
-
+/**
+ * Core user table backing auth flow.
+ */
 export const users = mysqlTable("users", {
-	id: int().autoincrement().notNull(),
-	openId: varchar({ length: 64 }).notNull(),
-	name: text(),
-	email: varchar({ length: 320 }),
-	loginMethod: varchar({ length: 64 }),
-	role: mysqlEnum(['user','admin']).default('user').notNull(),
-	createdAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
-	updatedAt: timestamp({ mode: 'string' }).defaultNow().onUpdateNow().notNull(),
-	lastSignedIn: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
-},
-(table) => [
-	index("users_openId_unique").on(table.openId),
-]);
+  id: int("id").autoincrement().primaryKey(),
+  openId: varchar("openId", { length: 64 }).notNull().unique(),
+  name: text("name"),
+  email: varchar("email", { length: 320 }),
+  loginMethod: varchar("loginMethod", { length: 64 }),
+  role: mysqlEnum("role", ["user", "admin"]).default("user").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+  lastSignedIn: timestamp("lastSignedIn").defaultNow().notNull(),
+});
+
+export type User = typeof users.$inferSelect;
+export type InsertUser = typeof users.$inferInsert;
+
+/**
+ * Document categories for organization
+ */
+export const categories = mysqlTable("categories", {
+  id: int("id").autoincrement().primaryKey(),
+  name: varchar("name", { length: 100 }).notNull(),
+  slug: varchar("slug", { length: 100 }).notNull().unique(),
+  description: text("description"),
+  color: varchar("color", { length: 7 }).default("#1a4d2e"),
+  icon: varchar("icon", { length: 50 }).default("folder"),
+  sortOrder: int("sortOrder").default(0),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type Category = typeof categories.$inferSelect;
+export type InsertCategory = typeof categories.$inferInsert;
+
+/**
+ * Documents table - main entity for document management
+ */
+export const documents = mysqlTable("documents", {
+  id: int("id").autoincrement().primaryKey(),
+  title: varchar("title", { length: 255 }).notNull(),
+  description: text("description"),
+  categoryId: int("categoryId").notNull(),
+  status: mysqlEnum("status", ["pending", "in-progress", "completed"]).default("pending").notNull(),
+  priority: mysqlEnum("priority", ["low", "medium", "high", "urgent"]).default("medium").notNull(),
+  
+  // File storage info
+  fileUrl: text("fileUrl"),
+  fileKey: varchar("fileKey", { length: 500 }),
+  fileName: varchar("fileName", { length: 255 }),
+  fileType: varchar("fileType", { length: 100 }),
+  fileSize: int("fileSize"),
+  
+  // Metadata
+  createdBy: int("createdBy"),
+  updatedBy: int("updatedBy"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+  dueDate: timestamp("dueDate"),
+  isArchived: boolean("isArchived").default(false),
+});
+
+export type Document = typeof documents.$inferSelect;
+export type InsertDocument = typeof documents.$inferInsert;
+
+/**
+ * Document notes/comments
+ */
+export const documentNotes = mysqlTable("document_notes", {
+  id: int("id").autoincrement().primaryKey(),
+  documentId: int("documentId").notNull(),
+  userId: int("userId").notNull(),
+  content: text("content").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type DocumentNote = typeof documentNotes.$inferSelect;
+export type InsertDocumentNote = typeof documentNotes.$inferInsert;
+
+/**
+ * Members table for association members management
+ */
+export const members = mysqlTable("members", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId"),
+  firstName: varchar("firstName", { length: 100 }).notNull(),
+  lastName: varchar("lastName", { length: 100 }).notNull(),
+  email: varchar("email", { length: 320 }),
+  phone: varchar("phone", { length: 20 }),
+  role: varchar("role", { length: 100 }).default("Membre"), // Peut être: Président, Secrétaire Général, Secrétaire Général Adjoint, Trésorier Général, Trésorier Général Adjoint, Membre
+  function: varchar("function", { length: 100 }),
+  status: mysqlEnum("status", ["active", "inactive", "pending"]).default("active").notNull(),
+  joinedAt: timestamp("joinedAt").defaultNow().notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type Member = typeof members.$inferSelect;
+export type InsertMember = typeof members.$inferInsert;
+
+/**
+ * Document access permissions
+ */
+export const documentPermissions = mysqlTable("document_permissions", {
+  id: int("id").autoincrement().primaryKey(),
+  documentId: int("documentId").notNull(),
+  memberId: int("memberId").notNull(),
+  canView: boolean("canView").default(true),
+  canEdit: boolean("canEdit").default(false),
+  canDelete: boolean("canDelete").default(false),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type DocumentPermission = typeof documentPermissions.$inferSelect;
+export type InsertDocumentPermission = typeof documentPermissions.$inferInsert;
+
+/**
+ * Activity log for tracking actions
+ */
+export const activityLogs = mysqlTable("activity_logs", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId"),
+  action: varchar("action", { length: 100 }).notNull(),
+  entityType: varchar("entityType", { length: 50 }).notNull(),
+  entityId: int("entityId"),
+  details: text("details"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type ActivityLog = typeof activityLogs.$inferSelect;
+export type InsertActivityLog = typeof activityLogs.$inferInsert;
+
+
+/**
+ * Cotisations table - membership fees
+ */
+export const cotisations = mysqlTable("cotisations", {
+  id: int("id").autoincrement().primaryKey(),
+  memberId: int("memberId").notNull(),
+  montant: varchar("montant", { length: 20 }).notNull(),
+  dateDebut: timestamp("dateDebut").notNull(),
+  dateFin: timestamp("dateFin").notNull(),
+  statut: mysqlEnum("statut", ["payée", "en attente", "en retard"]).default("en attente").notNull(),
+  datePayment: timestamp("datePayment"),
+  notes: text("notes"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type Cotisation = typeof cotisations.$inferSelect;
+export type InsertCotisation = typeof cotisations.$inferInsert;
+
+/**
+ * Dons table - donations received
+ */
+export const dons = mysqlTable("dons", {
+  id: int("id").autoincrement().primaryKey(),
+  donateur: varchar("donateur", { length: 255 }).notNull(),
+  montant: varchar("montant", { length: 20 }).notNull(),
+  description: text("description"),
+  email: varchar("email", { length: 320 }),
+  telephone: varchar("telephone", { length: 20 }),
+  date: timestamp("date").defaultNow().notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type Don = typeof dons.$inferSelect;
+export type InsertDon = typeof dons.$inferInsert;
+
+/**
+ * Dépenses table - expenses
+ */
+export const depenses = mysqlTable("depenses", {
+  id: int("id").autoincrement().primaryKey(),
+  description: varchar("description", { length: 255 }).notNull(),
+  montant: varchar("montant", { length: 20 }).notNull(),
+  categorie: varchar("categorie", { length: 100 }).notNull(),
+  date: timestamp("date").defaultNow().notNull(),
+  approuvePar: int("approuvePar"),
+  notes: text("notes"),
+  pieceJointe: text("pieceJointe"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type Depense = typeof depenses.$inferSelect;
+export type InsertDepense = typeof depenses.$inferInsert;
+
+/**
+ * Transactions table - all financial transactions
+ */
+export const transactions = mysqlTable("transactions", {
+  id: int("id").autoincrement().primaryKey(),
+  type: mysqlEnum("type", ["cotisation", "don", "depense", "autre"]).notNull(),
+  montant: varchar("montant", { length: 20 }).notNull(),
+  description: varchar("description", { length: 255 }).notNull(),
+  date: timestamp("date").defaultNow().notNull(),
+  memberId: int("memberId"),
+  referenceId: int("referenceId"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type Transaction = typeof transactions.$inferSelect;
+export type InsertTransaction = typeof transactions.$inferInsert;
+
+/**
+ * Campaigns table - fundraising campaigns
+ */
+export const campaigns = mysqlTable("campaigns", {
+  id: int("id").autoincrement().primaryKey(),
+  title: varchar("title", { length: 255 }).notNull(),
+  description: text("description"),
+  objectif: varchar("objectif", { length: 20 }).notNull(),
+  montantCollecte: varchar("montantCollecte", { length: 20 }).default("0").notNull(),
+  dateDebut: timestamp("dateDebut").notNull(),
+  dateFin: timestamp("dateFin").notNull(),
+  status: mysqlEnum("status", ["draft", "active", "completed", "cancelled"]).default("draft").notNull(),
+  image: text("image"),
+  createdBy: int("createdBy").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type Campaign = typeof campaigns.$inferSelect;
+export type InsertCampaign = typeof campaigns.$inferInsert;
+
+/**
+ * Adhésions table - membership registrations
+ */
+export const adhesions = mysqlTable("adhesions", {
+  id: int("id").autoincrement().primaryKey(),
+  memberId: int("memberId").notNull(),
+  annee: int("annee").notNull(),
+  montant: varchar("montant", { length: 20 }).notNull(),
+  dateAdhesion: timestamp("dateAdhesion").notNull(),
+  dateExpiration: timestamp("dateExpiration").notNull(),
+  status: mysqlEnum("status", ["active", "expired", "pending"]).default("pending").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type Adhesion = typeof adhesions.$inferSelect;
+export type InsertAdhesion = typeof adhesions.$inferInsert;
+
+/**
+ * Notifications table - system notifications
+ */
+export const notifications = mysqlTable("notifications", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(),
+  title: varchar("title", { length: 255 }).notNull(),
+  message: text("message").notNull(),
+  type: mysqlEnum("type", ["info", "warning", "error", "success"]).default("info").notNull(),
+  isRead: boolean("isRead").default(false),
+  actionUrl: text("actionUrl"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type Notification = typeof notifications.$inferSelect;
+export type InsertNotification = typeof notifications.$inferInsert;
+
+/**
+ * Association info table - organization details
+ */
+export const associationInfo = mysqlTable("association_info", {
+  id: int("id").autoincrement().primaryKey(),
+  name: varchar("name", { length: 255 }).notNull(),
+  description: text("description"),
+  logo: text("logo"),
+  email: varchar("email", { length: 320 }),
+  phone: varchar("phone", { length: 20 }),
+  address: text("address"),
+  siret: varchar("siret", { length: 20 }),
+  rib: varchar("rib", { length: 50 }),
+  website: varchar("website", { length: 255 }),
+  foundedAt: timestamp("foundedAt"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type AssociationInfo = typeof associationInfo.$inferSelect;
+export type InsertAssociationInfo = typeof associationInfo.$inferInsert;
+
+
+/**
+ * Events table - calendar events for the association
+ */
+export const events = mysqlTable("events", {
+  id: int("id").autoincrement().primaryKey(),
+  title: varchar("title", { length: 255 }).notNull(),
+  description: text("description"),
+  location: varchar("location", { length: 255 }),
+  eventType: mysqlEnum("eventType", ["reunion", "formation", "activite", "evenement", "autre"]).default("autre").notNull(),
+  startDate: timestamp("startDate").notNull(),
+  endDate: timestamp("endDate").notNull(),
+  color: varchar("color", { length: 7 }).default("#1a4d2e"),
+  organizer: varchar("organizer", { length: 255 }),
+  attendees: int("attendees").default(0),
+  image: text("image"),
+  createdBy: int("createdBy").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type Event = typeof events.$inferSelect;
+export type InsertEvent = typeof events.$inferInsert;
+
+
+/**
+ * Application users table - for managing usernames and passwords
+ */
+export const appUsers = mysqlTable("app_users", {
+  id: int("id").autoincrement().primaryKey(),
+  username: varchar("username", { length: 100 }).notNull().unique(),
+  password: text("password").notNull(), // Hashed password
+  email: varchar("email", { length: 320 }),
+  fullName: varchar("fullName", { length: 255 }),
+  role: mysqlEnum("role", ["admin", "membre"]).default("membre").notNull(),
+  isActive: boolean("isActive").default(true).notNull(),
+  lastLogin: timestamp("lastLogin"),
+  createdBy: int("createdBy"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type AppUser = typeof appUsers.$inferSelect;
+export type InsertAppUser = typeof appUsers.$inferInsert;
+
+
+/**
+ * Audit log table - tracks all modifications
+ */
+export const auditLogs = mysqlTable("auditLogs", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId"),
+  userEmail: varchar("userEmail", { length: 255 }),
+  action: varchar("action", { length: 50 }).notNull(), // CREATE, UPDATE, DELETE, LOGIN, EXPORT, IMPORT
+  entityType: varchar("entityType", { length: 50 }).notNull(), // documents, members, finances, users, events, campaigns, etc.
+  entityId: int("entityId"),
+  entityName: varchar("entityName", { length: 255 }), // Name/title of the modified entity
+  changes: text("changes"), // JSON with before/after values
+  oldValue: text("oldValue"), // JSON - previous value
+  newValue: text("newValue"), // JSON - new value
+  description: text("description"), // Human-readable description
+  ipAddress: varchar("ipAddress", { length: 45 }),
+  userAgent: text("userAgent"),
+  status: mysqlEnum("status", ["success", "failed"]).default("success").notNull(),
+  errorMessage: text("errorMessage"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type AuditLog = typeof auditLogs.$inferSelect;
+export type InsertAuditLog = typeof auditLogs.$inferInsert;
+
+/**
+ * Member statuses - track member status changes
+ */
+export const memberStatuses = mysqlTable("member_statuses", {
+  id: int("id").autoincrement().primaryKey(),
+  memberId: int("memberId").notNull(),
+  status: mysqlEnum("status", ["active", "inactive", "suspended", "resigned", "deceased"]).notNull(),
+  reason: text("reason"),
+  changedBy: int("changedBy"),
+  changedAt: timestamp("changedAt").defaultNow().notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type MemberStatus = typeof memberStatuses.$inferSelect;
+export type InsertMemberStatus = typeof memberStatuses.$inferInsert;
+
+/**
+ * Member history - track all changes to member records
+ */
+export const memberHistory = mysqlTable("member_history", {
+  id: int("id").autoincrement().primaryKey(),
+  memberId: int("memberId").notNull(),
+  fieldName: varchar("fieldName", { length: 100 }).notNull(),
+  oldValue: text("oldValue"),
+  newValue: text("newValue"),
+  changedBy: int("changedBy"),
+  changedAt: timestamp("changedAt").defaultNow().notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type MemberHistory = typeof memberHistory.$inferSelect;
+export type InsertMemberHistory = typeof memberHistory.$inferInsert;
+
+/**
+ * Roles - define roles in the association
+ */
+export const roles = mysqlTable("roles", {
+  id: int("id").autoincrement().primaryKey(),
+  name: varchar("name", { length: 100 }).notNull().unique(),
+  description: text("description"),
+  isSystem: boolean("isSystem").default(false),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type Role = typeof roles.$inferSelect;
+export type InsertRole = typeof roles.$inferInsert;
+
+/**
+ * Permissions - define permissions for roles
+ */
+export const permissions = mysqlTable("permissions", {
+  id: int("id").autoincrement().primaryKey(),
+  name: varchar("name", { length: 100 }).notNull().unique(),
+  description: text("description"),
+  category: varchar("category", { length: 50 }).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type Permission = typeof permissions.$inferSelect;
+export type InsertPermission = typeof permissions.$inferInsert;
+
+/**
+ * Role permissions - link roles to permissions
+ */
+export const rolePermissions = mysqlTable("role_permissions", {
+  id: int("id").autoincrement().primaryKey(),
+  roleId: int("roleId").notNull(),
+  permissionId: int("permissionId").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type RolePermission = typeof rolePermissions.$inferSelect;
+export type InsertRolePermission = typeof rolePermissions.$inferInsert;
+
+/**
+ * User roles - assign roles to users
+ */
+export const userRoles = mysqlTable("user_roles", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(),
+  roleId: int("roleId").notNull(),
+  assignedBy: int("assignedBy"),
+  assignedAt: timestamp("assignedAt").defaultNow().notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type UserRole = typeof userRoles.$inferSelect;
+export type InsertUserRole = typeof userRoles.$inferInsert;
+
+/**
+ * Announcements - important announcements for the association
+ */
+export const announcements = mysqlTable("announcements", {
+  id: int("id").autoincrement().primaryKey(),
+  title: varchar("title", { length: 255 }).notNull(),
+  content: text("content").notNull(),
+  authorId: int("authorId").notNull(),
+  priority: mysqlEnum("priority", ["low", "medium", "high", "urgent"]).default("medium").notNull(),
+  status: mysqlEnum("status", ["draft", "published", "archived"]).default("draft").notNull(),
+  publishedAt: timestamp("publishedAt"),
+  expiresAt: timestamp("expiresAt"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type Announcement = typeof announcements.$inferSelect;
+export type InsertAnnouncement = typeof announcements.$inferInsert;
+
+/**
+ * News - news articles for the association
+ */
+export const news = mysqlTable("news", {
+  id: int("id").autoincrement().primaryKey(),
+  title: varchar("title", { length: 255 }).notNull(),
+  content: text("content").notNull(),
+  excerpt: varchar("excerpt", { length: 500 }),
+  authorId: int("authorId").notNull(),
+  category: varchar("category", { length: 100 }).default("general"),
+  status: mysqlEnum("status", ["draft", "published", "archived"]).default("draft").notNull(),
+  publishedAt: timestamp("publishedAt"),
+  viewCount: int("viewCount").default(0),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type News = typeof news.$inferSelect;
+export type InsertNews = typeof news.$inferInsert;
+
+/**
+ * News comments - comments on news articles
+ */
+export const newsComments = mysqlTable("news_comments", {
+  id: int("id").autoincrement().primaryKey(),
+  newsId: int("newsId").notNull(),
+  authorId: int("authorId").notNull(),
+  content: text("content").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type NewsComment = typeof newsComments.$inferSelect;
+export type InsertNewsComment = typeof newsComments.$inferInsert;
+
+/**
+ * Email templates - reusable email templates
+ */
+export const emailTemplates = mysqlTable("email_templates", {
+  id: int("id").autoincrement().primaryKey(),
+  name: varchar("name", { length: 100 }).notNull(),
+  subject: varchar("subject", { length: 255 }).notNull(),
+  content: text("content").notNull(),
+  description: text("description"),
+  category: varchar("category", { length: 50 }).default("general"),
+  variables: text("variables"),
+  isSystem: boolean("isSystem").default(false),
+  createdBy: int("createdBy").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type EmailTemplate = typeof emailTemplates.$inferSelect;
+export type InsertEmailTemplate = typeof emailTemplates.$inferInsert;
+
+/**
+ * Email history - track sent emails
+ */
+export const emailHistory = mysqlTable("email_history", {
+  id: int("id").autoincrement().primaryKey(),
+  templateId: int("templateId"),
+  subject: varchar("subject", { length: 255 }).notNull(),
+  content: text("content").notNull(),
+  recipientCount: int("recipientCount").notNull(),
+  sentBy: int("sentBy").notNull(),
+  status: mysqlEnum("status", ["pending", "sending", "sent", "failed"]).default("pending").notNull(),
+  successCount: int("successCount").default(0),
+  failureCount: int("failureCount").default(0),
+  errorMessage: text("errorMessage"),
+  sentAt: timestamp("sentAt"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+export type EmailHistory = typeof emailHistory.$inferSelect;
+export type InsertEmailHistory = typeof emailHistory.$inferInsert;
+
+/**
+ * Email recipients - track individual email recipients
+ */
+export const emailRecipients = mysqlTable("email_recipients", {
+  id: int("id").autoincrement().primaryKey(),
+  emailHistoryId: int("emailHistoryId").notNull(),
+  recipientId: int("recipientId").notNull(),
+  recipientEmail: varchar("recipientEmail", { length: 320 }).notNull(),
+  status: mysqlEnum("status", ["pending", "sent", "failed", "bounced"]).default("pending").notNull(),
+  errorMessage: text("errorMessage"),
+  sentAt: timestamp("sentAt"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+export type EmailRecipient = typeof emailRecipients.$inferSelect;
+export type InsertEmailRecipient = typeof emailRecipients.$inferInsert;
+
+/**
+ * Application Settings - global configuration
+ */
+export const appSettings = mysqlTable("app_settings", {
+  id: int("id").autoincrement().primaryKey(),
+  key: varchar("key", { length: 100 }).notNull().unique(),
+  value: text("value").notNull(),
+  description: text("description"),
+  type: mysqlEnum("type", ["string", "number", "boolean", "json"]).default("string").notNull(),
+  updatedBy: int("updatedBy").notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+export type AppSetting = typeof appSettings.$inferSelect;
+export type InsertAppSetting = typeof appSettings.$inferInsert;
+
+
+/**
+ * CRM Contacts - detailed member profiles
+ */
+export const crmContacts = mysqlTable("crm_contacts", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId"),
+  firstName: varchar("firstName", { length: 100 }).notNull(),
+  lastName: varchar("lastName", { length: 100 }).notNull(),
+  email: varchar("email", { length: 320 }).notNull(),
+  phone: varchar("phone", { length: 20 }),
+  company: varchar("company", { length: 255 }),
+  position: varchar("position", { length: 100 }),
+  address: text("address"),
+  city: varchar("city", { length: 100 }),
+  postalCode: varchar("postalCode", { length: 20 }),
+  country: varchar("country", { length: 100 }),
+  birthDate: date("birthDate"),
+  joinDate: date("joinDate"),
+  segment: varchar("segment", { length: 50 }).default("general"),
+  status: mysqlEnum("status", ["prospect", "active", "inactive", "archived"]).default("prospect").notNull(),
+  notes: text("notes"),
+  tags: varchar("tags", { length: 500 }),
+  lastInteraction: timestamp("lastInteraction"),
+  engagementScore: int("engagementScore").default(0),
+  createdBy: int("createdBy").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type CrmContact = typeof crmContacts.$inferSelect;
+export type InsertCrmContact = typeof crmContacts.$inferInsert;
+
+/**
+ * CRM Activities - track interactions with contacts
+ */
+export const crmActivities = mysqlTable("crm_activities", {
+  id: int("id").autoincrement().primaryKey(),
+  contactId: int("contactId").notNull(),
+  type: mysqlEnum("type", ["call", "email", "meeting", "task", "note", "event"]).notNull(),
+  title: varchar("title", { length: 255 }).notNull(),
+  description: text("description"),
+  status: mysqlEnum("status", ["pending", "completed", "cancelled"]).default("pending").notNull(),
+  priority: mysqlEnum("priority", ["low", "medium", "high"]).default("medium").notNull(),
+  dueDate: timestamp("dueDate"),
+  completedDate: timestamp("completedDate"),
+  assignedTo: int("assignedTo"),
+  createdBy: int("createdBy").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type CrmActivity = typeof crmActivities.$inferSelect;
+export type InsertCrmActivity = typeof crmActivities.$inferInsert;
+
+/**
+ * Adhesion Pipeline - track membership application process
+ */
+export const adhesionPipeline = mysqlTable("adhesion_pipeline", {
+  id: int("id").autoincrement().primaryKey(),
+  contactId: int("contactId").notNull(),
+  stage: mysqlEnum("stage", ["inquiry", "application", "review", "approved", "rejected", "member"]).default("inquiry").notNull(),
+  applicationDate: date("applicationDate"),
+  approvalDate: date("approvalDate"),
+  rejectionReason: text("rejectionReason"),
+  notes: text("notes"),
+  assignedTo: int("assignedTo"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type AdhesionPipeline = typeof adhesionPipeline.$inferSelect;
+export type InsertAdhesionPipeline = typeof adhesionPipeline.$inferInsert;
+
+/**
+ * CRM Reports - store generated reports and metrics
+ */
+export const crmReports = mysqlTable("crm_reports", {
+  id: int("id").autoincrement().primaryKey(),
+  name: varchar("name", { length: 255 }).notNull(),
+  type: mysqlEnum("type", ["engagement", "pipeline", "activity", "segment", "custom"]).notNull(),
+  description: text("description"),
+  data: json("data"),
+  filters: json("filters"),
+  generatedBy: int("generatedBy").notNull(),
+  generatedAt: timestamp("generatedAt").defaultNow().notNull(),
+  expiresAt: timestamp("expiresAt"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type CrmReport = typeof crmReports.$inferSelect;
+export type InsertCrmReport = typeof crmReports.$inferInsert;
+
+/**
+ * CRM Email Integration - track email interactions with contacts
+ */
+export const crmEmailIntegration = mysqlTable("crm_email_integration", {
+  id: int("id").autoincrement().primaryKey(),
+  contactId: int("contactId").notNull(),
+  emailHistoryId: int("emailHistoryId"),
+  subject: varchar("subject", { length: 255 }).notNull(),
+  content: text("content"),
+  direction: mysqlEnum("direction", ["sent", "received"]).notNull(),
+  status: mysqlEnum("status", ["sent", "failed", "bounced", "opened", "clicked"]).default("sent").notNull(),
+  sentBy: int("sentBy"),
+  sentAt: timestamp("sentAt"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+export type CrmEmailIntegration = typeof crmEmailIntegration.$inferSelect;
+export type InsertCrmEmailIntegration = typeof crmEmailIntegration.$inferInsert;
+
+
+/**
+ * Global Settings - store association information
+ */
+export const globalSettings = mysqlTable("global_settings", {
+  id: int("id").autoincrement().primaryKey(),
+  associationName: varchar("associationName", { length: 255 }).default("Les Bâtisseurs Engagés").notNull(),
+  seatCity: varchar("seatCity", { length: 255 }).default("N'djaména-tchad").notNull(),
+  folio: varchar("folio", { length: 100 }).default("10512").notNull(),
+  email: varchar("email", { length: 320 }).default("contact.lesbatisseursengages@gmail.com").notNull(),
+  website: varchar("website", { length: 500 }).default("www.lesbatisseursengage.com").notNull(),
+  phone: varchar("phone", { length: 20 }),
+  logo: text("logo"), // Base64 encoded logo
+  description: text("description"),
+  updatedBy: int("updatedBy"),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type GlobalSettings = typeof globalSettings.$inferSelect;
+export type InsertGlobalSettings = typeof globalSettings.$inferInsert;
+
+
+/**
+ * Password Reset Requests - track password reset requests
+ */
+export const passwordResetRequests = mysqlTable("password_reset_requests", {
+  id: int("id").autoincrement().primaryKey(),
+  email: varchar("email", { length: 320 }).notNull(),
+  token: varchar("token", { length: 255 }).notNull().unique(),
+  temporaryPassword: varchar("temporaryPassword", { length: 255 }),
+  status: mysqlEnum("status", ["pending", "completed", "expired"]).default("pending").notNull(),
+  expiresAt: timestamp("expiresAt").notNull(),
+  completedAt: timestamp("completedAt"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type PasswordResetRequest = typeof passwordResetRequests.$inferSelect;
+export type InsertPasswordResetRequest = typeof passwordResetRequests.$inferInsert;
+
+/**
+ * Projects table - project management
+ */
+export const projects = mysqlTable("projects", {
+  id: int("id").autoincrement().primaryKey(),
+  name: varchar("name", { length: 255 }).notNull(),
+  description: text("description"),
+  status: mysqlEnum("status", ["planning", "in-progress", "on-hold", "completed", "archived"]).default("planning").notNull(),
+  startDate: timestamp("startDate"),
+  endDate: timestamp("endDate"),
+  budget: varchar("budget", { length: 20 }),
+  leaderId: int("leaderId").notNull(), // Reference to members table
+  createdBy: int("createdBy").notNull(), // Reference to users table
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type Project = typeof projects.$inferSelect;
+export type InsertProject = typeof projects.$inferInsert;
+
+/**
+ * Project Members - team members assigned to projects
+ */
+export const projectMembers = mysqlTable("project_members", {
+  id: int("id").autoincrement().primaryKey(),
+  projectId: int("projectId").notNull(),
+  memberId: int("memberId").notNull(),
+  role: mysqlEnum("role", ["project-lead", "member", "observer"]).default("member").notNull(),
+  joinedAt: timestamp("joinedAt").defaultNow().notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type ProjectMember = typeof projectMembers.$inferSelect;
+export type InsertProjectMember = typeof projectMembers.$inferInsert;
+
+/**
+ * Project Tasks - individual tasks within projects
+ */
+export const projectTasks = mysqlTable("project_tasks", {
+  id: int("id").autoincrement().primaryKey(),
+  projectId: int("projectId").notNull(),
+  title: varchar("title", { length: 255 }).notNull(),
+  description: text("description"),
+  status: mysqlEnum("status", ["todo", "in-progress", "in-review", "completed"]).default("todo").notNull(),
+  priority: mysqlEnum("priority", ["low", "medium", "high", "critical"]).default("medium").notNull(),
+  assignedTo: int("assignedTo"), // Reference to members table
+  dueDate: timestamp("dueDate"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type ProjectTask = typeof projectTasks.$inferSelect;
+export type InsertProjectTask = typeof projectTasks.$inferInsert;
+
+/**
+ * Project Milestones - key milestones in project timeline
+ */
+export const projectMilestones = mysqlTable("project_milestones", {
+  id: int("id").autoincrement().primaryKey(),
+  projectId: int("projectId").notNull(),
+  title: varchar("title", { length: 255 }).notNull(),
+  description: text("description"),
+  dueDate: timestamp("dueDate").notNull(),
+  status: mysqlEnum("status", ["pending", "in-progress", "completed", "delayed"]).default("pending").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type ProjectMilestone = typeof projectMilestones.$inferSelect;
+export type InsertProjectMilestone = typeof projectMilestones.$inferInsert;
+
+/**
+ * Project Updates - project status updates and timeline
+ */
+export const projectUpdates = mysqlTable("project_updates", {
+  id: int("id").autoincrement().primaryKey(),
+  projectId: int("projectId").notNull(),
+  title: varchar("title", { length: 255 }).notNull(),
+  content: text("content").notNull(),
+  createdBy: int("createdBy").notNull(), // Reference to users table
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type ProjectUpdate = typeof projectUpdates.$inferSelect;
+export type InsertProjectUpdate = typeof projectUpdates.$inferInsert;
+
+/**
+ * Project Budget Items - budget tracking for projects
+ */
+export const projectBudgetItems = mysqlTable("project_budget_items", {
+  id: int("id").autoincrement().primaryKey(),
+  projectId: int("projectId").notNull(),
+  category: varchar("category", { length: 100 }).notNull(),
+  amount: varchar("amount", { length: 20 }).notNull(),
+  spent: varchar("spent", { length: 20 }).default("0").notNull(),
+  description: text("description"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type ProjectBudgetItem = typeof projectBudgetItems.$inferSelect;
+export type InsertProjectBudgetItem = typeof projectBudgetItems.$inferInsert;

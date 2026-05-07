@@ -3,7 +3,6 @@ import { ExportPDF } from "@/components/ExportPDF";
 import { HeroSection } from "@/components/HeroSection";
 import { Pagination } from "@/components/Pagination";
 import { trpc } from "@/lib/trpc";
-import { generateMemberId, formatMemberId } from "@/../../shared/memberIdGenerator";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -91,14 +90,11 @@ export default function Members() {
     lastName: "",
     email: "",
     phone: "",
-    gender: "1" as "1" | "2" | "3",
     role: "Membre",
     function: "",
     status: "active" as "active" | "inactive" | "pending",
     memberRole: "member" as "admin" | "secretary" | "member",
-    memberId: "",
   });
-  const [generatedMemberId, setGeneratedMemberId] = useState("");
 
   const { data: members, isLoading } = trpc.members.list.useQuery();
   const { data: exportData } = trpc.members.exportList.useQuery();
@@ -144,14 +140,11 @@ export default function Members() {
       lastName: "",
       email: "",
       phone: "",
-      gender: "1",
       role: "Membre",
       function: "",
       status: "active",
       memberRole: "member",
-      memberId: "",
     });
-    setGeneratedMemberId("");
   };
 
   const handleCreate = () => {
@@ -159,18 +152,7 @@ export default function Members() {
       toast.error("Le prénom et le nom sont obligatoires");
       return;
     }
-    if (!generatedMemberId) {
-      toast.error("Veuillez générer un numéro d'ID");
-      return;
-    }
-    createMember.mutate({ ...formData, memberId: generatedMemberId });
-  };
-
-  const generateMemberIdNumber = () => {
-    const memberId = generateMemberId(formData.gender as "1" | "2" | "3");
-    setGeneratedMemberId(memberId);
-    setFormData({ ...formData, memberId });
-    toast.success(`Numéro d'ID généré: ${formatMemberId(memberId)}`);
+    createMember.mutate(formData);
   };
 
   const handleEdit = () => {
@@ -521,33 +503,6 @@ export default function Members() {
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="gender">Genre</Label>
-                <Select 
-                  value={formData.gender} 
-                  onValueChange={(v: any) => setFormData({ ...formData, gender: v })}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="1">Homme</SelectItem>
-                    <SelectItem value="2">Femme</SelectItem>
-                    <SelectItem value="3">Autre/Institution</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="memberId">Numéro d'ID</Label>
-                <Input
-                  id="memberId"
-                  value={generatedMemberId}
-                  disabled
-                  placeholder="Auto-généré: 105260002"
-                />
-              </div>
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
                 <Label htmlFor="role">Rôle</Label>
                 <Select 
                   value={formData.role} 
@@ -594,14 +549,11 @@ export default function Members() {
               />
             </div>
           </div>
-          <DialogFooter className="flex gap-2">
+          <DialogFooter>
             <Button variant="outline" onClick={() => setIsCreateDialogOpen(false)}>
               Annuler
             </Button>
-            <Button variant="secondary" onClick={generateMemberIdNumber} disabled={!formData.gender}>
-              Générer ID
-            </Button>
-            <Button onClick={handleCreate} disabled={createMember.isPending || !generatedMemberId}>
+            <Button onClick={handleCreate} disabled={createMember.isPending}>
               {createMember.isPending ? (
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
               ) : (

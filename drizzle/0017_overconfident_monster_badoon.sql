@@ -1,1 +1,0 @@
-ALTER TABLE `members` MODIFY COLUMN `gender` enum('1','2','3');
