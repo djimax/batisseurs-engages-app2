@@ -1285,3 +1285,44 @@
 - [x] Modifier la page UserManagement pour utiliser tRPC
 - [x] Créer les tests vitest pour les opérations de rôles
 - [x] Tester et valider l'intégration complète
+
+
+## Phase 11 - Système de Numéro d'Identification des Membres
+
+### Implémentation du Système d'ID
+- [x] Créer l'utilitaire de génération d'ID (shared/memberIdGenerator.ts)
+- [x] Format d'ID : [Genre]-[MM]-[YY]-[Ordre] (ex: 1-05-26-0002)
+- [x] Codes de genre : 1=Homme, 2=Femme, 3=Autre
+- [x] Fonctions de validation et parsing d'ID
+- [x] Tests complets (28 tests passent)
+- [x] Affichage de l'ID dans le tableau des membres
+- [x] Bouton de copie pour l'ID du membre
+- [x] Génération automatique de l'ID basée sur la date d'adhésion
+
+### Fonctionnalités Implémentées
+- [x] generateMemberId() - Génère un ID au format spécifié
+- [x] parseMemberId() - Parse un ID pour extraire ses composants
+- [x] isValidMemberId() - Valide le format d'un ID
+- [x] getNextOrderNumber() - Calcule le numéro d'ordre suivant
+- [x] formatGenderDisplay() - Formate le genre pour l'affichage
+- [x] parseGenderDisplay() - Parse le genre depuis l'affichage
+
+### Tests
+- [x] 28 tests vitest pour le système d'ID
+- [x] Tests de génération d'ID
+- [x] Tests de validation d'ID
+- [x] Tests de parsing d'ID
+- [x] Tests de conversion genre/affichage
+- [x] Tests de conversion aller-retour
+
+### Interface Utilisateur
+- [x] Colonne "ID Membre" dans le tableau des membres
+- [x] Affichage de l'ID au format monospace
+- [x] Bouton de copie pour copier l'ID dans le presse-papiers
+- [x] Notification de confirmation après copie
+
+### Prochaines Étapes
+- [ ] Intégrer l'ID dans la base de données (migration Drizzle)
+- [ ] Ajouter le champ gender au schéma des membres
+- [ ] Améliorer la page des adhésions annuelles avec filtres et rapports
+- [ ] Créer un système de rapports pour les retards de paiement

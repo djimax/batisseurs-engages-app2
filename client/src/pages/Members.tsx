@@ -53,8 +53,10 @@ import {
   UserCircle,
   Loader2,
   Shield,
-  Lock
+  Lock,
+  Copy
 } from "lucide-react";
+import { generateMemberId } from "@/../../shared/memberIdGenerator";
 
 const MEMBER_ROLES = [
   { value: "admin", label: "Admin", description: "Accès complet à tous les documents" },
@@ -351,6 +353,7 @@ export default function Members() {
               <Table>
                 <TableHeader>
                   <TableRow>
+                    <TableHead>ID Membre</TableHead>
                     <TableHead>Membre</TableHead>
                     <TableHead>Rôle</TableHead>
                     <TableHead>Contact</TableHead>
@@ -359,8 +362,32 @@ export default function Members() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredMembers.map((member) => (
+                  {filteredMembers.map((member) => {
+                    const memberId = generateMemberId(
+                      "other",
+                      new Date(member.joinedAt),
+                      member.id
+                    );
+                    return (
                     <TableRow key={member.id}>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          <code className="relative rounded bg-muted px-[0.3rem] py-[0.2rem] font-mono text-sm font-semibold">
+                            {memberId}
+                          </code>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-6 w-6"
+                            onClick={() => {
+                              navigator.clipboard.writeText(memberId);
+                              toast.success("ID copié !");
+                            }}
+                          >
+                            <Copy className="h-3 w-3" />
+                          </Button>
+                        </div>
+                      </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-3">
                           <Avatar className="h-9 w-9">
@@ -424,7 +451,8 @@ export default function Members() {
                         </DropdownMenu>
                       </TableCell>
                     </TableRow>
-                  ))}
+                  );
+                  })}
                 </TableBody>
               </Table>
               <Pagination
