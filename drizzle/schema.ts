@@ -96,6 +96,9 @@ export const members = mysqlTable("members", {
   joinedAt: timestamp("joinedAt").defaultNow().notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+  memberRole: mysqlEnum("memberRole", ["admin", "secretary", "member"]).default("member").notNull(),
+  gender: mysqlEnum("gender", ["1", "2", "3"]).notNull(),
+  memberID: varchar("memberID", { length: 20 }).notNull(),
 });
 
 export type Member = typeof members.$inferSelect;

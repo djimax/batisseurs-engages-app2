@@ -1,7 +1,7 @@
 {
   "version": "5",
   "dialect": "mysql",
-  "id": "b48cc16c-b44e-4251-8e3c-6b67493fccd9",
+  "id": "f6891919-1ca6-493e-8093-a7ba8d93c8ab",
   "prevId": "8b9ef4ba-2034-4d56-9778-8ef44dd711e9",
   "tables": {
     "activity_logs": {
@@ -2672,21 +2672,6 @@
           "notNull": false,
           "autoincrement": false
         },
-        "gender": {
-          "name": "gender",
-          "type": "enum('male','female','other')",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false,
-          "default": "'other'"
-        },
-        "memberId": {
-          "name": "memberId",
-          "type": "varchar(50)",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
         "role": {
           "name": "role",
           "type": "varchar(100)",
@@ -2734,6 +2719,28 @@
           "autoincrement": false,
           "onUpdate": true,
           "default": "(now())"
+        },
+        "memberRole": {
+          "name": "memberRole",
+          "type": "enum('admin','secretary','member')",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "'member'"
+        },
+        "gender": {
+          "name": "gender",
+          "type": "enum('1','2','3')",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "memberID": {
+          "name": "memberID",
+          "type": "varchar(20)",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
         }
       },
       "indexes": {},
@@ -2746,14 +2753,7 @@
           ]
         }
       },
-      "uniqueConstraints": {
-        "members_memberId_unique": {
-          "name": "members_memberId_unique",
-          "columns": [
-            "memberId"
-          ]
-        }
-      },
+      "uniqueConstraints": {},
       "checkConstraint": {}
     },
     "news": {

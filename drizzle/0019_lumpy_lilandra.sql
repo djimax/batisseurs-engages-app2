@@ -1,0 +1,1 @@
+-- No changes needed, all fields already exist in the database

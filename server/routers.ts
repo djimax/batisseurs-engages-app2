@@ -390,9 +390,11 @@ export const appRouter = router({
         role: z.string().optional(),
         function: z.string().optional(),
         status: z.enum(["active", "inactive", "pending"]).optional(),
+        gender: z.enum(["1", "2", "3"]).optional().default("3"),
+        memberID: z.string().optional(),
       }))
       .mutation(async ({ input, ctx }) => {
-        const result = await createMember(input);
+        const result = await createMember(input as any);
         await logActivity({
           userId: ctx.user.id,
           action: "create",

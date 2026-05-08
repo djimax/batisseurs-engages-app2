@@ -131,22 +131,8 @@
     {
       "idx": 18,
       "version": "5",
-      "when": 1778167953484,
-      "tag": "0018_chilly_screwball",
-      "breakpoints": true
-    },
-    {
-      "idx": 19,
-      "version": "5",
-      "when": 1778168512540,
-      "tag": "0019_swift_red_skull",
-      "breakpoints": true
-    },
-    {
-      "idx": 20,
-      "version": "5",
-      "when": 1778168593481,
-      "tag": "0020_perfect_thena",
+      "when": 1778168700000,
+      "tag": "0019_lumpy_lilandra",
       "breakpoints": true
     }
   ]
