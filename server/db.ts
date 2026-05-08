@@ -1,4 +1,4 @@
-import { eq, and, like, desc, asc, sql, or, inArray, lt, ne } from "drizzle-orm";
+import { eq, and, like, desc, asc, sql, or, inArray, lt, ne, count } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
 import { 
   InsertUser, users, 
@@ -349,11 +349,46 @@ export async function getMemberById(id: number) {
   return result[0];
 }
 
+export async function getNextOrderNumberForMember(gender: string, joinedAt: Date) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  const month = String(joinedAt.getMonth() + 1).padStart(2, "0");
+  const year = String(joinedAt.getFullYear()).slice(-2);
+  
+  // Count existing members with the same gender, month, and year
+  const existingMembers = await db
+    .select({ count: count() })
+    .from(members)
+    .where(
+      and(
+        eq(members.gender, gender as any),
+        sql`MONTH(${members.joinedAt}) = ${parseInt(month)}`,
+        sql`YEAR(${members.joinedAt}) = ${parseInt("20" + year)}`
+      )
+    );
+  
+  return (existingMembers[0]?.count || 0) + 1;
+}
+
 export async function createMember(data: InsertMember) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
-  const result = await db.insert(members).values(data);
-  return { id: result[0].insertId, ...data };
+  
+  // Generate memberID if not provided
+  let memberID = data.memberID;
+  if (!memberID) {
+    const { generateMemberId } = await import("../shared/memberIdGenerator");
+    const genderCode = data.gender || "3";
+    const genderMap: Record<string, "male" | "female" | "other"> = { "1": "male", "2": "female", "3": "other" };
+    const gender = genderMap[genderCode] || "other";
+    const joinedAt = data.joinedAt || new Date();
+    const orderNumber = await getNextOrderNumberForMember(genderCode, joinedAt);
+    memberID = generateMemberId(gender, joinedAt, orderNumber);
+  }
+  
+  const result = await db.insert(members).values({ ...data, memberID });
+  return { id: result[0].insertId, ...data, memberID };
 }
 
 export async function updateMember(id: number, data: Partial<InsertMember>) {

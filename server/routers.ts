@@ -400,11 +400,11 @@ export const appRouter = router({
           action: "create",
           entityType: "member",
           entityId: result.id as number,
-          details: `Membre "${input.firstName} ${input.lastName}" ajouté`,
+          details: `Membre "${input.firstName} ${input.lastName}" ajouté avec l'ID ${result.memberID}`,
         });
         await notifyOwner({
           title: "Nouveau membre ajouté",
-          content: `${input.firstName} ${input.lastName} a été ajouté comme membre.`,
+          content: `${input.firstName} ${input.lastName} a été ajouté comme membre avec l'ID: ${result.memberID}`,
         });
         return result;
       }),

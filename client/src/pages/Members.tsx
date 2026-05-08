@@ -96,6 +96,7 @@ export default function Members() {
     function: "",
     status: "active" as "active" | "inactive" | "pending",
     memberRole: "member" as "admin" | "secretary" | "member",
+    gender: "3" as "1" | "2" | "3",
   });
 
   const { data: members, isLoading } = trpc.members.list.useQuery();
@@ -146,6 +147,7 @@ export default function Members() {
       function: "",
       status: "active",
       memberRole: "member",
+      gender: "3",
     });
   };
 
@@ -172,6 +174,7 @@ export default function Members() {
       lastName: member.lastName,
       email: member.email || "",
       phone: member.phone || "",
+      gender: member.gender || "3",
       role: member.role || "Membre",
       function: member.function || "",
       status: member.status,
@@ -531,6 +534,22 @@ export default function Members() {
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
+                <Label htmlFor="gender">Genre</Label>
+                <Select 
+                  value={formData.gender} 
+                  onValueChange={(v: any) => setFormData({ ...formData, gender: v })}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="1">Homme</SelectItem>
+                    <SelectItem value="2">Femme</SelectItem>
+                    <SelectItem value="3">Autre / Institution</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
                 <Label htmlFor="role">Rôle</Label>
                 <Select 
                   value={formData.role} 
@@ -550,6 +569,8 @@ export default function Members() {
                   </SelectContent>
                 </Select>
               </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="status">Statut</Label>
                 <Select 
