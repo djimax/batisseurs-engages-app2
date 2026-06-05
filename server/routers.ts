@@ -34,6 +34,7 @@ import { logAudit } from "./audit";
 import { storagePut } from "./storage";
 import { notifyOwner } from "./_core/notification";
 import { nanoid } from "nanoid";
+import { membersAdhesionsRouter } from "./members-adhesions-router";
 
 // Note: Email procedures are now in email-router.ts and imported above
 
@@ -42,6 +43,7 @@ export const appRouter = router({
   email: emailRouter,
   adminSettings: adminSettingsRouter,
   crm: crmRouter,
+  membersAdhesions: membersAdhesionsRouter,
   
   auth: router({
     me: publicProcedure.query(opts => opts.ctx.user),

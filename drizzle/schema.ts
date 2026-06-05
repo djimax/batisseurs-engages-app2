@@ -90,15 +90,22 @@ export const members = mysqlTable("members", {
   lastName: varchar("lastName", { length: 100 }).notNull(),
   email: varchar("email", { length: 320 }),
   phone: varchar("phone", { length: 20 }),
-  role: varchar("role", { length: 100 }).default("Membre"), // Peut être: Président, Secrétaire Général, Secrétaire Général Adjoint, Trésorier Général, Trésorier Général Adjoint, Membre
+  role: varchar("role", { length: 100 }).default("Membre"),
   function: varchar("function", { length: 100 }),
   status: mysqlEnum("status", ["active", "inactive", "pending"]).default("active").notNull(),
+  gender: mysqlEnum("gender", ["1", "2", "3"]).notNull(),
+  memberID: varchar("memberID", { length: 20 }).notNull(),
+  
+  // Informations personnelles enrichies
+  dateOfBirth: date("dateOfBirth"),
+  address: text("address"),
+  photo: text("photo"), // URL de la photo
+  profession: varchar("profession", { length: 100 }),
+  
   joinedAt: timestamp("joinedAt").defaultNow().notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
   memberRole: mysqlEnum("memberRole", ["admin", "secretary", "member"]).default("member").notNull(),
-  gender: mysqlEnum("gender", ["1", "2", "3"]).notNull(),
-  memberID: varchar("memberID", { length: 20 }).notNull(),
 });
 
 export type Member = typeof members.$inferSelect;
@@ -236,11 +243,17 @@ export type InsertCampaign = typeof campaigns.$inferInsert;
 export const adhesions = mysqlTable("adhesions", {
   id: int("id").autoincrement().primaryKey(),
   memberId: int("memberId").notNull(),
-  annee: int("annee").notNull(),
-  montant: varchar("montant", { length: 20 }).notNull(),
-  dateAdhesion: timestamp("dateAdhesion").notNull(),
+  annee: int("annee"),
+  type: mysqlEnum("type", ["annuelle", "mensuelle", "trimestrielle", "semestrielle"]).default("annuelle").notNull(),
+  montant: decimal("montant", { precision: 10, scale: 2 }).notNull(),
+  dateAdhesion: timestamp("dateAdhesion"),
+  dateDebut: timestamp("dateDebut").notNull(),
   dateExpiration: timestamp("dateExpiration").notNull(),
-  status: mysqlEnum("status", ["active", "expired", "pending"]).default("pending").notNull(),
+  modePayment: mysqlEnum("modePayment", ["virement", "especes", "cheque", "carte", "autre"]).default("autre"),
+  referencePayment: varchar("referencePayment", { length: 100 }),
+  datePaiement: timestamp("datePaiement"),
+  status: mysqlEnum("status", ["active", "expired", "pending", "cancelled"]).default("pending").notNull(),
+  notes: text("notes"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });

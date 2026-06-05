@@ -1,8 +1,8 @@
 {
   "version": "5",
   "dialect": "mysql",
-  "id": "f6891919-1ca6-493e-8093-a7ba8d93c8ab",
-  "prevId": "8b9ef4ba-2034-4d56-9778-8ef44dd711e9",
+  "id": "1ea74b0c-b686-4c65-8fa5-b0df8cbbdb28",
+  "prevId": "10dae8c4-e4e5-4e5b-9477-012de0a0f297",
   "tables": {
     "activity_logs": {
       "name": "activity_logs",
@@ -183,18 +183,33 @@
           "name": "annee",
           "type": "int",
           "primaryKey": false,
-          "notNull": true,
+          "notNull": false,
           "autoincrement": false
+        },
+        "type": {
+          "name": "type",
+          "type": "enum('annuelle','mensuelle','trimestrielle','semestrielle')",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "'annuelle'"
         },
         "montant": {
           "name": "montant",
-          "type": "varchar(20)",
+          "type": "decimal(10,2)",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false
         },
         "dateAdhesion": {
           "name": "dateAdhesion",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "dateDebut": {
+          "name": "dateDebut",
           "type": "timestamp",
           "primaryKey": false,
           "notNull": true,
@@ -207,13 +222,42 @@
           "notNull": true,
           "autoincrement": false
         },
+        "modePayment": {
+          "name": "modePayment",
+          "type": "enum('virement','especes','cheque','carte','autre')",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false,
+          "default": "'autre'"
+        },
+        "referencePayment": {
+          "name": "referencePayment",
+          "type": "varchar(100)",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "datePaiement": {
+          "name": "datePaiement",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
         "status": {
           "name": "status",
-          "type": "enum('active','expired','pending')",
+          "type": "enum('active','expired','pending','cancelled')",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
           "default": "'pending'"
+        },
+        "notes": {
+          "name": "notes",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
         },
         "createdAt": {
           "name": "createdAt",
@@ -2695,6 +2739,48 @@
           "autoincrement": false,
           "default": "'active'"
         },
+        "gender": {
+          "name": "gender",
+          "type": "enum('1','2','3')",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "memberID": {
+          "name": "memberID",
+          "type": "varchar(20)",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "dateOfBirth": {
+          "name": "dateOfBirth",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "address": {
+          "name": "address",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "photo": {
+          "name": "photo",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "profession": {
+          "name": "profession",
+          "type": "varchar(100)",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
         "joinedAt": {
           "name": "joinedAt",
           "type": "timestamp",
@@ -2727,20 +2813,6 @@
           "notNull": true,
           "autoincrement": false,
           "default": "'member'"
-        },
-        "gender": {
-          "name": "gender",
-          "type": "enum('1','2','3')",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "memberID": {
-          "name": "memberID",
-          "type": "varchar(20)",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
         }
       },
       "indexes": {},
