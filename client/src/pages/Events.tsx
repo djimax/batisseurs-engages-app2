@@ -75,7 +75,8 @@ export default function Events() {
   const [searchTerm, setSearchTerm] = useState("");
   const [sortBy, setSortBy] = useState<string>("date-asc");
 
-  const now = new Date();
+  // Stabilize `now` reference to prevent infinite useMemo recalculations
+  const now = useMemo(() => new Date(), []);
 
   const filteredEvents = useMemo(() => {
     const filtered = events.filter(event => {
@@ -117,7 +118,7 @@ export default function Events() {
           return 0;
       }
     });
-  }, [events, filter, searchTerm, now, sortBy]);
+  }, [events, filter, searchTerm, sortBy]);
 
   const handleDelete = (id: number) => {
     setEvents(events.filter(e => e.id !== id));
