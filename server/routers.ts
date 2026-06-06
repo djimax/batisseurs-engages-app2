@@ -28,7 +28,7 @@ import {
   getDashboardStatistics, getProjectsStatistics, getTasksStatistics, getFinanceStatistics, getMembersStatistics,
   getAllUsers, getUserById, updateUserRole, getAdminCount, isUserAdmin
 } from "./db";
-import { roles, permissions, auditLogs, emailTemplates, emailHistory, emailRecipients } from "../drizzle/schema";
+import { roles, permissions, auditLogs, emailTemplates, emailHistory, emailRecipients, members, adhesions } from "../drizzle/schema";
 import { eq, desc } from "drizzle-orm";
 import { logAudit } from "./audit";
 import { storagePut } from "./storage";
@@ -394,6 +394,7 @@ export const appRouter = router({
         status: z.enum(["active", "inactive", "pending"]).optional(),
         gender: z.enum(["1", "2", "3"]).optional().default("3"),
         memberID: z.string().optional(),
+        photo: z.string().optional(),
       }))
       .mutation(async ({ input, ctx }) => {
         const result = await createMember(input as any);
@@ -421,6 +422,7 @@ export const appRouter = router({
         role: z.string().optional(),
         function: z.string().optional(),
         status: z.enum(["active", "inactive", "pending"]).optional(),
+        photo: z.string().optional(),
       }))
       .mutation(async ({ input, ctx }) => {
         const { id, ...data } = input;
@@ -447,6 +449,66 @@ export const appRouter = router({
           details: `Membre supprimé`,
         });
         return { success: true };
+      }),
+    
+    uploadPhoto: protectedProcedure
+      .input(z.object({
+        memberId: z.number(),
+        photoData: z.string(), // base64 encoded image
+        fileName: z.string(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        try {
+          // Convert base64 to buffer
+          const buffer = Buffer.from(input.photoData.split(',')[1] || input.photoData, 'base64');
+          
+          // Upload to S3
+          const fileKey = `members/${input.memberId}/photo-${nanoid()}.jpg`;
+          const { url } = await storagePut(fileKey, buffer, 'image/jpeg');
+          
+          // Update member with photo URL
+          const db = await getDb();
+          if (db) {
+            await db.update(members)
+              .set({ photo: url })
+              .where(eq(members.id, input.memberId));
+          }
+          
+          await logActivity({
+            userId: ctx.user.id,
+            action: "update",
+            entityType: "member",
+            entityId: input.memberId,
+            details: `Photo du membre mise à jour`,
+          });
+          
+          return { success: true, photoUrl: url };
+        } catch (error) {
+          console.error('Photo upload error:', error);
+          throw new Error('Erreur lors de l\'upload de la photo');
+        }
+      }),
+    
+    getAdhesionCard: protectedProcedure
+      .input(z.object({ memberId: z.number() }))
+      .query(async ({ input }) => {
+        const member = await getMemberById(input.memberId);
+        if (!member) throw new Error('Membre non trouvé');
+        
+        // Get latest adhesion
+        const db = await getDb();
+        if (!db) throw new Error('Database not available');
+        
+        const latestAdhesion = await db.select()
+          .from(adhesions)
+          .where(eq(adhesions.memberId, input.memberId))
+          .orderBy(desc(adhesions.dateExpiration))
+          .limit(1);
+        
+        return {
+          member,
+          adhesion: latestAdhesion[0] || null,
+        };
       }),
     
     // Export members list

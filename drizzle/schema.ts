@@ -95,6 +95,7 @@ export const members = mysqlTable("members", {
   status: mysqlEnum("status", ["active", "inactive", "pending"]).default("active").notNull(),
   gender: mysqlEnum("gender", ["1", "2", "3"]).notNull(),
   memberID: varchar("memberID", { length: 20 }).notNull(),
+  photo: text("photo"), // URL de la photo du membre (stockée en S3)
   joinedAt: timestamp("joinedAt").defaultNow().notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
