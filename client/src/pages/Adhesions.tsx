@@ -8,7 +8,8 @@ import { Plus, User, Calendar, AlertCircle, CheckCircle, Clock, Search, X } from
 import { toast } from "sonner";
 import { useFormatAmount } from "@/hooks/useFormatAmount";
 import { AmountDisplay } from "@/components/AmountDisplay";
-import { useState } from "react";
+import { useState, useMemo } from "react";
+import { trpc } from "@/lib/trpc";
 
 export default function Adhesions() {
   const { formatAmountWithConversion } = useFormatAmount();
@@ -16,6 +17,7 @@ export default function Adhesions() {
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear().toString());
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [memberSearchQuery, setMemberSearchQuery] = useState("");
   const [formData, setFormData] = useState({
     memberId: "",
     annee: new Date().getFullYear().toString(),
@@ -23,6 +25,16 @@ export default function Adhesions() {
     dateAdhesion: new Date().toISOString().split('T')[0],
     dateExpiration: new Date(new Date().getFullYear() + 1, 11, 31).toISOString().split('T')[0],
   });
+  
+  // Récupérer la liste des membres
+  const { data: members = [] } = trpc.members.list.useQuery();
+  
+  // Filtrer les membres selon la recherche
+  const filteredMembers = useMemo(() => {
+    return members.filter(m => 
+      `${m.firstName} ${m.lastName}`.toLowerCase().includes(memberSearchQuery.toLowerCase())
+    );
+  }, [members, memberSearchQuery]);
 
   // Placeholder data
   const adhesions = [
@@ -308,10 +320,16 @@ export default function Adhesions() {
                 <SelectTrigger>
                   <SelectValue placeholder="Sélectionner un membre" />
                 </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="1">Jean Dupont</SelectItem>
-                  <SelectItem value="2">Marie Martin</SelectItem>
-                  <SelectItem value="3">Pierre Bernard</SelectItem>
+                <SelectContent className="max-h-96 overflow-y-auto">
+                  {members.length === 0 ? (
+                    <div className="p-2 text-sm text-muted-foreground">Aucun membre trouvé</div>
+                  ) : (
+                    members.map((member) => (
+                      <SelectItem key={member.id} value={member.id.toString()}>
+                        {member.firstName} {member.lastName} ({member.memberID})
+                      </SelectItem>
+                    ))
+                  )}
                 </SelectContent>
               </Select>
             </div>
