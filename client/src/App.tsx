@@ -37,6 +37,7 @@ import { AdminPasswordResets } from "./pages/AdminPasswordResets";
 import { Projects } from "./pages/Projects";
 import { ProjectDetail } from "./pages/ProjectDetail";
 import Dashboard from "./pages/Dashboard";
+import AdhesionsList from "./pages/AdhesionsList";
 import { usePasswordAuth } from "./hooks/usePasswordAuth";
 import { useState, useEffect } from "react";
 
@@ -59,6 +60,7 @@ function OnlineRouter({ isAuthenticated, error, onLogin, onLogout, onForgotPassw
         <Route path="/categories" component={Categories} />
         <Route path="/members" component={Members} />
         <Route path="/members/adhesions" component={Adhesions} />
+        <Route path="/adhesions-list" component={AdhesionsList} />
         <Route path="/activity" component={Activity} />
         <Route path="/archives" component={Archives} />
         <Route path="/finance" component={Finance} />

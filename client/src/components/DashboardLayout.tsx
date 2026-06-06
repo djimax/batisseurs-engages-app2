@@ -77,6 +77,7 @@ const menuItems: MenuItem[] = [
   { label: "👥 Gestion des Membres", isGroup: true, items: [
     { icon: Users, label: "Membres", path: "/members" },
     { icon: UserCheck, label: "Adhésions", path: "/members/adhesions" },
+    { icon: UserCheck, label: "Liste des Adhérents", path: "/adhesions-list" },
     { icon: Shield, label: "Gestion des Rôles", path: "/admin/roles", adminOnly: true },
   ]},
   
@@ -90,7 +91,6 @@ const menuItems: MenuItem[] = [
   // Finances
   { label: "💰 Finances", isGroup: true, items: [
     { icon: DollarSign, label: "Finance", path: "/finance" },
-    { icon: UserCheck, label: "Adhésions Annuelles", path: "/adhesions" },
   ]},
   
   // CRM

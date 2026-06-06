@@ -228,6 +228,40 @@ export const membersAdhesionsRouter = router({
   }),
 
   /**
+   * Récupère toutes les adhésions avec les détails des membres
+   */
+  listWithMembers: protectedProcedure.query(async () => {
+    const db = await getDb();
+    if (!db) return [];
+
+    const allAdhesions = await db.select().from(adhesions);
+    const now = new Date();
+
+    // Enrichir chaque adhésion avec les détails du membre
+    const adhesionsWithMembers = await Promise.all(
+      allAdhesions.map(async (adhesion) => {
+        const memberData = await db
+          .select()
+          .from(members)
+          .where(eq(members.id, adhesion.memberId))
+          .limit(1);
+
+        const member = memberData[0];
+        const isExpired = new Date(adhesion.dateExpiration) <= now;
+        const status = isExpired ? "expired" : adhesion.status;
+
+        return {
+          ...adhesion,
+          member,
+          status,
+        };
+      })
+    );
+
+    return adhesionsWithMembers;
+  }),
+
+  /**
    * Récupère les statistiques d'adhésion
    */
   getAdhesionStats: protectedProcedure.query(async () => {
