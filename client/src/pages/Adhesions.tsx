@@ -1,19 +1,21 @@
-import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Plus, User, Calendar, AlertCircle, CheckCircle, Clock } from "lucide-react";
+import { Plus, User, Calendar, AlertCircle, CheckCircle, Clock, Search, X } from "lucide-react";
 import { toast } from "sonner";
 import { useFormatAmount } from "@/hooks/useFormatAmount";
 import { AmountDisplay } from "@/components/AmountDisplay";
+import { useState } from "react";
 
 export default function Adhesions() {
   const { formatAmountWithConversion } = useFormatAmount();
   const [isOpen, setIsOpen] = useState(false);
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear().toString());
+  const [searchQuery, setSearchQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
   const [formData, setFormData] = useState({
     memberId: "",
     annee: new Date().getFullYear().toString(),
@@ -176,23 +178,61 @@ export default function Adhesions() {
         </Card>
       </div>
 
-      {/* Year Filter */}
-      <div className="flex gap-2">
-        <Select value={selectedYear} onValueChange={setSelectedYear}>
-          <SelectTrigger className="w-32">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="2024">2024</SelectItem>
-            <SelectItem value="2025">2025</SelectItem>
-            <SelectItem value="2026">2026</SelectItem>
-          </SelectContent>
-        </Select>
+      {/* Search and Filters */}
+      <div className="space-y-4">
+        <div className="flex gap-3">
+          <div className="flex-1 relative">
+            <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Rechercher par nom de membre..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-10"
+            />
+            {searchQuery && (
+              <button
+                onClick={() => setSearchQuery("")}
+                className="absolute right-3 top-3 text-muted-foreground hover:text-foreground"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            )}
+          </div>
+        </div>
+
+        <div className="flex gap-2 flex-wrap">
+          <Select value={selectedYear} onValueChange={setSelectedYear}>
+            <SelectTrigger className="w-32">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="2024">2024</SelectItem>
+              <SelectItem value="2025">2025</SelectItem>
+              <SelectItem value="2026">2026</SelectItem>
+            </SelectContent>
+          </Select>
+
+          <Select value={statusFilter} onValueChange={setStatusFilter}>
+            <SelectTrigger className="w-40">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Tous les statuts</SelectItem>
+              <SelectItem value="active">Actives</SelectItem>
+              <SelectItem value="expired">Expirées</SelectItem>
+              <SelectItem value="pending">En attente</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
       </div>
 
       {/* Adhesions List */}
       <div className="space-y-3">
-        {adhesions.filter(a => a.annee.toString() === selectedYear).map((adhesion) => (
+        {adhesions
+          .filter(a => a.annee.toString() === selectedYear)
+          .filter(a => statusFilter === "all" || a.status === statusFilter)
+          .filter(a => a.memberName.toLowerCase().includes(searchQuery.toLowerCase()))
+          .map((adhesion) => (
           <Card key={adhesion.id} className="hover:shadow-md transition-shadow">
             <CardContent className="pt-6">
               <div className="flex items-center justify-between">
