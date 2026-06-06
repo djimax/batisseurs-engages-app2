@@ -58,6 +58,7 @@ function OnlineRouter({ isAuthenticated, error, onLogin, onLogout, onForgotPassw
         <Route path="/documents" component={Documents} />
         <Route path="/categories" component={Categories} />
         <Route path="/members" component={Members} />
+        <Route path="/members/adhesions" component={Adhesions} />
         <Route path="/activity" component={Activity} />
         <Route path="/archives" component={Archives} />
         <Route path="/finance" component={Finance} />
