@@ -31,7 +31,7 @@ export default function AdhesionsList() {
   const [showCardDialog, setShowCardDialog] = useState(false);
 
   // Récupérer les adhésions avec les détails des membres
-  const { data: adhesions = [], isLoading } = trpc.membersAdhesions.listWithMembers.useQuery();
+  const { data: adhesions = [], isLoading, refetch } = trpc.membersAdhesions.listWithMembers.useQuery();
 
   // Filtrer les adhésions
   const filteredAdhesions = useMemo(() => {
@@ -187,6 +187,14 @@ export default function AdhesionsList() {
 
             {/* Actions */}
             <div className="flex gap-2">
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="gap-2"
+                onClick={() => refetch()}
+              >
+                🔄 Rafraîchir
+              </Button>
               <Button variant="outline" size="sm" className="gap-2">
                 <Download className="h-4 w-4" />
                 Exporter
