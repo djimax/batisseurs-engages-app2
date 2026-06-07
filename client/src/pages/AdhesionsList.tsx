@@ -83,6 +83,14 @@ export default function AdhesionsList() {
     setShowCardDialog(true);
   };
 
+  const handlePrintCard = (adhesion: any) => {
+    setSelectedMemberId(adhesion.member.id);
+    setShowCardDialog(true);
+    setTimeout(() => {
+      window.print();
+    }, 500);
+  };
+
   const selectedAdhesion = selectedMemberId
     ? adhesions.find((a: any) => a.member.id === selectedMemberId)
     : null;
@@ -261,15 +269,28 @@ export default function AdhesionsList() {
                       </TableCell>
                       <TableCell>{adhesion.montant} F</TableCell>
                       <TableCell>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleViewCard(adhesion.member.id)}
-                          className="gap-2"
-                        >
-                          <Eye className="h-4 w-4" />
-                          Carte
-                        </Button>
+                        <div className="flex gap-2">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleViewCard(adhesion.member.id)}
+                            className="gap-2"
+                            title="Afficher la carte d'adhésion"
+                          >
+                            <Eye className="h-4 w-4" />
+                            Aperçu
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handlePrintCard(adhesion)}
+                            className="gap-2"
+                            title="Imprimer la carte d'adhésion"
+                          >
+                            <Printer className="h-4 w-4" />
+                            Imprimer
+                          </Button>
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))}
