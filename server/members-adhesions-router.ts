@@ -116,46 +116,24 @@ export const membersAdhesionsRouter = router({
     .input(
       z.object({
         memberId: z.number(),
-        type: z.enum(["annuelle", "mensuelle", "trimestrielle", "semestrielle"]),
         montant: z.string(),
-        dateDebut: z.date(),
-        modePayment: z.enum(["virement", "especes", "cheque", "carte", "autre"]).optional(),
-        referencePayment: z.string().optional(),
-        notes: z.string().optional(),
+        annee: z.number().optional(),
       })
     )
     .mutation(async ({ input }) => {
       const db = await getDb();
       if (!db) throw new Error("Database not available");
 
-      // Calculer la date d'expiration basée sur le type
-      const dateDebut = new Date(input.dateDebut);
-      const dateExpiration = new Date(dateDebut);
-
-      switch (input.type) {
-        case "annuelle":
-          dateExpiration.setFullYear(dateExpiration.getFullYear() + 1);
-          break;
-        case "semestrielle":
-          dateExpiration.setMonth(dateExpiration.getMonth() + 6);
-          break;
-        case "trimestrielle":
-          dateExpiration.setMonth(dateExpiration.getMonth() + 3);
-          break;
-        case "mensuelle":
-          dateExpiration.setMonth(dateExpiration.getMonth() + 1);
-          break;
-      }
+      const now = new Date();
+      const dateExpiration = new Date(now);
+      dateExpiration.setFullYear(dateExpiration.getFullYear() + 1);
 
       const result = await db.insert(adhesions).values({
         memberId: input.memberId,
-        type: input.type,
         montant: input.montant,
-        dateDebut,
+        annee: input.annee || now.getFullYear(),
+        dateAdhesion: now,
         dateExpiration,
-        modePayment: input.modePayment || "autre",
-        referencePayment: input.referencePayment,
-        notes: input.notes,
         status: "pending",
       });
 
@@ -169,10 +147,8 @@ export const membersAdhesionsRouter = router({
     .input(
       z.object({
         memberId: z.number(),
-        type: z.enum(["annuelle", "mensuelle", "trimestrielle", "semestrielle"]),
         montant: z.string(),
-        modePayment: z.enum(["virement", "especes", "cheque", "carte", "autre"]).optional(),
-        referencePayment: z.string().optional(),
+        annee: z.number().optional(),
       })
     )
     .mutation(async ({ input }) => {
@@ -180,32 +156,15 @@ export const membersAdhesionsRouter = router({
       if (!db) throw new Error("Database not available");
 
       const now = new Date();
-      const dateDebut = now;
       const dateExpiration = new Date(now);
-
-      switch (input.type) {
-        case "annuelle":
-          dateExpiration.setFullYear(dateExpiration.getFullYear() + 1);
-          break;
-        case "semestrielle":
-          dateExpiration.setMonth(dateExpiration.getMonth() + 6);
-          break;
-        case "trimestrielle":
-          dateExpiration.setMonth(dateExpiration.getMonth() + 3);
-          break;
-        case "mensuelle":
-          dateExpiration.setMonth(dateExpiration.getMonth() + 1);
-          break;
-      }
+      dateExpiration.setFullYear(dateExpiration.getFullYear() + 1);
 
       const result = await db.insert(adhesions).values({
         memberId: input.memberId,
-        type: input.type,
         montant: input.montant,
-        dateDebut,
+        annee: input.annee || now.getFullYear(),
+        dateAdhesion: now,
         dateExpiration,
-        modePayment: input.modePayment || "autre",
-        referencePayment: input.referencePayment,
         status: "pending",
       });
 

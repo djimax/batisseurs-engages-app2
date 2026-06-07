@@ -17,7 +17,7 @@ interface AdhesionCardProps {
   adhesion?: {
     dateExpiration: Date;
     annee: number;
-    type: string;
+    type?: string;
   };
 }
 

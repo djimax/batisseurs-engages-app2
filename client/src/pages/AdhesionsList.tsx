@@ -302,7 +302,6 @@ export default function AdhesionsList() {
               adhesion={{
                 dateExpiration: selectedAdhesion.dateExpiration,
                 annee: selectedAdhesion.annee || new Date().getFullYear(),
-                type: selectedAdhesion.type || "annuelle",
               }}
             />
           )}
