@@ -28,6 +28,7 @@ export default function Adhesions() {
   
   // Récupérer la liste des membres
   const { data: members = [] } = trpc.members.list.useQuery();
+  const utils = trpc.useUtils();
   
   // Filtrer les membres selon la recherche
   const filteredMembers = useMemo(() => {
@@ -35,6 +36,25 @@ export default function Adhesions() {
       `${m.firstName} ${m.lastName}`.toLowerCase().includes(memberSearchQuery.toLowerCase())
     );
   }, [members, memberSearchQuery]);
+
+  // Mutation pour créer une adhésion
+  const createAdhesion = trpc.membersAdhesions.createAdhesion.useMutation({
+    onSuccess: () => {
+      utils.membersAdhesions.listWithMembers.invalidate();
+      setFormData({
+        memberId: "",
+        annee: new Date().getFullYear().toString(),
+        montant: "50",
+        dateAdhesion: new Date().toISOString().split('T')[0],
+        dateExpiration: new Date(new Date().getFullYear() + 1, 11, 31).toISOString().split('T')[0],
+      });
+      setIsOpen(false);
+      toast.success("Adhésion créée avec succès");
+    },
+    onError: (error) => {
+      toast.error("Erreur: " + error.message);
+    },
+  });
 
   // Placeholder data
   const adhesions = [
@@ -75,15 +95,12 @@ export default function Adhesions() {
       toast.error("Veuillez remplir tous les champs obligatoires");
       return;
     }
-    toast.success("Adhésion créée avec succès");
-    setFormData({
-      memberId: "",
-      annee: new Date().getFullYear().toString(),
-      montant: "50",
-      dateAdhesion: new Date().toISOString().split('T')[0],
-      dateExpiration: new Date(new Date().getFullYear() + 1, 11, 31).toISOString().split('T')[0],
+    
+    createAdhesion.mutate({
+      memberId: parseInt(formData.memberId),
+      annee: parseInt(formData.annee),
+      montant: formData.montant,
     });
-    setIsOpen(false);
   };
 
   const getStatusColor = (status: string) => {

@@ -105,6 +105,7 @@ export default function Members() {
   const createMember = trpc.members.create.useMutation({
     onSuccess: () => {
       utils.members.list.invalidate();
+      utils.membersAdhesions.listWithMembers.invalidate();
       setIsCreateDialogOpen(false);
       resetForm();
       toast.success("Membre ajouté avec succès");
@@ -117,6 +118,7 @@ export default function Members() {
   const updateMember = trpc.members.update.useMutation({
     onSuccess: () => {
       utils.members.list.invalidate();
+      utils.membersAdhesions.listWithMembers.invalidate();
       setIsEditDialogOpen(false);
       setSelectedMember(null);
       resetForm();
@@ -130,6 +132,7 @@ export default function Members() {
   const deleteMember = trpc.members.delete.useMutation({
     onSuccess: () => {
       utils.members.list.invalidate();
+      utils.membersAdhesions.listWithMembers.invalidate();
       toast.success("Membre supprimé");
     },
     onError: (error) => {
