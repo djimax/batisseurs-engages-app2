@@ -27,6 +27,7 @@ export default function AdhesionsList() {
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [yearFilter, setYearFilter] = useState("all");
+  const [roleFilter, setRoleFilter] = useState("all");
   const [selectedMemberId, setSelectedMemberId] = useState<number | null>(null);
   const [showCardDialog, setShowCardDialog] = useState(false);
 
@@ -44,9 +45,11 @@ export default function AdhesionsList() {
 
       const matchesYear = yearFilter === "all" || adhesion.annee.toString() === yearFilter;
 
-      return matchesSearch && matchesStatus && matchesYear;
+      const matchesRole = roleFilter === "all" || adhesion.member.role === roleFilter;
+
+      return matchesSearch && matchesStatus && matchesYear && matchesRole;
     });
-  }, [adhesions, searchQuery, statusFilter, yearFilter]);
+  }, [adhesions, searchQuery, statusFilter, yearFilter, roleFilter]);
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -74,77 +77,74 @@ export default function AdhesionsList() {
     }
   };
 
-  const formatDate = (date: Date | string) => {
-    return new Date(date).toLocaleDateString("fr-FR");
-  };
-
-  const handleViewCard = (memberId: number) => {
+  const handlePrintCard = (memberId: number) => {
     setSelectedMemberId(memberId);
-    setShowCardDialog(true);
-  };
-
-  const handlePrintCard = (adhesion: any) => {
-    setSelectedMemberId(adhesion.member.id);
     setShowCardDialog(true);
     setTimeout(() => {
       window.print();
     }, 500);
   };
 
-  const selectedAdhesion = selectedMemberId
-    ? adhesions.find((a: any) => a.member.id === selectedMemberId)
-    : null;
-
-  // Statistiques
-  const stats = {
-    total: adhesions.length,
-    active: adhesions.filter((a: any) => a.status === "active").length,
-    expired: adhesions.filter((a: any) => a.status === "expired").length,
-    pending: adhesions.filter((a: any) => a.status === "pending").length,
-  };
+  if (isLoading) {
+    return (
+      <div className="space-y-4">
+        <Card>
+          <CardContent className="pt-6">
+            <div className="text-center text-muted-foreground">Chargement...</div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
-      {/* Header */}
+      {/* En-tête */}
       <div>
-        <h1 className="text-3xl font-bold">Liste des Adhérents</h1>
+        <h1 className="text-3xl font-bold">Liste des Adhésions</h1>
         <p className="text-muted-foreground mt-2">
-          Gérez et consultez les adhésions de vos membres
+          Gérez et consultez les adhésions de votre association
         </p>
       </div>
 
       {/* Statistiques */}
-      <div className="grid grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Total</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.total}</div>
+          <CardContent className="pt-6">
+            <div className="text-center">
+              <div className="text-3xl font-bold">{adhesions.length}</div>
+              <p className="text-sm text-muted-foreground mt-1">Total adhésions</p>
+            </div>
           </CardContent>
         </Card>
         <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Actives</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-green-600">{stats.active}</div>
+          <CardContent className="pt-6">
+            <div className="text-center">
+              <div className="text-3xl font-bold text-green-600">
+                {adhesions.filter((a: any) => a.status === "active").length}
+              </div>
+              <p className="text-sm text-muted-foreground mt-1">Actives</p>
+            </div>
           </CardContent>
         </Card>
         <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Expirées</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-red-600">{stats.expired}</div>
+          <CardContent className="pt-6">
+            <div className="text-center">
+              <div className="text-3xl font-bold text-yellow-600">
+                {adhesions.filter((a: any) => a.status === "pending").length}
+              </div>
+              <p className="text-sm text-muted-foreground mt-1">En attente</p>
+            </div>
           </CardContent>
         </Card>
         <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">En attente</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-yellow-600">{stats.pending}</div>
+          <CardContent className="pt-6">
+            <div className="text-center">
+              <div className="text-3xl font-bold text-red-600">
+                {adhesions.filter((a: any) => a.status === "expired").length}
+              </div>
+              <p className="text-sm text-muted-foreground mt-1">Expirées</p>
+            </div>
           </CardContent>
         </Card>
       </div>
@@ -152,143 +152,187 @@ export default function AdhesionsList() {
       {/* Filtres */}
       <Card>
         <CardHeader>
-          <CardTitle>Filtres</CardTitle>
+          <CardTitle>Recherche et Filtres</CardTitle>
+          <CardDescription>Trouvez rapidement un adhérent par son ID, nom ou rôle</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            {/* Recherche */}
+          <div className="space-y-4">
+            {/* Barre de recherche principale */}
             <div className="relative">
               <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
               <Input
-                placeholder="Rechercher par nom ou ID..."
+                placeholder="Rechercher par nom, prénom ou ID d'adhérent..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10"
+                className="pl-10 h-10"
               />
             </div>
 
-            {/* Filtre Statut */}
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger>
-                <SelectValue placeholder="Statut" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Tous les statuts</SelectItem>
-                <SelectItem value="active">Active</SelectItem>
-                <SelectItem value="expired">Expirée</SelectItem>
-                <SelectItem value="pending">En attente</SelectItem>
-              </SelectContent>
-            </Select>
+            {/* Filtres */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              {/* Filtre Statut */}
+              <Select value={statusFilter} onValueChange={setStatusFilter}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Statut" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Tous les statuts</SelectItem>
+                  <SelectItem value="active">Active</SelectItem>
+                  <SelectItem value="expired">Expirée</SelectItem>
+                  <SelectItem value="pending">En attente</SelectItem>
+                </SelectContent>
+              </Select>
 
-            {/* Filtre Année */}
-            <Select value={yearFilter} onValueChange={setYearFilter}>
-              <SelectTrigger>
-                <SelectValue placeholder="Année" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Toutes les années</SelectItem>
-                <SelectItem value="2024">2024</SelectItem>
-                <SelectItem value="2025">2025</SelectItem>
-                <SelectItem value="2026">2026</SelectItem>
-              </SelectContent>
-            </Select>
+              {/* Filtre Année */}
+              <Select value={yearFilter} onValueChange={setYearFilter}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Année" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Toutes les années</SelectItem>
+                  <SelectItem value="2024">2024</SelectItem>
+                  <SelectItem value="2025">2025</SelectItem>
+                  <SelectItem value="2026">2026</SelectItem>
+                </SelectContent>
+              </Select>
 
-            {/* Actions */}
-            <div className="flex gap-2">
-              <Button 
-                variant="outline" 
-                size="sm" 
-                className="gap-2"
-                onClick={() => refetch()}
-              >
-                🔄 Rafraîchir
-              </Button>
-              <Button variant="outline" size="sm" className="gap-2">
-                <Download className="h-4 w-4" />
-                Exporter
-              </Button>
-              <Button variant="outline" size="sm" className="gap-2">
-                <Printer className="h-4 w-4" />
-                Imprimer
-              </Button>
+              {/* Filtre Rôle */}
+              <Select value={roleFilter} onValueChange={setRoleFilter}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Rôle" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Tous les rôles</SelectItem>
+                  <SelectItem value="Membre">Membre</SelectItem>
+                  <SelectItem value="Président">Président</SelectItem>
+                  <SelectItem value="Vice-Président">Vice-Président</SelectItem>
+                  <SelectItem value="Secrétaire Général">Secrétaire Général</SelectItem>
+                  <SelectItem value="Trésorier">Trésorier</SelectItem>
+                  <SelectItem value="Conseiller">Conseiller</SelectItem>
+                  <SelectItem value="Bénévole">Bénévole</SelectItem>
+                </SelectContent>
+              </Select>
+
+              {/* Actions */}
+              <div className="flex gap-2">
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="gap-2 flex-1"
+                  onClick={() => refetch()}
+                  title="Rafraîchir la liste"
+                >
+                  🔄
+                </Button>
+                <Button variant="outline" size="sm" className="gap-2 flex-1" title="Exporter en CSV">
+                  <Download className="h-4 w-4" />
+                </Button>
+                <Button variant="outline" size="sm" className="gap-2 flex-1" title="Imprimer">
+                  <Printer className="h-4 w-4" />
+                </Button>
+              </div>
             </div>
+
+            {/* Résumé des filtres actifs */}
+            {(searchQuery || statusFilter !== "all" || yearFilter !== "all" || roleFilter !== "all") && (
+              <div className="flex flex-wrap gap-2 items-center text-sm text-muted-foreground pt-2 border-t">
+                <span className="font-medium">Filtres actifs:</span>
+                {searchQuery && (
+                  <Badge variant="secondary" className="cursor-pointer" onClick={() => setSearchQuery("")}>
+                    Recherche: {searchQuery} ✕
+                  </Badge>
+                )}
+                {statusFilter !== "all" && (
+                  <Badge variant="secondary" className="cursor-pointer" onClick={() => setStatusFilter("all")}>
+                    Statut: {statusFilter} ✕
+                  </Badge>
+                )}
+                {yearFilter !== "all" && (
+                  <Badge variant="secondary" className="cursor-pointer" onClick={() => setYearFilter("all")}>
+                    Année: {yearFilter} ✕
+                  </Badge>
+                )}
+                {roleFilter !== "all" && (
+                  <Badge variant="secondary" className="cursor-pointer" onClick={() => setRoleFilter("all")}>
+                    Rôle: {roleFilter} ✕
+                  </Badge>
+                )}
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    setSearchQuery("");
+                    setStatusFilter("all");
+                    setYearFilter("all");
+                    setRoleFilter("all");
+                  }}
+                  className="ml-auto text-xs"
+                >
+                  Réinitialiser tous les filtres
+                </Button>
+              </div>
+            )}
           </div>
         </CardContent>
       </Card>
 
       {/* Tableau */}
       <Card>
-        <CardHeader>
-          <CardTitle>
-            Adhésions ({filteredAdhesions.length}/{adhesions.length})
-          </CardTitle>
-          <CardDescription>
-            Liste complète des adhérents et leurs informations d'adhésion
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          {isLoading ? (
-            <div className="text-center py-8">
-              <p className="text-muted-foreground">Chargement...</p>
-            </div>
-          ) : filteredAdhesions.length === 0 ? (
-            <div className="text-center py-8">
-              <p className="text-muted-foreground">Aucune adhésion trouvée</p>
-            </div>
-          ) : (
+        <CardContent className="pt-6">
+          {filteredAdhesions.length > 0 ? (
             <div className="overflow-x-auto">
               <Table>
                 <TableHeader>
                   <TableRow>
+                    <TableHead>ID Adhérent</TableHead>
                     <TableHead>Nom</TableHead>
-                    <TableHead>ID Membre</TableHead>
-                    <TableHead>Année</TableHead>
-                    <TableHead>Date d'adhésion</TableHead>
-                    <TableHead>Date d'expiration</TableHead>
+                    <TableHead>Rôle</TableHead>
                     <TableHead>Statut</TableHead>
+                    <TableHead>Année</TableHead>
                     <TableHead>Montant</TableHead>
-                    <TableHead>Actions</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {filteredAdhesions.map((adhesion: any) => (
                     <TableRow key={adhesion.id}>
-                      <TableCell className="font-medium">
-                        {adhesion.member.firstName} {adhesion.member.lastName}
+                      <TableCell className="font-mono text-sm">{adhesion.member.memberID}</TableCell>
+                      <TableCell>
+                        <div>
+                          <p className="font-medium">{adhesion.member.firstName} {adhesion.member.lastName}</p>
+                          <p className="text-sm text-muted-foreground">{adhesion.member.email}</p>
+                        </div>
                       </TableCell>
-                      <TableCell className="font-mono text-sm">
-                        {adhesion.member.memberID}
+                      <TableCell>
+                        <Badge variant="outline">{adhesion.member.role}</Badge>
                       </TableCell>
-                      <TableCell>{adhesion.annee}</TableCell>
-                      <TableCell>{formatDate(adhesion.dateAdhesion)}</TableCell>
-                      <TableCell>{formatDate(adhesion.dateExpiration)}</TableCell>
                       <TableCell>
                         <Badge className={getStatusColor(adhesion.status)}>
                           {getStatusLabel(adhesion.status)}
                         </Badge>
                       </TableCell>
-                      <TableCell>{adhesion.montant} F</TableCell>
-                      <TableCell>
-                        <div className="flex gap-2">
+                      <TableCell>{adhesion.annee}</TableCell>
+                      <TableCell>{adhesion.montant}€</TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex justify-end gap-2">
                           <Button
                             variant="ghost"
                             size="sm"
-                            onClick={() => handleViewCard(adhesion.member.id)}
-                            className="gap-2"
-                            title="Afficher la carte d'adhésion"
+                            onClick={() => {
+                              setSelectedMemberId(adhesion.member.id);
+                              setShowCardDialog(true);
+                            }}
+                            title="Voir la carte"
                           >
                             <Eye className="h-4 w-4" />
-                            Aperçu
                           </Button>
                           <Button
                             variant="ghost"
                             size="sm"
-                            onClick={() => handlePrintCard(adhesion)}
-                            className="gap-2"
-                            title="Imprimer la carte d'adhésion"
+                            onClick={() => handlePrintCard(adhesion.member.id)}
+                            title="Imprimer la carte"
                           >
                             <Printer className="h-4 w-4" />
-                            Imprimer
                           </Button>
                         </div>
                       </TableCell>
@@ -297,34 +341,49 @@ export default function AdhesionsList() {
                 </TableBody>
               </Table>
             </div>
+          ) : (
+            <div className="text-center py-12">
+              <p className="text-muted-foreground mb-4">
+                {searchQuery || statusFilter !== "all" || yearFilter !== "all" || roleFilter !== "all"
+                  ? "Aucun adhérent ne correspond à vos critères de recherche"
+                  : "Aucune adhésion trouvée"}
+              </p>
+              {(searchQuery || statusFilter !== "all" || yearFilter !== "all" || roleFilter !== "all") && (
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setSearchQuery("");
+                    setStatusFilter("all");
+                    setYearFilter("all");
+                    setRoleFilter("all");
+                  }}
+                >
+                  Réinitialiser les filtres
+                </Button>
+              )}
+            </div>
           )}
         </CardContent>
       </Card>
 
-      {/* Dialog - Carte d'adhésion */}
+      {/* Dialog Carte d'adhésion */}
       <Dialog open={showCardDialog} onOpenChange={setShowCardDialog}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="sm:max-w-[600px]">
           <DialogHeader>
-            <DialogTitle>Carte d'Adhésion</DialogTitle>
+            <DialogTitle>Carte d'adhésion</DialogTitle>
             <DialogDescription>
               Aperçu et impression de la carte d'adhésion
             </DialogDescription>
           </DialogHeader>
-          {selectedAdhesion && (
-            <AdhesionCard
-              member={{
-                id: selectedAdhesion.member.id,
-                firstName: selectedAdhesion.member.firstName,
-                lastName: selectedAdhesion.member.lastName,
-                memberID: selectedAdhesion.member.memberID || "",
-                photo: selectedAdhesion.member.photo || undefined,
-                email: selectedAdhesion.member.email || undefined,
-              }}
-              adhesion={{
-                dateExpiration: selectedAdhesion.dateExpiration,
-                annee: selectedAdhesion.annee || new Date().getFullYear(),
-              }}
-            />
+          {selectedMemberId && adhesions.find((a: any) => a.member.id === selectedMemberId) && (
+            <AdhesionCard member={{
+              id: adhesions.find((a: any) => a.member.id === selectedMemberId)!.member.id,
+              firstName: adhesions.find((a: any) => a.member.id === selectedMemberId)!.member.firstName,
+              lastName: adhesions.find((a: any) => a.member.id === selectedMemberId)!.member.lastName,
+              memberID: adhesions.find((a: any) => a.member.id === selectedMemberId)!.member.memberID,
+              photo: adhesions.find((a: any) => a.member.id === selectedMemberId)!.member.photo || undefined,
+              email: adhesions.find((a: any) => a.member.id === selectedMemberId)!.member.email || undefined
+            }} />
           )}
         </DialogContent>
       </Dialog>
