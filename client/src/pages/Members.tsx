@@ -103,6 +103,18 @@ export default function Members() {
   });
   const [photoPreview, setPhotoPreview] = useState<string>("");
 
+  // Générer l'ID automatiquement quand le genre change
+  const generateAutoMemberId = () => {
+    const genderCode = formData.gender;
+    const genderMap: Record<string, "male" | "female" | "other"> = { "1": "male", "2": "female", "3": "other" };
+    const gender = genderMap[genderCode] || "other";
+    const now = new Date();
+    const month = String(now.getMonth() + 1).padStart(2, "0");
+    const year = String(now.getFullYear()).slice(-2);
+    const order = String(Math.floor(Math.random() * 9000) + 1000).padStart(4, "0");
+    return generateMemberId(gender, now, parseInt(order));
+  };
+
   const { data: members, isLoading } = trpc.members.list.useQuery();
   const { data: exportData } = trpc.members.exportList.useQuery();
 
@@ -163,11 +175,13 @@ export default function Members() {
   };
 
   const handleCreate = () => {
-    if (!formData.firstName || !formData.lastName || !formData.memberID || !formData.photo) {
-      toast.error("Le prénom, nom, ID et photo sont obligatoires");
+    if (!formData.firstName || !formData.lastName || !formData.photo) {
+      toast.error("Le prénom, nom et photo sont obligatoires");
       return;
     }
-    createMember.mutate(formData);
+    // Générer l'ID s'il n'existe pas
+    const memberIDToUse = formData.memberID || generateAutoMemberId();
+    createMember.mutate({ ...formData, memberID: memberIDToUse });
   };
 
   const handleEdit = () => {
@@ -194,7 +208,7 @@ export default function Members() {
       function: member.function || "",
       status: member.status,
       memberRole: member.memberRole || "member",
-      memberID: member.memberID || "",
+      memberID: member.memberID || generateAutoMemberId(),
       photo: member.photo || "",
       adhesionType: "standard",
     });
@@ -617,13 +631,27 @@ export default function Members() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="memberID">ID Adhérent *</Label>
-              <Input
-                id="memberID"
-                value={formData.memberID}
-                onChange={(e) => setFormData({ ...formData, memberID: e.target.value })}
-                placeholder="Ex: 1-01-26-0001"
-              />
+              <Label htmlFor="memberID">ID Adhérent (généré automatiquement)</Label>
+              <div className="flex gap-2">
+                <Input
+                  id="memberID"
+                  value={formData.memberID || generateAutoMemberId()}
+                  readOnly
+                  className="bg-muted"
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    const newId = generateAutoMemberId();
+                    setFormData({ ...formData, memberID: newId });
+                  }}
+                  title="Générer un nouvel ID"
+                >
+                  🔄
+                </Button>
+              </div>
             </div>
             <div className="space-y-2">
               <Label htmlFor="adhesionType">Type d'adhésion *</Label>
@@ -776,12 +804,12 @@ export default function Members() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="editMemberID">ID Adhérent *</Label>
+              <Label htmlFor="editMemberID">ID Adhérent</Label>
               <Input
                 id="editMemberID"
                 value={formData.memberID}
-                onChange={(e) => setFormData({ ...formData, memberID: e.target.value })}
-                placeholder="Ex: 1-01-26-0001"
+                readOnly
+                className="bg-muted"
               />
             </div>
             <div className="space-y-2">
