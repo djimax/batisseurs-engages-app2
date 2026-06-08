@@ -97,7 +97,11 @@ export default function Members() {
     status: "active" as "active" | "inactive" | "pending",
     memberRole: "member" as "admin" | "secretary" | "member",
     gender: "3" as "1" | "2" | "3",
+    memberID: "",
+    photo: "",
+    adhesionType: "standard" as "standard" | "premium" | "beneficiary",
   });
+  const [photoPreview, setPhotoPreview] = useState<string>("");
 
   const { data: members, isLoading } = trpc.members.list.useQuery();
   const { data: exportData } = trpc.members.exportList.useQuery();
@@ -151,12 +155,16 @@ export default function Members() {
       status: "active",
       memberRole: "member",
       gender: "3",
+      memberID: "",
+      photo: "",
+      adhesionType: "standard",
     });
+    setPhotoPreview("");
   };
 
   const handleCreate = () => {
-    if (!formData.firstName || !formData.lastName) {
-      toast.error("Le prénom et le nom sont obligatoires");
+    if (!formData.firstName || !formData.lastName || !formData.memberID || !formData.photo) {
+      toast.error("Le prénom, nom, ID et photo sont obligatoires");
       return;
     }
     createMember.mutate(formData);
@@ -164,6 +172,10 @@ export default function Members() {
 
   const handleEdit = () => {
     if (!selectedMember) return;
+    if (!formData.memberID || !formData.photo) {
+      toast.error("L'ID et la photo sont obligatoires");
+      return;
+    }
     updateMember.mutate({
       id: selectedMember.id,
       ...formData,
@@ -182,7 +194,11 @@ export default function Members() {
       function: member.function || "",
       status: member.status,
       memberRole: member.memberRole || "member",
+      memberID: member.memberID || "",
+      photo: member.photo || "",
+      adhesionType: "standard",
     });
+    setPhotoPreview(member.photo || "");
     setIsEditDialogOpen(true);
   };
 
@@ -600,6 +616,57 @@ export default function Members() {
                 placeholder="Ex: Responsable communication"
               />
             </div>
+            <div className="space-y-2">
+              <Label htmlFor="memberID">ID Adhérent *</Label>
+              <Input
+                id="memberID"
+                value={formData.memberID}
+                onChange={(e) => setFormData({ ...formData, memberID: e.target.value })}
+                placeholder="Ex: 1-01-26-0001"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="adhesionType">Type d'adhésion *</Label>
+              <Select 
+                value={formData.adhesionType} 
+                onValueChange={(v: any) => setFormData({ ...formData, adhesionType: v })}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="standard">Standard</SelectItem>
+                  <SelectItem value="premium">Premium</SelectItem>
+                  <SelectItem value="beneficiary">Bénéficiaire</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="photo">Photo du membre *</Label>
+              <div className="flex items-center gap-4">
+                {photoPreview && (
+                  <img src={photoPreview} alt="Aperçu" className="h-20 w-20 rounded-lg object-cover" />
+                )}
+                <Input
+                  id="photo"
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) {
+                      const reader = new FileReader();
+                      reader.onload = (event) => {
+                        const base64 = event.target?.result as string;
+                        setFormData({ ...formData, photo: base64 });
+                        setPhotoPreview(base64);
+                      };
+                      reader.readAsDataURL(file);
+                    }
+                  }}
+                  className="flex-1"
+                />
+              </div>
+            </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsCreateDialogOpen(false)}>
@@ -707,6 +774,41 @@ export default function Members() {
                 value={formData.function}
                 onChange={(e) => setFormData({ ...formData, function: e.target.value })}
               />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="editMemberID">ID Adhérent *</Label>
+              <Input
+                id="editMemberID"
+                value={formData.memberID}
+                onChange={(e) => setFormData({ ...formData, memberID: e.target.value })}
+                placeholder="Ex: 1-01-26-0001"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="editPhoto">Photo du membre *</Label>
+              <div className="flex items-center gap-4">
+                {photoPreview && (
+                  <img src={photoPreview} alt="Aperçu" className="h-20 w-20 rounded-lg object-cover" />
+                )}
+                <Input
+                  id="editPhoto"
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) {
+                      const reader = new FileReader();
+                      reader.onload = (event) => {
+                        const base64 = event.target?.result as string;
+                        setFormData({ ...formData, photo: base64 });
+                        setPhotoPreview(base64);
+                      };
+                      reader.readAsDataURL(file);
+                    }
+                  }}
+                  className="flex-1"
+                />
+              </div>
             </div>
           </div>
           <DialogFooter>
