@@ -19,7 +19,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Search, Download, Printer, Eye } from "lucide-react";
+import { Search, Download, Printer, Eye, Camera, CameraOff } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { AdhesionCard } from "@/components/AdhesionCard";
 import { MemberProfileModal } from "@/components/MemberProfileModal";
@@ -305,7 +305,22 @@ export default function AdhesionsList() {
                         setShowProfileModal(true);
                       }}
                     >
-                      <TableCell className="font-mono text-sm">{adhesion.member.memberID}</TableCell>
+                      <TableCell className="font-mono text-sm">
+                        <div className="flex items-center gap-2">
+                          {adhesion.member.photo ? (
+                            <div className="relative group">
+                              <Camera className="h-4 w-4 text-green-600" />
+                              <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 bg-gray-900 text-white text-xs rounded whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">Photo présente</span>
+                            </div>
+                          ) : (
+                            <div className="relative group">
+                              <CameraOff className="h-4 w-4 text-red-600" />
+                              <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 bg-gray-900 text-white text-xs rounded whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">Pas de photo</span>
+                            </div>
+                          )}
+                          {adhesion.member.memberID}
+                        </div>
+                      </TableCell>
                       <TableCell>
                         <div>
                           <p className="font-medium">{adhesion.member.firstName} {adhesion.member.lastName}</p>
