@@ -45,7 +45,8 @@ import {
   Cog,
   Lock,
   Briefcase,
-  ChevronDown
+  ChevronDown,
+  MapPin
 } from "lucide-react";
 import { CSSProperties, useEffect, useRef, useState } from "react";
 import { useLocation } from "wouter";
@@ -86,6 +87,11 @@ const menuItems: MenuItem[] = [
     { icon: Briefcase, label: "Projets", path: "/projects" },
     { icon: Calendar, label: "Événements", path: "/events" },
     { icon: Megaphone, label: "Campagnes", path: "/campaigns" },
+  ]},
+  
+  // Groupes & Antennes
+  { label: "🏢 Groupes & Antennes", isGroup: true, items: [
+    { icon: MapPin, label: "Groupes & Antennes", path: "/groupes-antennes" },
   ]},
   
   // Finances
