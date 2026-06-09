@@ -22,6 +22,7 @@ import {
 import { Search, Download, Printer, Eye } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { AdhesionCard } from "@/components/AdhesionCard";
+import { MemberProfileModal } from "@/components/MemberProfileModal";
 
 export default function AdhesionsList() {
   const [searchQuery, setSearchQuery] = useState("");
@@ -30,6 +31,7 @@ export default function AdhesionsList() {
   const [roleFilter, setRoleFilter] = useState("all");
   const [selectedMemberId, setSelectedMemberId] = useState<number | null>(null);
   const [showCardDialog, setShowCardDialog] = useState(false);
+  const [showProfileModal, setShowProfileModal] = useState(false);
 
   // Récupérer les adhésions avec les détails des membres
   const { data: adhesions = [], isLoading, refetch } = trpc.membersAdhesions.listWithMembers.useQuery();
@@ -295,7 +297,14 @@ export default function AdhesionsList() {
                 </TableHeader>
                 <TableBody>
                   {filteredAdhesions.map((adhesion: any) => (
-                    <TableRow key={adhesion.id}>
+                    <TableRow 
+                      key={adhesion.id}
+                      className="cursor-pointer hover:bg-muted/50 transition-colors"
+                      onClick={() => {
+                        setSelectedMemberId(adhesion.member.id);
+                        setShowProfileModal(true);
+                      }}
+                    >
                       <TableCell className="font-mono text-sm">{adhesion.member.memberID}</TableCell>
                       <TableCell>
                         <div>
@@ -387,6 +396,33 @@ export default function AdhesionsList() {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Modal Profil Détaillé */}
+      {selectedMemberId && adhesions.find((a: any) => a.member.id === selectedMemberId) && (
+        <MemberProfileModal
+          open={showProfileModal}
+          onOpenChange={setShowProfileModal}
+          member={{
+            id: adhesions.find((a: any) => a.member.id === selectedMemberId)!.member.id,
+            firstName: adhesions.find((a: any) => a.member.id === selectedMemberId)!.member.firstName,
+            lastName: adhesions.find((a: any) => a.member.id === selectedMemberId)!.member.lastName,
+            memberID: adhesions.find((a: any) => a.member.id === selectedMemberId)!.member.memberID,
+            photo: adhesions.find((a: any) => a.member.id === selectedMemberId)!.member.photo || undefined,
+            email: adhesions.find((a: any) => a.member.id === selectedMemberId)!.member.email || undefined,
+            phone: adhesions.find((a: any) => a.member.id === selectedMemberId)!.member.phone || undefined,
+            role: adhesions.find((a: any) => a.member.id === selectedMemberId)!.member.role || undefined,
+            function: adhesions.find((a: any) => a.member.id === selectedMemberId)!.member.function || undefined,
+            status: adhesions.find((a: any) => a.member.id === selectedMemberId)!.member.status || undefined,
+          }}
+          adhesion={{
+            id: adhesions.find((a: any) => a.member.id === selectedMemberId)!.id,
+            annee: adhesions.find((a: any) => a.member.id === selectedMemberId)!.annee || new Date().getFullYear(),
+            montant: Number(adhesions.find((a: any) => a.member.id === selectedMemberId)!.montant) || 0,
+            status: adhesions.find((a: any) => a.member.id === selectedMemberId)!.status || undefined,
+            dateExpiration: adhesions.find((a: any) => a.member.id === selectedMemberId)!.dateExpiration || undefined,
+          }}
+        />
+      )}
     </div>
   );
 }
