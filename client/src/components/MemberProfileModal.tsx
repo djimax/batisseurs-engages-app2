@@ -1,8 +1,10 @@
+import { useState, useRef } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Mail, Phone, MapPin, Calendar, User, Edit, Trash2 } from "lucide-react";
+import { Mail, Phone, MapPin, Calendar, User, Edit, Trash2, Upload, Download, X } from "lucide-react";
+import { trpc } from "@/lib/trpc";
 
 interface MemberProfileModalProps {
   open: boolean;
@@ -30,6 +32,8 @@ interface MemberProfileModalProps {
   };
   onEdit?: () => void;
   onDelete?: () => void;
+  onPhotoUpdate?: (photoUrl: string) => void;
+  onPhotoDelete?: () => void;
 }
 
 export function MemberProfileModal({
@@ -39,7 +43,90 @@ export function MemberProfileModal({
   adhesion,
   onEdit,
   onDelete,
+  onPhotoUpdate,
+  onPhotoDelete,
 }: MemberProfileModalProps) {
+  const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
+  const [photoPreview, setPhotoPreview] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const updateMemberMutation = trpc.members.update.useMutation();
+
+  const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validation de la taille (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      alert("La photo doit faire moins de 5MB");
+      return;
+    }
+
+    // Validation du type
+    if (!file.type.startsWith("image/")) {
+      alert("Veuillez sélectionner une image");
+      return;
+    }
+
+    setIsUploadingPhoto(true);
+    try {
+      // Créer un FormData pour l'upload
+      const formData = new FormData();
+      formData.append("file", file);
+
+      // Upload vers le serveur
+      const response = await fetch("/api/upload", {
+        method: "POST",
+        body: formData,
+      });
+
+      if (!response.ok) throw new Error("Upload failed");
+
+      const { url } = await response.json();
+
+      // Mettre à jour le membre
+      await updateMemberMutation.mutateAsync({
+        id: member.id,
+        photo: url as string,
+      });
+
+      setPhotoPreview(url);
+      onPhotoUpdate?.(url);
+    } catch (error) {
+      console.error("Error uploading photo:", error);
+      alert("Erreur lors du téléchargement de la photo");
+    } finally {
+      setIsUploadingPhoto(false);
+    }
+  };
+
+  const handlePhotoDelete = async () => {
+    if (!confirm("Êtes-vous sûr de vouloir supprimer cette photo ?")) return;
+
+    try {
+      await updateMemberMutation.mutateAsync({
+        id: member.id,
+        photo: null as any,
+      });
+      setPhotoPreview(null);
+      onPhotoDelete?.();
+    } catch (error) {
+      console.error("Error deleting photo:", error);
+      alert("Erreur lors de la suppression de la photo");
+    }
+  };
+
+  const handleDownloadPhoto = () => {
+    const photoUrl = photoPreview || member.photo;
+    if (!photoUrl) return;
+
+    const link = document.createElement("a");
+    link.href = photoUrl;
+    link.download = `${member.memberID}-photo.jpg`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   const getStatusColor = (status?: string) => {
     switch (status) {
       case "active":
@@ -70,6 +157,8 @@ export function MemberProfileModal({
     ? new Date(adhesion.dateExpiration).toLocaleDateString("fr-FR")
     : "Non défini";
 
+  const currentPhoto = photoPreview || member.photo;
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto">
@@ -83,17 +172,69 @@ export function MemberProfileModal({
         <div className="space-y-6">
           {/* Photo et Informations Principales */}
           <div className="flex gap-6">
-            {/* Photo */}
-            <div className="flex-shrink-0">
-              {member.photo ? (
-                <img
-                  src={member.photo}
-                  alt={`${member.firstName} ${member.lastName}`}
-                  className="w-32 h-40 rounded-lg object-cover border-2 border-border shadow-md"
-                />
-              ) : (
-                <div className="w-32 h-40 rounded-lg bg-muted flex items-center justify-center border-2 border-border">
-                  <User className="h-12 w-12 text-muted-foreground" />
+            {/* Photo avec actions */}
+            <div className="flex-shrink-0 relative">
+              <div className="relative group">
+                {currentPhoto ? (
+                  <img
+                    src={currentPhoto}
+                    alt={`${member.firstName} ${member.lastName}`}
+                    className="w-32 h-40 rounded-lg object-cover border-2 border-border shadow-md"
+                  />
+                ) : (
+                  <div className="w-32 h-40 rounded-lg bg-muted flex items-center justify-center border-2 border-border">
+                    <User className="h-12 w-12 text-muted-foreground" />
+                  </div>
+                )}
+
+                {/* Overlay avec boutons */}
+                <div className="absolute inset-0 rounded-lg bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="text-white hover:bg-white/20"
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={isUploadingPhoto}
+                  >
+                    <Upload className="h-4 w-4" />
+                  </Button>
+                  {currentPhoto && (
+                    <>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="text-white hover:bg-white/20"
+                        onClick={handleDownloadPhoto}
+                      >
+                        <Download className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="text-white hover:bg-red-500/50"
+                        onClick={handlePhotoDelete}
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </>
+                  )}
+                </div>
+              </div>
+
+              {/* Input file caché */}
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                onChange={handlePhotoUpload}
+                className="hidden"
+                disabled={isUploadingPhoto}
+              />
+
+              {/* État de chargement */}
+              {isUploadingPhoto && (
+                <div className="absolute inset-0 rounded-lg bg-black/30 flex items-center justify-center">
+                  <div className="text-white text-xs">Chargement...</div>
                 </div>
               )}
             </div>
@@ -188,15 +329,6 @@ export function MemberProfileModal({
                     >
                       {member.phone}
                     </a>
-                  </div>
-                </div>
-              )}
-              {member.address && (
-                <div className="flex items-start gap-3">
-                  <MapPin className="h-4 w-4 mt-1 text-muted-foreground flex-shrink-0" />
-                  <div>
-                    <p className="text-xs text-muted-foreground">Adresse</p>
-                    <p className="text-sm">{member.address}</p>
                   </div>
                 </div>
               )}
