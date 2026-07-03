@@ -79,15 +79,27 @@ export function MemberProfileModal({
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // Validation de la taille (max 5MB)
-    if (file.size > 5 * 1024 * 1024) {
-      alert("La photo doit faire moins de 5MB");
+    // Validation de la taille (max 2MB)
+    const MAX_FILE_SIZE = 2 * 1024 * 1024;
+    if (file.size > MAX_FILE_SIZE) {
+      const sizeMB = (file.size / 1024 / 1024).toFixed(2);
+      alert(`La photo doit faire moins de 2 Mo. Taille actuelle: ${sizeMB} Mo`);
       return;
     }
 
-    // Validation du type
-    if (!file.type.startsWith("image/")) {
-      alert("Veuillez sélectionner une image");
+    // Validation du type (JPG et PNG uniquement)
+    const ALLOWED_TYPES = ["image/jpeg", "image/jpg", "image/png"];
+    if (!ALLOWED_TYPES.includes(file.type)) {
+      alert("Seuls les formats JPG et PNG sont acceptés");
+      return;
+    }
+
+    // Validation de l'extension du fichier
+    const fileName = file.name.toLowerCase();
+    const ALLOWED_EXTENSIONS = [".jpg", ".jpeg", ".png"];
+    const hasValidExtension = ALLOWED_EXTENSIONS.some(ext => fileName.endsWith(ext));
+    if (!hasValidExtension) {
+      alert("Seuls les fichiers JPG et PNG sont acceptés");
       return;
     }
 
@@ -238,7 +250,7 @@ export function MemberProfileModal({
               <input
                 ref={fileInputRef}
                 type="file"
-                accept="image/*"
+                accept=".jpg,.jpeg,.png,image/jpeg,image/png"
                 onChange={handlePhotoUpload}
                 className="hidden"
                 disabled={isUploadingPhoto || uploadPhotoMutation.isPending}
