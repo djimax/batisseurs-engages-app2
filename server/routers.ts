@@ -489,6 +489,34 @@ export const appRouter = router({
         }
       }),
     
+    deletePhoto: protectedProcedure
+      .input(z.object({
+        memberId: z.number(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        try {
+          const db = await getDb();
+          if (db) {
+            await db.update(members)
+              .set({ photo: null })
+              .where(eq(members.id, input.memberId));
+          }
+          
+          await logActivity({
+            userId: ctx.user.id,
+            action: "update",
+            entityType: "member",
+            entityId: input.memberId,
+            details: `Photo du membre supprimée`,
+          });
+          
+          return { success: true };
+        } catch (error) {
+          console.error('Photo delete error:', error);
+          throw new Error('Erreur lors de la suppression de la photo');
+        }
+      }),
+    
     getAdhesionCard: protectedProcedure
       .input(z.object({ memberId: z.number() }))
       .query(async ({ input }) => {

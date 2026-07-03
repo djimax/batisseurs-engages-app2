@@ -49,7 +49,31 @@ export function MemberProfileModal({
   const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const updateMemberMutation = trpc.members.update.useMutation();
+  const utils = trpc.useUtils();
+  
+  const uploadPhotoMutation = trpc.members.uploadPhoto.useMutation({
+    onSuccess: (result) => {
+      setPhotoPreview(null);
+      onPhotoUpdate?.(result.photoUrl);
+      utils.members.list.invalidate();
+      utils.membersAdhesions.listWithMembers.invalidate();
+    },
+    onError: (error) => {
+      alert("Erreur lors du téléchargement de la photo: " + error.message);
+    },
+  });
+
+  const deletePhotoMutation = trpc.members.deletePhoto.useMutation({
+    onSuccess: () => {
+      setPhotoPreview(null);
+      onPhotoDelete?.();
+      utils.members.list.invalidate();
+      utils.membersAdhesions.listWithMembers.invalidate();
+    },
+    onError: (error) => {
+      alert("Erreur lors de la suppression de la photo: " + error.message);
+    },
+  });
 
   const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -69,28 +93,19 @@ export function MemberProfileModal({
 
     setIsUploadingPhoto(true);
     try {
-      // Créer un FormData pour l'upload
-      const formData = new FormData();
-      formData.append("file", file);
-
-      // Upload vers le serveur
-      const response = await fetch("/api/upload", {
-        method: "POST",
-        body: formData,
-      });
-
-      if (!response.ok) throw new Error("Upload failed");
-
-      const { url } = await response.json();
-
-      // Mettre à jour le membre
-      await updateMemberMutation.mutateAsync({
-        id: member.id,
-        photo: url as string,
-      });
-
-      setPhotoPreview(url);
-      onPhotoUpdate?.(url);
+      // Lire le fichier en base64
+      const reader = new FileReader();
+      reader.onload = async () => {
+        const base64 = reader.result as string;
+        
+        // Utiliser la mutation tRPC uploadPhoto
+        await uploadPhotoMutation.mutateAsync({
+          memberId: member.id,
+          photoData: base64,
+          fileName: file.name,
+        });
+      };
+      reader.readAsDataURL(file);
     } catch (error) {
       console.error("Error uploading photo:", error);
       alert("Erreur lors du téléchargement de la photo");
@@ -103,12 +118,9 @@ export function MemberProfileModal({
     if (!confirm("Êtes-vous sûr de vouloir supprimer cette photo ?")) return;
 
     try {
-      await updateMemberMutation.mutateAsync({
-        id: member.id,
-        photo: null as any,
+      await deletePhotoMutation.mutateAsync({
+        memberId: member.id,
       });
-      setPhotoPreview(null);
-      onPhotoDelete?.();
     } catch (error) {
       console.error("Error deleting photo:", error);
       alert("Erreur lors de la suppression de la photo");
@@ -116,7 +128,7 @@ export function MemberProfileModal({
   };
 
   const handleDownloadPhoto = () => {
-    const photoUrl = photoPreview || member.photo;
+    const photoUrl = member.photo;
     if (!photoUrl) return;
 
     const link = document.createElement("a");
@@ -157,7 +169,7 @@ export function MemberProfileModal({
     ? new Date(adhesion.dateExpiration).toLocaleDateString("fr-FR")
     : "Non défini";
 
-  const currentPhoto = photoPreview || member.photo;
+  const currentPhoto = member.photo;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -194,7 +206,7 @@ export function MemberProfileModal({
                     variant="ghost"
                     className="text-white hover:bg-white/20"
                     onClick={() => fileInputRef.current?.click()}
-                    disabled={isUploadingPhoto}
+                    disabled={isUploadingPhoto || uploadPhotoMutation.isPending}
                   >
                     <Upload className="h-4 w-4" />
                   </Button>
@@ -213,6 +225,7 @@ export function MemberProfileModal({
                         variant="ghost"
                         className="text-white hover:bg-red-500/50"
                         onClick={handlePhotoDelete}
+                        disabled={deletePhotoMutation.isPending}
                       >
                         <X className="h-4 w-4" />
                       </Button>
@@ -228,11 +241,11 @@ export function MemberProfileModal({
                 accept="image/*"
                 onChange={handlePhotoUpload}
                 className="hidden"
-                disabled={isUploadingPhoto}
+                disabled={isUploadingPhoto || uploadPhotoMutation.isPending}
               />
 
               {/* État de chargement */}
-              {isUploadingPhoto && (
+              {(isUploadingPhoto || uploadPhotoMutation.isPending) && (
                 <div className="absolute inset-0 rounded-lg bg-black/30 flex items-center justify-center">
                   <div className="text-white text-xs">Chargement...</div>
                 </div>
@@ -245,121 +258,78 @@ export function MemberProfileModal({
                 <h2 className="text-2xl font-bold">
                   {member.firstName} {member.lastName}
                 </h2>
-                <p className="text-sm text-muted-foreground font-mono">
-                  ID: {member.memberID}
-                </p>
+                <p className="text-sm text-muted-foreground">{member.memberID}</p>
               </div>
 
-              {/* Rôle et Fonction */}
-              <div className="flex flex-wrap gap-2">
+              <div className="space-y-2">
                 {member.role && (
-                  <Badge variant="default">{member.role}</Badge>
+                  <div className="flex items-center gap-2">
+                    <Badge variant="secondary">{member.role}</Badge>
+                  </div>
                 )}
                 {member.function && (
-                  <Badge variant="outline">{member.function}</Badge>
-                )}
-              </div>
-
-              {/* Statut */}
-              {member.status && (
-                <div>
-                  <p className="text-xs text-muted-foreground mb-1">Statut</p>
-                  <Badge className={getStatusColor(member.status)}>
-                    {member.status === "active" ? "Actif" : member.status === "inactive" ? "Inactif" : member.status}
-                  </Badge>
-                </div>
-              )}
-
-              {/* Actions */}
-              <div className="flex gap-2 pt-2">
-                {onEdit && (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={onEdit}
-                    className="gap-2"
-                  >
-                    <Edit className="h-4 w-4" />
-                    Modifier
-                  </Button>
-                )}
-                {onDelete && (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={onDelete}
-                    className="gap-2 text-destructive hover:text-destructive"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                    Supprimer
-                  </Button>
+                  <p className="text-sm"><span className="font-medium">Fonction:</span> {member.function}</p>
                 )}
               </div>
             </div>
           </div>
 
-          {/* Informations de Contact */}
+          {/* Coordonnées */}
           <Card>
             <CardHeader>
-              <CardTitle className="text-lg">Coordonnées</CardTitle>
+              <CardTitle className="text-base">Coordonnées</CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
               {member.email && (
-                <div className="flex items-start gap-3">
-                  <Mail className="h-4 w-4 mt-1 text-muted-foreground flex-shrink-0" />
-                  <div>
-                    <p className="text-xs text-muted-foreground">Email</p>
-                    <a
-                      href={`mailto:${member.email}`}
-                      className="text-sm hover:underline text-blue-600"
-                    >
-                      {member.email}
-                    </a>
-                  </div>
+                <div className="flex items-center gap-3">
+                  <Mail className="h-4 w-4 text-muted-foreground" />
+                  <a href={`mailto:${member.email}`} className="text-sm hover:underline text-blue-600">
+                    {member.email}
+                  </a>
                 </div>
               )}
               {member.phone && (
+                <div className="flex items-center gap-3">
+                  <Phone className="h-4 w-4 text-muted-foreground" />
+                  <a href={`tel:${member.phone}`} className="text-sm hover:underline text-blue-600">
+                    {member.phone}
+                  </a>
+                </div>
+              )}
+              {member.address && (
                 <div className="flex items-start gap-3">
-                  <Phone className="h-4 w-4 mt-1 text-muted-foreground flex-shrink-0" />
-                  <div>
-                    <p className="text-xs text-muted-foreground">Téléphone</p>
-                    <a
-                      href={`tel:${member.phone}`}
-                      className="text-sm hover:underline text-blue-600"
-                    >
-                      {member.phone}
-                    </a>
-                  </div>
+                  <MapPin className="h-4 w-4 text-muted-foreground mt-1" />
+                  <p className="text-sm">{member.address}</p>
                 </div>
               )}
             </CardContent>
           </Card>
 
-          {/* Informations d'Adhésion */}
+          {/* Adhésion */}
           {adhesion && (
             <Card>
               <CardHeader>
-                <CardTitle className="text-lg">Adhésion</CardTitle>
+                <CardTitle className="text-base">Adhésion</CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4">
+              <CardContent className="space-y-3">
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <p className="text-xs text-muted-foreground mb-1">Année</p>
-                    <p className="text-sm font-semibold">{adhesion.annee}</p>
+                    <p className="text-xs text-muted-foreground">Année</p>
+                    <p className="font-medium">{adhesion.annee}</p>
                   </div>
                   <div>
-                    <p className="text-xs text-muted-foreground mb-1">Montant</p>
-                    <p className="text-sm font-semibold">{adhesion.montant}€</p>
+                    <p className="text-xs text-muted-foreground">Montant</p>
+                    <p className="font-medium">{adhesion.montant}€</p>
                   </div>
                   {adhesion.type && (
                     <div>
-                      <p className="text-xs text-muted-foreground mb-1">Type</p>
-                      <p className="text-sm font-semibold capitalize">{adhesion.type}</p>
+                      <p className="text-xs text-muted-foreground">Type</p>
+                      <p className="font-medium">{adhesion.type}</p>
                     </div>
                   )}
                   {adhesion.status && (
                     <div>
-                      <p className="text-xs text-muted-foreground mb-1">Statut</p>
+                      <p className="text-xs text-muted-foreground">Statut</p>
                       <Badge className={getStatusColor(adhesion.status)}>
                         {getStatusLabel(adhesion.status)}
                       </Badge>
@@ -367,17 +337,30 @@ export function MemberProfileModal({
                   )}
                 </div>
                 {adhesion.dateExpiration && (
-                  <div className="flex items-start gap-3 pt-2 border-t">
-                    <Calendar className="h-4 w-4 mt-1 text-muted-foreground flex-shrink-0" />
-                    <div>
-                      <p className="text-xs text-muted-foreground">Valide jusqu'au</p>
-                      <p className="text-sm font-semibold">{expirationDate}</p>
-                    </div>
+                  <div className="flex items-center gap-2 pt-2 border-t">
+                    <Calendar className="h-4 w-4 text-muted-foreground" />
+                    <span className="text-sm">Expire le: {expirationDate}</span>
                   </div>
                 )}
               </CardContent>
             </Card>
           )}
+
+          {/* Actions */}
+          <div className="flex gap-2 justify-end pt-4 border-t">
+            {onEdit && (
+              <Button variant="outline" onClick={onEdit}>
+                <Edit className="h-4 w-4 mr-2" />
+                Modifier
+              </Button>
+            )}
+            {onDelete && (
+              <Button variant="destructive" onClick={onDelete}>
+                <Trash2 className="h-4 w-4 mr-2" />
+                Supprimer
+              </Button>
+            )}
+          </div>
         </div>
       </DialogContent>
     </Dialog>
