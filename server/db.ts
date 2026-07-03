@@ -215,16 +215,16 @@ export async function getAllDocuments(filters?: {
     );
   }
   if (filters?.isArchived !== undefined) {
-    conditions.push(eq(documents.isArchived, filters.isArchived));
+    conditions.push(eq(documents.isArchived, filters.isArchived ? 1 : 0));
   } else {
-    conditions.push(eq(documents.isArchived, false));
+    conditions.push(eq(documents.isArchived, 0));
   }
 
   if (conditions.length > 0) {
     return db.select().from(documents).where(and(...conditions)).orderBy(desc(documents.updatedAt));
   }
   
-  return db.select().from(documents).where(eq(documents.isArchived, false)).orderBy(desc(documents.updatedAt));
+  return db.select().from(documents).where(eq(documents.isArchived, 0)).orderBy(desc(documents.updatedAt));
 }
 
 export async function getDocumentById(id: number) {
@@ -258,7 +258,7 @@ export async function getDocumentStats() {
   const db = await getDb();
   if (!db) return { total: 0, completed: 0, inProgress: 0, pending: 0, urgent: 0 };
 
-  const allDocs = await db.select().from(documents).where(eq(documents.isArchived, false));
+  const allDocs = await db.select().from(documents).where(eq(documents.isArchived, 0));
   
   return {
     total: allDocs.length,
@@ -1110,11 +1110,11 @@ export async function getDashboardStatistics() {
     urgentTasks,
     activeProjects,
   ] = await Promise.all([
-    db.select({ count: sql<number>`count(*)` }).from(documents).where(eq(documents.isArchived, false)),
+    db.select({ count: sql<number>`count(*)` }).from(documents).where(eq(documents.isArchived, 0)),
     db.select({ count: sql<number>`count(*)` }).from(members),
     db.select({ count: sql<number>`count(*)` }).from(projects).where(inArray(projects.status, ["planning", "in-progress", "on-hold"])),
     db.select({ total: sql<number>`COALESCE(SUM(CAST(montant AS DECIMAL(10,2))), 0)` }).from(cotisations).where(eq(cotisations.statut, "payée")),
-    db.select().from(documents).where(eq(documents.isArchived, false)).orderBy(desc(documents.createdAt)).limit(5),
+    db.select().from(documents).where(eq(documents.isArchived, 0)).orderBy(desc(documents.createdAt)).limit(5),
     db.select().from(projectTasks).where(eq(projectTasks.status, "todo")).orderBy(asc(projectTasks.dueDate)).limit(5),
     db.select().from(projects).where(inArray(projects.status, ["planning", "in-progress"])).orderBy(desc(projects.startDate)).limit(5),
   ]);

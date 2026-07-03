@@ -288,7 +288,7 @@ export const appRouter = router({
       .query(async ({ input }) => {
         return getAllDocuments({
           ...input,
-          isArchived: true,
+          isArchived: 1,
         });
       }),
     
@@ -297,7 +297,7 @@ export const appRouter = router({
       .input(z.object({ id: z.number() }))
       .mutation(async ({ input, ctx }) => {
         const result = await updateDocument(input.id, {
-          isArchived: true,
+          isArchived: 1,
           updatedBy: ctx.user.id,
         });
         await logActivity({
@@ -319,7 +319,7 @@ export const appRouter = router({
       .input(z.object({ id: z.number() }))
       .mutation(async ({ input, ctx }) => {
         const result = await updateDocument(input.id, {
-          isArchived: false,
+          isArchived: 0,
           updatedBy: ctx.user.id,
         });
         await logActivity({
