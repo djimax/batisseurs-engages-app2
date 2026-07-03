@@ -74,6 +74,7 @@ export default function Documents() {
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [priorityFilter, setPriorityFilter] = useState<string>("all");
   const [sortBy, setSortBy] = useState<string>("date-newest");
+  const [showArchived, setShowArchived] = useState<boolean>(false);
   const [selectedDocument, setSelectedDocument] = useState<any>(null);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isDetailDialogOpen, setIsDetailDialogOpen] = useState(false);
@@ -99,6 +100,7 @@ export default function Documents() {
     status: statusFilter !== "all" ? statusFilter : undefined,
     priority: priorityFilter !== "all" ? priorityFilter : undefined,
     search: searchTerm || undefined,
+    isArchived: showArchived,
   });
   const { data: notes, refetch: refetchNotes } = trpc.notes.listByDocument.useQuery(
     { documentId: selectedDocument?.id || 0 },
@@ -438,6 +440,15 @@ export default function Documents() {
                 </SelectContent>
               </Select>
 
+              <Button
+                variant={showArchived ? "default" : "outline"}
+                onClick={() => setShowArchived(!showArchived)}
+                className="gap-2"
+              >
+                <Archive className="h-4 w-4" />
+                {showArchived ? "Documents archivés" : "Documents actifs"}
+              </Button>
+
               <Select value={sortBy} onValueChange={setSortBy}>
                 <SelectTrigger className="w-[180px]">
                   <SelectValue placeholder="Trier par" />
@@ -585,7 +596,7 @@ export default function Documents() {
             <FileText className="h-16 w-16 mx-auto mb-4 text-muted-foreground/50" />
             <h3 className="text-lg font-medium mb-2">Aucun document trouvé</h3>
             <p className="text-muted-foreground mb-4">
-              {searchTerm || categoryFilter !== "all" || statusFilter !== "all" || priorityFilter !== "all"
+              {searchTerm || categoryFilter !== "all" || statusFilter !== "all" || priorityFilter !== "all" || showArchived
                 ? "Essayez de modifier vos filtres de recherche"
                 : "Commencez par créer votre premier document"}
             </p>
