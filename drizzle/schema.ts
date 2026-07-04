@@ -72,7 +72,7 @@ export const appUsers = mysqlTable("app_users", {
 	email: varchar({ length: 320 }),
 	fullName: varchar({ length: 255 }),
 	role: mysqlEnum(['admin','membre']).default('membre').notNull(),
-	isActive: tinyint('1').default(1).notNull(),
+	isActive: int().default(1).notNull(),
 	lastLogin: timestamp({ mode: 'string' }),
 	createdBy: int(),
 	createdAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
@@ -256,9 +256,9 @@ export const documentPermissions = mysqlTable("document_permissions", {
 	id: int().autoincrement().notNull(),
 	documentId: int().notNull(),
 	memberId: int().notNull(),
-	canView: tinyint('1').default(1),
-	canEdit: tinyint('1').default(0),
-	canDelete: tinyint('1').default(0),
+	canView: int().default(1),
+	canEdit: int().default(0),
+	canDelete: int().default(0),
 	createdAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
 });
 
@@ -279,7 +279,7 @@ export const documents = mysqlTable("documents", {
 	createdAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
 	updatedAt: timestamp({ mode: 'string' }).defaultNow().onUpdateNow().notNull(),
 	dueDate: timestamp({ mode: 'string' }),
-	isArchived: tinyint('1').default(0),
+	isArchived: int().default(0),
 });
 
 export const dons = mysqlTable("dons", {
@@ -327,7 +327,7 @@ export const emailTemplates = mysqlTable("email_templates", {
 	description: text(),
 	category: varchar({ length: 50 }).default('general'),
 	variables: text(),
-	isSystem: tinyint('1').default(0),
+	isSystem: int().default(0),
 	createdBy: int().notNull(),
 	createdAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
 	updatedAt: timestamp({ mode: 'string' }).defaultNow().onUpdateNow().notNull(),
@@ -434,7 +434,7 @@ export const notifications = mysqlTable("notifications", {
 	title: varchar({ length: 255 }).notNull(),
 	message: text().notNull(),
 	type: mysqlEnum(['info','warning','error','success']).default('info').notNull(),
-	isRead: tinyint('1').default(0),
+	isRead: int().default(0),
 	actionUrl: text(),
 	createdAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
 });
@@ -543,7 +543,7 @@ export const roles = mysqlTable("roles", {
 	id: int().autoincrement().notNull(),
 	name: varchar({ length: 100 }).notNull(),
 	description: text(),
-	isSystem: tinyint('1').default(0),
+	isSystem: int().default(0),
 	createdAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
 	updatedAt: timestamp({ mode: 'string' }).defaultNow().onUpdateNow().notNull(),
 },
