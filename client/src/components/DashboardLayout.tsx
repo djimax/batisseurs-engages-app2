@@ -91,7 +91,8 @@ const menuItems: MenuItem[] = [
   
   // Groupes & Antennes
   { label: "🏢 Groupes & Antennes", isGroup: true, items: [
-    { icon: MapPin, label: "Groupes & Antennes", path: "/groupes-antennes" },
+    { icon: MapPin, label: "Antennes", path: "/antennes" },
+    { icon: MapPin, label: "Groupes & Antennes (Legacy)", path: "/groupes-antennes" },
   ]},
   
   // Finances

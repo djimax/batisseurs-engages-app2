@@ -39,6 +39,8 @@ import { ProjectDetail } from "./pages/ProjectDetail";
 import Dashboard from "./pages/Dashboard";
 import AdhesionsList from "./pages/AdhesionsList";
 import GroupesAntennes from "./pages/GroupesAntennes";
+import { Antennes } from "./pages/Antennes";
+import { AntenneDetail } from "./pages/AntenneDetail";
 import { usePasswordAuth } from "./hooks/usePasswordAuth";
 import { useState, useEffect } from "react";
 
@@ -86,6 +88,8 @@ function OnlineRouter({ isAuthenticated, error, onLogin, onLogout, onForgotPassw
         <Route path="/projects" component={Projects} />
         <Route path="/projects/:id" component={ProjectDetail} />
         <Route path="/groupes-antennes" component={GroupesAntennes} />
+        <Route path="/antennes" component={Antennes} />
+        <Route path="/antennes/:id" component={AntenneDetail} />
         <Route path="/404" component={NotFound} />
         <Route component={NotFound} />
       </Switch>

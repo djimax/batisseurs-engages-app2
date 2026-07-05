@@ -1326,3 +1326,102 @@
 - [ ] Ajouter le champ gender au schéma des membres
 - [ ] Améliorer la page des adhésions annuelles avec filtres et rapports
 - [ ] Créer un système de rapports pour les retards de paiement
+
+
+## Phase 3 - Robustesse et Fonctionnalités Avancées
+
+### 1. Audit et Refactorisation du Schéma de Base de Données
+- [ ] Audit complet du schéma (identifier tous les problèmes tinyint)
+- [ ] Refactoriser toutes les colonnes tinyint('1') en int()
+- [ ] Ajouter des index manquants pour les performances
+- [ ] Ajouter des contraintes de clés étrangères
+- [ ] Documenter le schéma avec commentaires
+- [ ] Créer des migrations de schéma sûres
+- [ ] Valider les migrations en environnement de test
+
+### 2. Implémentation des Groupes et Antennes
+- [ ] Créer les tables antennes et groupes dans le schéma
+- [ ] Implémenter les mutations tRPC pour CRUD antennes
+- [ ] Implémenter les mutations tRPC pour CRUD groupes
+- [ ] Ajouter les relations entre groupes, antennes et projets
+- [ ] Créer la page de gestion des groupes et antennes complète
+- [ ] Ajouter la gestion des responsables de groupe/antenne
+- [ ] Implémenter l'affectation de groupes aux projets
+- [ ] Tests unitaires pour groupes et antennes
+
+### 3. Système de Permissions Granulaires
+- [ ] Créer les rôles personnalisés (admin, gestionnaire, membre, observateur)
+- [ ] Implémenter les permissions par ressource (documents, projets, adhésions)
+- [ ] Ajouter les vérifications de permissions dans les mutations tRPC
+- [ ] Créer une page de gestion des rôles et permissions
+- [ ] Implémenter l'héritage de permissions (groupe -> projet)
+- [ ] Ajouter l'audit des accès aux ressources
+- [ ] Tests de permissions
+
+### 4. Notifications en Temps Réel
+- [ ] Implémenter WebSocket pour les notifications en temps réel
+- [ ] Créer un système de notifications avec types (info, warning, error, success)
+- [ ] Ajouter les notifications pour les événements clés (adhésion, projet, document)
+- [ ] Implémenter les préférences de notification par utilisateur
+- [ ] Créer une page de centre de notifications
+- [ ] Ajouter les notifications par email pour les événements importants
+- [ ] Tests des notifications
+
+### 5. Rapports et Statistiques Avancées
+- [ ] Créer un dashboard statistiques avancé
+- [ ] Ajouter les graphiques (adhésions par année, revenus, dépenses)
+- [ ] Implémenter les rapports exportables (PDF, Excel)
+- [ ] Ajouter les filtres temporels (mois, trimestre, année)
+- [ ] Créer les rapports financiers complets
+- [ ] Ajouter les rapports d'adhésion (renouvellements, résiliations)
+- [ ] Implémenter les rapports de projets
+
+### 6. Gestion des Projets Complète
+- [ ] Créer les tables pour projets, tâches, jalons, budgets
+- [ ] Implémenter les mutations tRPC pour gestion de projets
+- [ ] Créer la page de liste des projets
+- [ ] Ajouter la page de détail projet avec Gantt chart
+- [ ] Implémenter la gestion des tâches avec statuts
+- [ ] Ajouter la gestion des jalons (milestones)
+- [ ] Implémenter la gestion du budget par projet
+- [ ] Ajouter les commentaires et discussions sur les tâches
+- [ ] Tests de gestion de projets
+
+### 7. Tests Unitaires et d'Intégration
+- [ ] Créer les tests pour toutes les mutations tRPC critiques
+- [ ] Ajouter les tests d'intégration pour les workflows clés
+- [ ] Implémenter les tests de permissions
+- [ ] Ajouter les tests de validation de données
+- [ ] Créer les tests de performance
+- [ ] Implémenter les tests E2E pour les scénarios critiques
+- [ ] Atteindre 80% de couverture de code
+
+### 8. Optimisation Performance et Scalabilité
+- [ ] Implémenter la pagination pour toutes les listes
+- [ ] Ajouter le cache Redis pour les données fréquemment accédées
+- [ ] Optimiser les requêtes N+1
+- [ ] Ajouter les index de base de données manquants
+- [ ] Implémenter la compression des réponses
+- [ ] Ajouter le lazy loading pour les images
+- [ ] Profiler et optimiser les endpoints lents
+- [ ] Tester la scalabilité avec charge
+
+### 9. Validation et Sécurité Avancées
+- [ ] Ajouter la validation Zod complète pour tous les inputs
+- [ ] Implémenter la sanitisation des données
+- [ ] Ajouter la protection CSRF
+- [ ] Implémenter le rate limiting
+- [ ] Ajouter la validation des fichiers uploadés
+- [ ] Implémenter le chiffrement des données sensibles
+- [ ] Ajouter l'audit de sécurité complet
+- [ ] Tests de sécurité
+
+### 10. Documentation et Déploiement
+- [ ] Documenter l'architecture système
+- [ ] Créer la documentation des APIs tRPC
+- [ ] Ajouter la documentation des rôles et permissions
+- [ ] Créer le guide d'administration
+- [ ] Ajouter le guide utilisateur
+- [ ] Créer le plan de déploiement
+- [ ] Implémenter le CI/CD
+- [ ] Configurer le monitoring en production
