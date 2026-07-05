@@ -189,7 +189,7 @@ export async function getAllDocuments(filters?: {
   status?: string;
   priority?: string;
   search?: string;
-  isArchived?: boolean;
+  isArchived?: number;
 }) {
   const db = await getDb();
   if (!db) return [];

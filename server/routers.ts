@@ -103,7 +103,10 @@ export const appRouter = router({
       .query(async ({ input }) => {
         await seedDefaultCategories();
         await seedDefaultDocuments();
-        return getAllDocuments(input);
+        return getAllDocuments({
+          ...input,
+          isArchived: input?.isArchived ? 1 : input?.isArchived === false ? 0 : undefined,
+        });
       }),
     
     getById: publicProcedure
@@ -612,7 +615,7 @@ export const appRouter = router({
           const result = await db.insert(roles).values({
             name: input.name,
             description: input.description,
-            isSystem: false,
+            isSystem: 0,
           });
           
           // Log audit

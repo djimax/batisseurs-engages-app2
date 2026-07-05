@@ -1340,14 +1340,14 @@
 - [ ] Valider les migrations en environnement de test
 
 ### 2. Implémentation des Groupes et Antennes
-- [ ] Créer les tables antennes et groupes dans le schéma
-- [ ] Implémenter les mutations tRPC pour CRUD antennes
-- [ ] Implémenter les mutations tRPC pour CRUD groupes
-- [ ] Ajouter les relations entre groupes, antennes et projets
-- [ ] Créer la page de gestion des groupes et antennes complète
-- [ ] Ajouter la gestion des responsables de groupe/antenne
-- [ ] Implémenter l'affectation de groupes aux projets
-- [ ] Tests unitaires pour groupes et antennes
+- [x] Créer les tables antennes et groupes dans le schéma
+- [x] Implémenter les mutations tRPC pour CRUD antennes
+- [x] Implémenter les mutations tRPC pour CRUD groupes
+- [x] Ajouter les relations entre groupes, antennes et projets
+- [x] Créer la page de gestion des groupes et antennes complète
+- [x] Ajouter la gestion des responsables de groupe/antenne
+- [x] Implémenter l'affectation de groupes aux projets
+- [x] Tests unitaires pour groupes et antennes (35 tests passés)
 
 ### 3. Système de Permissions Granulaires
 - [ ] Créer les rôles personnalisés (admin, gestionnaire, membre, observateur)
