@@ -16,18 +16,18 @@ import { Badge } from "@/components/ui/badge";
 import { Plus, ArrowLeft, Mail, Phone, MapPin, Edit, Trash2, Users } from "lucide-react";
 
 export function AntenneDetail() {
-  const router = useRouter();
+  const [, navigate] = useRouter();
   const { id } = useParams<{ id: string }>();
   const antenneId = parseInt(id || "0");
   const [isCreateGroupOpen, setIsCreateGroupOpen] = useState(false);
 
   // Récupérer l'antenne
   const { data: antenne, isLoading: isLoadingAntenne, refetch: refetchAntenne } =
-    trpc.antennes.getById.useQuery(antenneId, { enabled: antenneId > 0 });
+    trpc.antennes.getById.useQuery({ id: antenneId }, { enabled: antenneId > 0 });
 
   // Récupérer les groupes
   const { data: groupes = [], isLoading: isLoadingGroupes, refetch: refetchGroupes } =
-    trpc.groupes.listByAntenne.useQuery(antenneId, { enabled: antenneId > 0 });
+    trpc.groupes.listByAntenne.useQuery({ antenneId }, { enabled: antenneId > 0 });
 
   // Mutations
   const createGroupeMutation = trpc.groupes.create.useMutation({
@@ -45,7 +45,7 @@ export function AntenneDetail() {
 
   const deleteAntenneMutation = trpc.antennes.delete.useMutation({
     onSuccess: () => {
-      router.push("/antennes");
+      navigate("/antennes");
     },
   });
 
@@ -72,7 +72,7 @@ export function AntenneDetail() {
     return (
       <div className="text-center py-12">
         <p className="text-muted-foreground">Antenne non trouvée</p>
-        <Button onClick={() => router.push("/antennes")} className="mt-4">
+        <Button onClick={() => navigate("/antennes")} className="mt-4">
           Retour aux antennes
         </Button>
       </div>
@@ -83,7 +83,7 @@ export function AntenneDetail() {
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center gap-4">
-        <Button variant="ghost" size="icon" onClick={() => router.push("/antennes")}>
+        <Button variant="ghost" size="icon" onClick={() => navigate("/antennes")}>
           <ArrowLeft className="w-4 h-4" />
         </Button>
         <div className="flex-1">

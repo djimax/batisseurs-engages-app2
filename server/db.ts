@@ -1,34 +1,41 @@
 import { eq, and, like, desc, asc, sql, or, inArray, lt, ne, count } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
 import { 
-  InsertUser, users, 
-  categories, InsertCategory, Category,
-  documents, InsertDocument, Document,
-  documentNotes, InsertDocumentNote,
-  members, InsertMember,
-  documentPermissions, InsertDocumentPermission,
-  activityLogs, InsertActivityLog,
-  cotisations, InsertCotisation,
-  dons, InsertDon,
-  depenses, InsertDepense,
-  transactions, InsertTransaction,
-  emailTemplates, InsertEmailTemplate, EmailTemplate,
-  emailHistory, InsertEmailHistory, EmailHistory,
-  emailRecipients, InsertEmailRecipient, EmailRecipient,
-  appSettings, InsertAppSetting, AppSetting,
-  crmContacts, InsertCrmContact, CrmContact,
-  crmActivities, InsertCrmActivity, CrmActivity,
-  adhesionPipeline, InsertAdhesionPipeline, AdhesionPipeline,
-  crmReports, InsertCrmReport, CrmReport,
-  crmEmailIntegration, InsertCrmEmailIntegration, CrmEmailIntegration,
-  globalSettings, InsertGlobalSettings, GlobalSettings,
-  passwordResetRequests, InsertPasswordResetRequest, PasswordResetRequest,
-  projects, InsertProject, Project,
-  projectMembers, InsertProjectMember, ProjectMember,
-  projectTasks, InsertProjectTask, ProjectTask,
-  projectMilestones, InsertProjectMilestone, ProjectMilestone,
-  projectUpdates, InsertProjectUpdate, ProjectUpdate,
-  projectBudgetItems, InsertProjectBudgetItem, ProjectBudgetItem
+  users,
+  categories,
+  documents,
+  documentNotes,
+  members,
+  documentPermissions,
+  activityLogs,
+  cotisations,
+  dons,
+  depenses,
+  transactions,
+  emailTemplates,
+  emailHistory,
+  emailRecipients,
+  appSettings,
+  crmContacts,
+  crmActivities,
+  adhesionPipeline,
+  crmReports,
+  crmEmailIntegration,
+  globalSettings,
+  passwordResetRequests,
+  projects,
+  projectMembers,
+  projectTasks,
+  projectMilestones,
+  projectUpdates,
+  projectBudgetItems,
+  auditLogs,
+  roles,
+  rolePermissions,
+  campaigns,
+  events,
+  antennes,
+  groupes
 } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
@@ -1305,3 +1312,34 @@ export async function isUserAdmin(userId: number): Promise<boolean> {
   const user = await getUserById(userId);
   return user?.role === "admin";
 }
+
+// Type definitions for Insert operations
+export type InsertUser = typeof users.$inferInsert;
+export type InsertCategory = typeof categories.$inferInsert;
+export type InsertDocument = typeof documents.$inferInsert;
+export type InsertDocumentNote = typeof documentNotes.$inferInsert;
+export type InsertMember = typeof members.$inferInsert;
+export type InsertDocumentPermission = typeof documentPermissions.$inferInsert;
+export type InsertActivityLog = typeof activityLogs.$inferInsert;
+export type InsertCotisation = typeof cotisations.$inferInsert;
+export type InsertDon = typeof dons.$inferInsert;
+export type InsertDepense = typeof depenses.$inferInsert;
+export type InsertTransaction = typeof transactions.$inferInsert;
+export type InsertEmailTemplate = typeof emailTemplates.$inferInsert;
+export type InsertEmailHistory = typeof emailHistory.$inferInsert;
+export type InsertEmailRecipient = typeof emailRecipients.$inferInsert;
+export type InsertAppSetting = typeof appSettings.$inferInsert;
+export type InsertCrmContact = typeof crmContacts.$inferInsert;
+export type InsertCrmActivity = typeof crmActivities.$inferInsert;
+export type InsertAdhesionPipeline = typeof adhesionPipeline.$inferInsert;
+export type InsertCrmReport = typeof crmReports.$inferInsert;
+export type InsertCrmEmailIntegration = typeof crmEmailIntegration.$inferInsert;
+export type InsertGlobalSettings = typeof globalSettings.$inferInsert;
+export type InsertPasswordResetRequest = typeof passwordResetRequests.$inferInsert;
+export type InsertProject = typeof projects.$inferInsert;
+export type InsertProjectMember = typeof projectMembers.$inferInsert;
+export type InsertProjectTask = typeof projectTasks.$inferInsert;
+export type InsertProjectMilestone = typeof projectMilestones.$inferInsert;
+export type InsertProjectUpdate = typeof projectUpdates.$inferInsert;
+export type InsertProjectBudgetItem = typeof projectBudgetItems.$inferInsert;
+export type InsertAuditLog = typeof auditLogs.$inferInsert;

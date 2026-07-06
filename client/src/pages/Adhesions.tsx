@@ -343,7 +343,7 @@ export default function Adhesions() {
                   ) : (
                     members.map((member) => (
                       <SelectItem key={member.id} value={member.id.toString()}>
-                        {member.firstName} {member.lastName} ({member.memberID})
+                        {member.firstName} {member.lastName} ({member.memberId})
                       </SelectItem>
                     ))
                   )}

@@ -23,7 +23,7 @@ import { Plus, Search, MapPin, Mail, Phone, Edit, Trash2, ChevronRight } from "l
 import { useRouter } from "wouter";
 
 export function Antennes() {
-  const router = useRouter();
+  const [, navigate] = useRouter();
   const [search, setSearch] = useState("");
   const [sortBy, setSortBy] = useState<"name" | "city" | "createdAt">("name");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
@@ -213,7 +213,7 @@ export function Antennes() {
             <Card
               key={antenne.id}
               className="cursor-pointer hover:shadow-md transition-shadow"
-              onClick={() => router.push(`/antennes/${antenne.id}`)}
+              onClick={() => navigate(`/antennes/${antenne.id}`)}
             >
               <CardHeader className="pb-3">
                 <div className="flex items-start justify-between">
@@ -267,7 +267,7 @@ export function Antennes() {
                     size="sm"
                     onClick={(e) => {
                       e.stopPropagation();
-                      router.push(`/antennes/${antenne.id}`);
+                      navigate(`/antennes/${antenne.id}`);
                     }}
                     className="gap-2"
                   >

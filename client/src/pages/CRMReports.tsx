@@ -69,7 +69,7 @@ export default function CRMReports() {
     const segments = contacts.reduce(
       (acc, contact) => {
         const segmentName = contact.segment || "général";
-        const existing = acc.find((s) => s.name === segmentName);
+        const existing = acc.find((s: any) => s.name === segmentName);
         if (existing) {
           existing.value++;
         } else {
@@ -168,7 +168,7 @@ export default function CRMReports() {
     const stages = pipeline.reduce(
       (acc, item) => {
         const stageName = stageLabels[item.stage] || item.stage;
-        const existing = acc.find((s) => s.name === stageName);
+        const existing = acc.find((s: any) => s.name === stageName);
         if (existing) {
           existing.value++;
         } else {
@@ -292,7 +292,7 @@ export default function CRMReports() {
                       fill="#8884d8"
                       dataKey="value"
                     >
-                      {segmentData.map((entry, index) => (
+                      {segmentData.map((entry: any, index: number) => (
                         <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                       ))}
                     </Pie>
@@ -403,7 +403,7 @@ export default function CRMReports() {
             <CardContent>
               {pipelineData.length > 0 ? (
                 <div className="space-y-4">
-                  {pipelineData.map((stage, index) => (
+                  {pipelineData.map((stage: any, index: number) => (
                     <div key={stage.name} className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
                         <Badge variant="outline">{index + 1}</Badge>
@@ -414,7 +414,7 @@ export default function CRMReports() {
                           <div
                             className="bg-primary h-2 rounded-full"
                             style={{
-                              width: `${(stage.value / Math.max(...pipelineData.map((s) => s.value))) * 100}%`,
+                              width: `${(stage.value / Math.max(...pipelineData.map((s: any) => s.value))) * 100}%`,
                             }}
                           />
                         </div>

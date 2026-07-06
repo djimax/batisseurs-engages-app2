@@ -41,7 +41,7 @@ export default function AdhesionsList() {
     return adhesions.filter((adhesion: any) => {
       const memberName = `${adhesion.member.firstName} ${adhesion.member.lastName}`.toLowerCase();
       const matchesSearch = memberName.includes(searchQuery.toLowerCase()) ||
-        adhesion.member.memberID?.includes(searchQuery);
+        adhesion.member.memberId?.includes(searchQuery);
 
       const matchesStatus = statusFilter === "all" || adhesion.status === statusFilter;
 
@@ -318,7 +318,7 @@ export default function AdhesionsList() {
                               <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 bg-gray-900 text-white text-xs rounded whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">Pas de photo</span>
                             </div>
                           )}
-                          {adhesion.member.memberID}
+                          {adhesion.member.memberId}
                         </div>
                       </TableCell>
                       <TableCell>
@@ -404,7 +404,7 @@ export default function AdhesionsList() {
               id: adhesions.find((a: any) => a.member.id === selectedMemberId)!.member.id,
               firstName: adhesions.find((a: any) => a.member.id === selectedMemberId)!.member.firstName,
               lastName: adhesions.find((a: any) => a.member.id === selectedMemberId)!.member.lastName,
-              memberID: adhesions.find((a: any) => a.member.id === selectedMemberId)!.member.memberID,
+              memberID: adhesions.find((a: any) => a.member.id === selectedMemberId)!.member.memberId,
               photo: adhesions.find((a: any) => a.member.id === selectedMemberId)!.member.photo || undefined,
               email: adhesions.find((a: any) => a.member.id === selectedMemberId)!.member.email || undefined
             }} />
@@ -421,7 +421,7 @@ export default function AdhesionsList() {
             id: adhesions.find((a: any) => a.member.id === selectedMemberId)!.member.id,
             firstName: adhesions.find((a: any) => a.member.id === selectedMemberId)!.member.firstName,
             lastName: adhesions.find((a: any) => a.member.id === selectedMemberId)!.member.lastName,
-            memberID: adhesions.find((a: any) => a.member.id === selectedMemberId)!.member.memberID,
+            memberID: adhesions.find((a: any) => a.member.id === selectedMemberId)!.member.memberId,
             photo: adhesions.find((a: any) => a.member.id === selectedMemberId)!.member.photo || undefined,
             email: adhesions.find((a: any) => a.member.id === selectedMemberId)!.member.email || undefined,
             phone: adhesions.find((a: any) => a.member.id === selectedMemberId)!.member.phone || undefined,
