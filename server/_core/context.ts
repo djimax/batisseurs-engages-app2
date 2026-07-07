@@ -1,5 +1,5 @@
 import type { CreateExpressContextOptions } from "@trpc/server/adapters/express";
-import { users } from '../drizzle/schema';
+import { users } from "../../drizzle/schema";
 import { sdk } from "./sdk";
 
 export type TrpcContext = {

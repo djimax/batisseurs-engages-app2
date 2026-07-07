@@ -131,8 +131,9 @@ export const appRouter = router({
       .mutation(async ({ input, ctx }) => {
         const result = await createDocument({
           ...input,
+          dueDate: input.dueDate ? input.dueDate.toISOString() : undefined,
           createdBy: ctx.user.id,
-        });
+        } as any);
         await logActivity({
           userId: ctx.user.id,
           action: "create",
@@ -160,7 +161,12 @@ export const appRouter = router({
       }))
       .mutation(async ({ input, ctx }) => {
         const { id, ...data } = input;
-        const result = await updateDocument(id, { ...data, updatedBy: ctx.user.id });
+        const convertedData = {
+          ...data,
+          dueDate: data.dueDate ? data.dueDate.toISOString() : undefined,
+          updatedBy: ctx.user.id,
+        };
+        const result = await updateDocument(id, convertedData as any);
         await logActivity({
           userId: ctx.user.id,
           action: "update",
@@ -735,8 +741,10 @@ export const appRouter = router({
       .mutation(async ({ input, ctx }) => {
         const project = await createProject({
           ...input,
+          startDate: input.startDate ? input.startDate.toISOString() : undefined,
+          endDate: input.endDate ? input.endDate.toISOString() : undefined,
           createdBy: ctx.user?.id || 0,
-        });
+        } as any);
 
         await logAudit({
           userId: ctx.user?.id,
@@ -763,7 +771,12 @@ export const appRouter = router({
       }))
       .mutation(async ({ input, ctx }) => {
         const { id, ...data } = input;
-        const project = await updateProject(id, data);
+        const convertedData = {
+          ...data,
+          startDate: data.startDate ? data.startDate.toISOString() : undefined,
+          endDate: data.endDate ? data.endDate.toISOString() : undefined,
+        };
+        const project = await updateProject(id, convertedData as any);
 
         await logAudit({
           userId: ctx.user?.id,
@@ -826,7 +839,11 @@ export const appRouter = router({
         dueDate: z.date().optional(),
       }))
       .mutation(async ({ input }) => {
-        return await createProjectTask(input);
+        const convertedInput = {
+          ...input,
+          dueDate: input.dueDate ? input.dueDate.toISOString() : undefined,
+        };
+        return await createProjectTask(convertedInput as any);
       }),
 
     getTasks: protectedProcedure
@@ -847,7 +864,11 @@ export const appRouter = router({
       }))
       .mutation(async ({ input }) => {
         const { id, ...data } = input;
-        return await updateProjectTask(id, data);
+        const convertedData = {
+          ...data,
+          dueDate: data.dueDate ? data.dueDate.toISOString() : undefined,
+        };
+        return await updateProjectTask(id, convertedData as any);
       }),
 
     deleteTask: protectedProcedure
@@ -866,7 +887,11 @@ export const appRouter = router({
         status: z.enum(["pending", "in-progress", "completed", "delayed"]).default("pending"),
       }))
       .mutation(async ({ input }) => {
-        return await createProjectMilestone(input);
+        const convertedInput = {
+          ...input,
+          dueDate: input.dueDate.toISOString(),
+        };
+        return await createProjectMilestone(convertedInput as any);
       }),
 
     getMilestones: protectedProcedure
@@ -885,7 +910,11 @@ export const appRouter = router({
       }))
       .mutation(async ({ input }) => {
         const { id, ...data } = input;
-        return await updateProjectMilestone(id, data);
+        const convertedData = {
+          ...data,
+          dueDate: data.dueDate ? data.dueDate.toISOString() : undefined,
+        };
+        return await updateProjectMilestone(id, convertedData as any);
       }),
 
     deleteMilestone: protectedProcedure

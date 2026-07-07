@@ -1343,3 +1343,26 @@ export type InsertProjectMilestone = typeof projectMilestones.$inferInsert;
 export type InsertProjectUpdate = typeof projectUpdates.$inferInsert;
 export type InsertProjectBudgetItem = typeof projectBudgetItems.$inferInsert;
 export type InsertAuditLog = typeof auditLogs.$inferInsert;
+
+// Select types for queries
+export type CrmContact = typeof crmContacts.$inferSelect;
+export type CrmActivity = typeof crmActivities.$inferSelect;
+export type AdhesionPipeline = typeof adhesionPipeline.$inferSelect;
+export type CrmReport = typeof crmReports.$inferSelect;
+export type CrmEmailIntegration = typeof crmEmailIntegration.$inferSelect;
+export type User = typeof users.$inferSelect;
+export type Category = typeof categories.$inferSelect;
+export type Document = typeof documents.$inferSelect;
+export type DocumentNote = typeof documentNotes.$inferSelect;
+export type Member = typeof members.$inferSelect;
+export type DocumentPermission = typeof documentPermissions.$inferSelect;
+export type ActivityLog = typeof activityLogs.$inferSelect;
+export type Cotisation = typeof cotisations.$inferSelect;
+export type Don = typeof dons.$inferSelect;
+export type Depense = typeof depenses.$inferSelect;
+export type Transaction = typeof transactions.$inferSelect;
+export type EmailTemplate = typeof emailTemplates.$inferSelect;
+export type EmailHistory = typeof emailHistory.$inferSelect;
+export type EmailRecipient = typeof emailRecipients.$inferSelect;
+export type AppSetting = typeof appSettings.$inferSelect;
+export type AuditLog = typeof auditLogs.$inferSelect;
