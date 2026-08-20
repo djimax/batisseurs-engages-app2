@@ -80,6 +80,7 @@ const menuItems: MenuItem[] = [
     { icon: UserCheck, label: "Adhésions", path: "/members/adhesions" },
     { icon: UserCheck, label: "Liste des Adhérents", path: "/adhesions-list" },
     { icon: Shield, label: "Gestion des Rôles", path: "/admin/roles", adminOnly: true },
+    { icon: Lock, label: "Permissions & Périmètres", path: "/admin/permissions", adminOnly: true },
   ]},
   
   // Projets & Événements

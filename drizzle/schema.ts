@@ -386,6 +386,52 @@ export const memberStatuses = mysqlTable("member_statuses", {
 	createdAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
 });
 
+export const antennes = mysqlTable("antennes", {
+  id: int().autoincrement().notNull(),
+  name: varchar({ length: 255 }).notNull(),
+  slug: varchar({ length: 255 }).notNull(),
+  description: text(),
+  city: varchar({ length: 100 }).notNull(),
+  address: text(),
+  phone: varchar({ length: 20 }),
+  email: varchar({ length: 320 }),
+  responsibleId: int(),
+  status: mysqlEnum(['active','inactive','archived']).default('active').notNull(),
+  createdAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
+  updatedAt: timestamp({ mode: 'string' }).defaultNow().onUpdateNow().notNull(),
+},
+(table) => [
+  index("antennes_slug_idx").on(table.slug),
+  index("antennes_city_idx").on(table.city),
+  index("antennes_responsible_idx").on(table.responsibleId),
+]);
+
+export const groupes = mysqlTable("groupes", {
+  id: int().autoincrement().notNull(),
+  name: varchar({ length: 255 }).notNull(),
+  slug: varchar({ length: 255 }).notNull(),
+  description: text(),
+  antenneId: int(),
+  responsibleId: int(),
+  status: mysqlEnum(['active','inactive','archived']).default('active').notNull(),
+  createdAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
+  updatedAt: timestamp({ mode: 'string' }).defaultNow().onUpdateNow().notNull(),
+},
+(table) => [
+  index("groupes_slug_idx").on(table.slug),
+  index("groupes_antenne_idx").on(table.antenneId),
+  index("groupes_responsible_idx").on(table.responsibleId),
+]);
+
+export const groupeMembers = mysqlTable("groupe_members", {
+  id: int().autoincrement().notNull(),
+  groupeId: int().notNull(),
+  memberId: int().notNull(),
+  role: mysqlEnum(['leader','coordinator','member']).default('member').notNull(),
+  joinedAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
+  createdAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
+});
+
 export const members = mysqlTable("members", {
 	id: int().autoincrement().notNull(),
 	userId: int(),
@@ -570,6 +616,21 @@ export const userRoles = mysqlTable("user_roles", {
 	assignedAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
 	createdAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
 });
+
+export const userScopes = mysqlTable("user_scopes", {
+  id: int().autoincrement().notNull(),
+  userId: int().notNull(),
+  scopeType: mysqlEnum(['national','antenne','groupe','project']).notNull(),
+  scopeId: int(),
+  accessLevel: mysqlEnum(['viewer','editor','manager']).default('viewer').notNull(),
+  assignedBy: int(),
+  createdAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
+  updatedAt: timestamp({ mode: 'string' }).defaultNow().onUpdateNow().notNull(),
+},
+(table) => [
+  index("user_scopes_user_idx").on(table.userId),
+  index("user_scopes_scope_idx").on(table.scopeType, table.scopeId),
+]);
 
 export const users = mysqlTable("users", {
 	id: int().autoincrement().notNull(),

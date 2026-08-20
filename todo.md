@@ -1497,3 +1497,30 @@
 - [x] Optimiser la PWA et les flux de synchronisation locale pour les antennes de terrain
 - [x] Écrire les tests Vitest pour la conformité documentaire
 - [x] Valider le build et exécuter tous les tests
+
+## Implémentation réelle — Permissions et structures
+- [x] Restaurer les tables actives antennes/groupes et ajouter `user_scopes` au schéma Drizzle
+- [x] Appliquer la migration non destructive de `user_scopes`
+- [x] Ajouter le moteur central de permissions, niveaux d’accès et périmètres
+- [x] Ajouter les procédures tRPC de gestion des rôles, permissions et périmètres
+- [x] Remplacer les placeholders Antennes/Groupes par des requêtes Drizzle persistantes
+- [x] Ajouter la page d’administration Permissions & Périmètres et sa navigation
+- [x] Ajouter et exécuter les tests Vitest du moteur d’autorisation et des structures
+- [x] Valider TypeScript, build et serveur après cette tranche
+
+## Prochain module — Cycle de vie des membres
+- [ ] Ajouter les statuts métier complets, l’historique et les changements contrôlés
+- [ ] Ajouter la carte membre numérique et le portail adhérent
+- [ ] Ajouter les tests et validations du cycle de vie membre
+
+## Prochain module — Finances et paiements
+- [ ] Ajouter les statuts de paiement, reçus et rapprochement financier
+- [ ] Connecter un fournisseur de paiement après validation de la configuration de l’association
+- [ ] Ajouter les tests et validations du module financier
+
+## Prochains modules — Notifications, gouvernance et projets
+- [ ] Ajouter les notifications persistantes et rappels idempotents
+- [ ] Ajouter les assemblées, résolutions, quorum et votes
+- [ ] Ajouter les budgets, discussions et rapports de projets
+- [ ] Renforcer la conformité documentaire et la synchronisation terrain
+

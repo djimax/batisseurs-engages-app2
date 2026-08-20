@@ -28,9 +28,10 @@ import {
   getDashboardStatistics, getProjectsStatistics, getTasksStatistics, getFinanceStatistics, getMembersStatistics,
   getAllUsers, getUserById, updateUserRole, getAdminCount, isUserAdmin
 } from "./db";
-import { roles, permissions, auditLogs, emailTemplates, emailHistory, emailRecipients, members, adhesions } from "../drizzle/schema";
-import { eq, desc } from "drizzle-orm";
+import { roles, permissions, rolePermissions, userRoles, userScopes, auditLogs, emailTemplates, emailHistory, emailRecipients, members, adhesions } from "../drizzle/schema";
+import { and, eq, desc } from "drizzle-orm";
 import { logAudit } from "./audit";
+import { assertPermission, ensureDefaultPermissions } from "./authorization";
 import { storagePut } from "./storage";
 import { notifyOwner } from "./_core/notification";
 import { nanoid } from "nanoid";
@@ -586,7 +587,8 @@ export const appRouter = router({
   // ============ ADMIN - ROLES & PERMISSIONS ============
   admin: router({
     // Roles management
-    getRoles: protectedProcedure.query(async () => {
+    getRoles: protectedProcedure.query(async ({ ctx }) => {
+      await assertPermission(ctx.user, "admin.roles.view");
       const db = await getDb();
       if (!db) return [];
       try {
@@ -597,7 +599,9 @@ export const appRouter = router({
       }
     }),
 
-    getPermissions: protectedProcedure.query(async () => {
+    getPermissions: protectedProcedure.query(async ({ ctx }) => {
+      await assertPermission(ctx.user, "admin.roles.view");
+      await ensureDefaultPermissions();
       const db = await getDb();
       if (!db) return [];
       try {
@@ -608,12 +612,133 @@ export const appRouter = router({
       }
     }),
 
+    getRolePermissions: protectedProcedure
+      .input(z.object({ roleId: z.number().int().positive() }))
+      .query(async ({ input, ctx }) => {
+        await assertPermission(ctx.user, "admin.roles.view");
+        const db = await getDb();
+        if (!db) return [];
+        return db
+          .select({
+            id: permissions.id,
+            name: permissions.name,
+            description: permissions.description,
+            category: permissions.category,
+          })
+          .from(rolePermissions)
+          .innerJoin(permissions, eq(rolePermissions.permissionId, permissions.id))
+          .where(eq(rolePermissions.roleId, input.roleId));
+      }),
+
+    assignPermissionToRole: protectedProcedure
+      .input(z.object({ roleId: z.number().int().positive(), permissionId: z.number().int().positive() }))
+      .mutation(async ({ input, ctx }) => {
+        await assertPermission(ctx.user, "admin.roles.manage");
+        const db = await getDb();
+        if (!db) throw new Error("Database not available");
+        const existing = await db
+          .select({ id: rolePermissions.id })
+          .from(rolePermissions)
+          .where(and(eq(rolePermissions.roleId, input.roleId), eq(rolePermissions.permissionId, input.permissionId)))
+          .limit(1);
+        if (existing.length === 0) {
+          await db.insert(rolePermissions).values(input);
+        }
+        return { success: true } as const;
+      }),
+
+    removePermissionFromRole: protectedProcedure
+      .input(z.object({ roleId: z.number().int().positive(), permissionId: z.number().int().positive() }))
+      .mutation(async ({ input, ctx }) => {
+        await assertPermission(ctx.user, "admin.roles.manage");
+        const db = await getDb();
+        if (!db) throw new Error("Database not available");
+        await db.delete(rolePermissions).where(and(eq(rolePermissions.roleId, input.roleId), eq(rolePermissions.permissionId, input.permissionId)));
+        return { success: true } as const;
+      }),
+
+    assignRoleToUser: protectedProcedure
+      .input(z.object({ userId: z.number().int().positive(), roleId: z.number().int().positive() }))
+      .mutation(async ({ input, ctx }) => {
+        await assertPermission(ctx.user, "admin.users.manage");
+        const db = await getDb();
+        if (!db) throw new Error("Database not available");
+        const existing = await db
+          .select({ id: userRoles.id })
+          .from(userRoles)
+          .where(and(eq(userRoles.userId, input.userId), eq(userRoles.roleId, input.roleId)))
+          .limit(1);
+        if (existing.length === 0) {
+          await db.insert(userRoles).values({ ...input, assignedBy: ctx.user.id });
+        }
+        await logAudit({ userId: ctx.user.id, action: "ASSIGN", entityType: "user_role", entityId: input.userId, description: `Role ${input.roleId} assigned to user ${input.userId}`, status: "success" });
+        return { success: true } as const;
+      }),
+
+    removeRoleFromUser: protectedProcedure
+      .input(z.object({ userId: z.number().int().positive(), roleId: z.number().int().positive() }))
+      .mutation(async ({ input, ctx }) => {
+        await assertPermission(ctx.user, "admin.users.manage");
+        const db = await getDb();
+        if (!db) throw new Error("Database not available");
+        await db.delete(userRoles).where(and(eq(userRoles.userId, input.userId), eq(userRoles.roleId, input.roleId)));
+        await logAudit({ userId: ctx.user.id, action: "REMOVE", entityType: "user_role", entityId: input.userId, description: `Role ${input.roleId} removed from user ${input.userId}`, status: "success" });
+        return { success: true } as const;
+      }),
+
+    listUserScopes: protectedProcedure
+      .input(z.object({ userId: z.number().int().positive().optional() }).optional())
+      .query(async ({ input, ctx }) => {
+        await assertPermission(ctx.user, "admin.scopes.view");
+        const db = await getDb();
+        if (!db) return [];
+        if (input?.userId) return db.select().from(userScopes).where(eq(userScopes.userId, input.userId));
+        return db.select().from(userScopes);
+      }),
+
+    assignUserScope: protectedProcedure
+      .input(z.object({
+        userId: z.number().int().positive(),
+        scopeType: z.enum(["national", "antenne", "groupe", "project"]),
+        scopeId: z.number().int().positive().nullable().optional(),
+        accessLevel: z.enum(["viewer", "editor", "manager"]).default("viewer"),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        await assertPermission(ctx.user, "admin.scopes.manage");
+        const db = await getDb();
+        if (!db) throw new Error("Database not available");
+        if (input.scopeType === "national" && input.scopeId != null) {
+          throw new Error("Un périmètre national ne doit pas avoir de scopeId");
+        }
+        const result = await db.insert(userScopes).values({
+          userId: input.userId,
+          scopeType: input.scopeType,
+          scopeId: input.scopeId ?? null,
+          accessLevel: input.accessLevel,
+          assignedBy: ctx.user.id,
+        });
+        await logAudit({ userId: ctx.user.id, action: "ASSIGN", entityType: "user_scope", entityId: Number(result[0].insertId), description: `Scope ${input.scopeType}:${input.scopeId ?? "national"} assigned`, status: "success" });
+        return { id: Number(result[0].insertId), ...input, scopeId: input.scopeId ?? null };
+      }),
+
+    removeUserScope: protectedProcedure
+      .input(z.object({ id: z.number().int().positive() }))
+      .mutation(async ({ input, ctx }) => {
+        await assertPermission(ctx.user, "admin.scopes.manage");
+        const db = await getDb();
+        if (!db) throw new Error("Database not available");
+        await db.delete(userScopes).where(eq(userScopes.id, input.id));
+        await logAudit({ userId: ctx.user.id, action: "REMOVE", entityType: "user_scope", entityId: input.id, description: `Scope ${input.id} removed`, status: "success" });
+        return { success: true } as const;
+      }),
+
     createRole: protectedProcedure
       .input(z.object({
         name: z.string().min(1),
         description: z.string().optional(),
       }))
       .mutation(async ({ input, ctx }) => {
+        await assertPermission(ctx.user, "admin.roles.manage");
         const db = await getDb();
         if (!db) throw new Error("Database not available");
         

@@ -165,7 +165,7 @@ export function AntenneDetail() {
               size="sm"
               onClick={() => {
                 if (confirm("Êtes-vous sûr de vouloir supprimer cette antenne ?")) {
-                  deleteAntenneMutation.mutate(antenne.id);
+                  deleteAntenneMutation.mutate({ id: antenne.id });
                 }
               }}
             >
@@ -267,7 +267,7 @@ export function AntenneDetail() {
                       size="sm"
                       onClick={() => {
                         if (confirm("Êtes-vous sûr ?")) {
-                          deleteGroupeMutation.mutate(groupe.id);
+                          deleteGroupeMutation.mutate({ id: groupe.id });
                         }
                       }}
                     >

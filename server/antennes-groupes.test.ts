@@ -5,6 +5,7 @@
 
 import { describe, it, expect, beforeAll, afterAll, vi } from "vitest";
 import { z } from "zod";
+import { generateSlug } from "./antennes-groupes-router";
 
 /**
  * Tests pour la validation des schémas
@@ -142,21 +143,12 @@ describe("Antennes & Groupes - Validation des Schémas", () => {
  */
 describe("Antennes & Groupes - Logique Métier", () => {
   describe("Génération de slug", () => {
-    const generateSlug = (name: string): string => {
-      return name
-        .toLowerCase()
-        .trim()
-        .replace(/[^\w\s-]/g, "")
-        .replace(/\s+/g, "-")
-        .replace(/-+/g, "-");
-    };
-
     it("devrait générer un slug correct", () => {
       expect(generateSlug("Antenne Paris")).toBe("antenne-paris");
     });
 
     it("devrait gérer les caractères spéciaux", () => {
-      expect(generateSlug("Antenne d'Île-de-France")).toBe("antenne-dle-de-france");
+      expect(generateSlug("Antenne d'Île-de-France")).toBe("antenne-dile-de-france");
     });
 
     it("devrait gérer les espaces multiples", () => {

@@ -1,338 +1,244 @@
 /**
- * Routeur tRPC pour la gestion des Antennes et Groupes
- * Utilise Drizzle ORM pour les requêtes
+ * Routeur tRPC pour la gestion des antennes et groupes.
+ * Les listes, mutations et détails sont persistés dans MySQL/TiDB.
  */
 
-import { router, publicProcedure, protectedProcedure } from "./_core/trpc";
+import { router, protectedProcedure } from "./_core/trpc";
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import { getDb } from "./db";
-import { eq, like, desc, asc, sql } from "drizzle-orm";
-
-// ============================================================================
-// SCHÉMAS DE VALIDATION
-// ============================================================================
+import { antennes, groupes } from "../drizzle/schema";
+import { eq, like } from "drizzle-orm";
+import { assertPermission } from "./authorization";
+import { logAudit } from "./audit";
 
 const CreateAntenneSchema = z.object({
-  name: z.string().min(1, "Le nom est requis").max(255),
-  slug: z.string().min(1, "Le slug est requis").max(100),
-  description: z.string().optional(),
-  city: z.string().min(1, "La ville est requise").max(100),
-  address: z.string().optional(),
-  phone: z.string().optional(),
-  email: z.string().email().optional(),
-  responsibleId: z.number().optional(),
+  name: z.string().trim().min(1, "Le nom est requis").max(255),
+  slug: z.string().trim().max(255).optional(),
+  description: z.string().trim().optional(),
+  city: z.string().trim().min(1, "La ville est requise").max(100),
+  address: z.string().trim().optional(),
+  phone: z.string().trim().optional(),
+  email: z.string().email().optional().or(z.literal("")),
+  responsibleId: z.number().int().positive().optional(),
 });
-
-const UpdateAntenneSchema = CreateAntenneSchema.partial();
 
 const CreateGroupeSchema = z.object({
-  name: z.string().min(1, "Le nom est requis").max(255),
-  slug: z.string().min(1, "Le slug est requis").max(100),
-  description: z.string().optional(),
-  antenneId: z.number().min(1, "L'antenne est requise"),
-  responsibleId: z.number().optional(),
+  name: z.string().trim().min(1, "Le nom est requis").max(255),
+  slug: z.string().trim().max(255).optional(),
+  description: z.string().trim().optional(),
+  antenneId: z.number().int().positive().nullable().optional(),
+  responsibleId: z.number().int().positive().optional(),
 });
-
-const UpdateGroupeSchema = CreateGroupeSchema.partial();
 
 const ListSchema = z.object({
   search: z.string().optional(),
-  sortBy: z.enum(["name", "createdAt", "city"]).optional(),
-  sortOrder: z.enum(["asc", "desc"]).optional(),
-  page: z.number().min(1).optional(),
-  limit: z.number().min(1).max(100).optional(),
+  sortBy: z.enum(["name", "createdAt", "city"]).default("name"),
+  sortOrder: z.enum(["asc", "desc"]).default("asc"),
+  page: z.number().int().min(1).default(1),
+  limit: z.number().int().min(1).max(100).default(10),
 });
 
-// ============================================================================
-// HELPER FUNCTIONS
-// ============================================================================
+const GroupListSchema = ListSchema.extend({
+  sortBy: z.enum(["name", "createdAt"]).default("name"),
+});
 
-function generateSlug(name: string): string {
+export function generateSlug(name: string): string {
   return name
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
     .toLowerCase()
     .trim()
-    .replace(/[^\w\s-]/g, "")
+    .replace(/[^a-z0-9\s-]/g, "")
     .replace(/\s+/g, "-")
     .replace(/-+/g, "-");
 }
 
-// ============================================================================
-// PROCÉDURES ANTENNES
-// ============================================================================
+function normalizeAntenne(row: typeof antennes.$inferSelect) {
+  return { ...row, isActive: row.status === "active" ? 1 : 0 };
+}
+
+function normalizeGroupe(row: typeof groupes.$inferSelect) {
+  return { ...row, isActive: row.status === "active" ? 1 : 0 };
+}
+
+async function ensureUniqueSlug(table: typeof antennes | typeof groupes, requestedSlug: string, currentId?: number) {
+  const db = await getDb();
+  if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Base de données indisponible" });
+  const existing = await db.select({ id: table.id }).from(table).where(eq(table.slug, requestedSlug)).limit(1);
+  if (existing.length > 0 && existing[0].id !== currentId) {
+    throw new TRPCError({ code: "CONFLICT", message: "Ce slug est déjà utilisé." });
+  }
+}
 
 export const antennasRouter = router({
-  // Lister les antennes avec filtrage et tri
-  list: publicProcedure
-    .input(ListSchema)
-    .query(async ({ input }) => {
-      try {
-        const db = getDb();
-        if (!db) throw new Error("Database not available");
+  list: protectedProcedure.input(ListSchema).query(async ({ input, ctx }) => {
+    await assertPermission(ctx.user, "structures.view");
+    const db = await getDb();
+    if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Base de données indisponible" });
+    const rows = await db.select().from(antennes);
+    const search = input.search?.trim().toLowerCase();
+    const filtered = search
+      ? rows.filter((row) => [row.name, row.city, row.email ?? "", row.slug].some((value) => value.toLowerCase().includes(search)))
+      : rows;
+    const direction = input.sortOrder === "asc" ? 1 : -1;
+    const sorted = [...filtered].sort((a, b) => {
+      const aValue = String(a[input.sortBy] ?? "").toLowerCase();
+      const bValue = String(b[input.sortBy] ?? "").toLowerCase();
+      return aValue.localeCompare(bValue, "fr", { numeric: true }) * direction;
+    });
+    const start = (input.page - 1) * input.limit;
+    return {
+      data: sorted.slice(start, start + input.limit).map(normalizeAntenne),
+      pagination: {
+        page: input.page,
+        limit: input.limit,
+        total: sorted.length,
+        pages: Math.ceil(sorted.length / input.limit),
+      },
+    };
+  }),
 
-        const { search = "", sortBy = "name", sortOrder = "asc", page = 1, limit = 10 } = input;
+  create: protectedProcedure.input(CreateAntenneSchema).mutation(async ({ input, ctx }) => {
+    await assertPermission(ctx.user, "structures.manage");
+    const db = await getDb();
+    if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Base de données indisponible" });
+    const slug = input.slug || generateSlug(input.name);
+    await ensureUniqueSlug(antennes, slug);
+    const result = await db.insert(antennes).values({
+      name: input.name,
+      slug,
+      description: input.description || null,
+      city: input.city,
+      address: input.address || null,
+      phone: input.phone || null,
+      email: input.email || null,
+      responsibleId: input.responsibleId ?? null,
+      status: "active",
+    });
+    const created = await db.select().from(antennes).where(eq(antennes.id, Number(result[0].insertId))).limit(1);
+    if (!created[0]) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Antenne non créée" });
+    await logAudit({ userId: ctx.user.id, action: "CREATE", entityType: "antenne", entityId: created[0].id, entityName: created[0].name, description: `Création de l’antenne ${created[0].name}`, status: "success" });
+    return normalizeAntenne(created[0]);
+  }),
 
-        // Pour l'instant, retourner des données vides car les tables n'existent pas
-        // Cette implémentation utiliserait Drizzle si les tables étaient disponibles
-        return {
-          data: [],
-          pagination: {
-            page,
-            limit,
-            total: 0,
-            pages: 0,
-          },
-        };
-      } catch (error) {
-        console.error("Erreur lors de la récupération des antennes:", error);
-        throw new TRPCError({
-          code: "INTERNAL_SERVER_ERROR",
-          message: "Erreur lors de la récupération des antennes",
-        });
-      }
-    }),
+  getById: protectedProcedure.input(z.object({ id: z.number().int().positive() })).query(async ({ input, ctx }) => {
+    await assertPermission(ctx.user, "structures.view");
+    const db = await getDb();
+    if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Base de données indisponible" });
+    const row = await db.select().from(antennes).where(eq(antennes.id, input.id)).limit(1);
+    if (!row[0]) throw new TRPCError({ code: "NOT_FOUND", message: "Antenne introuvable" });
+    return normalizeAntenne(row[0]);
+  }),
 
-  // Créer une antenne
-  create: protectedProcedure
-    .input(CreateAntenneSchema)
-    .mutation(async ({ input, ctx }) => {
-      try {
-        const db = getDb();
-        if (!db) throw new Error("Database not available");
+  update: protectedProcedure.input(z.object({ id: z.number().int().positive(), data: CreateAntenneSchema.partial().optional(), ...CreateAntenneSchema.partial().shape })).mutation(async ({ input, ctx }) => {
+    await assertPermission(ctx.user, "structures.manage");
+    const db = await getDb();
+    if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Base de données indisponible" });
+    const { id, data, ...flatData } = input;
+    const updateData = { ...(data ?? {}), ...flatData };
+    if (Object.keys(updateData).length === 0) throw new TRPCError({ code: "BAD_REQUEST", message: "Aucune modification fournie" });
+    if (updateData.slug) await ensureUniqueSlug(antennes, updateData.slug, id);
+    const values = Object.fromEntries(Object.entries(updateData).map(([key, value]) => [key, value === "" ? null : value]));
+    await db.update(antennes).set(values as any).where(eq(antennes.id, id));
+    const updated = await db.select().from(antennes).where(eq(antennes.id, id)).limit(1);
+    if (!updated[0]) throw new TRPCError({ code: "NOT_FOUND", message: "Antenne introuvable" });
+    await logAudit({ userId: ctx.user.id, action: "UPDATE", entityType: "antenne", entityId: id, entityName: updated[0].name, description: `Modification de l’antenne ${updated[0].name}`, status: "success" });
+    return normalizeAntenne(updated[0]);
+  }),
 
-        // Validation du slug unique (simulation)
-        const slug = input.slug || generateSlug(input.name);
-
-        // Retourner un objet simulé
-        return {
-          id: Math.floor(Math.random() * 10000),
-          ...input,
-          slug,
-          isActive: 1,
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-        };
-      } catch (error) {
-        console.error("Erreur lors de la création d'une antenne:", error);
-        throw new TRPCError({
-          code: "INTERNAL_SERVER_ERROR",
-          message: "Erreur lors de la création de l'antenne",
-        });
-      }
-    }),
-
-  // Récupérer une antenne par ID
-  getById: publicProcedure
-    .input(z.object({ id: z.number() }))
-    .query(async ({ input }) => {
-      try {
-        const db = getDb();
-        if (!db) throw new Error("Database not available");
-
-        // Retourner un objet simulé avec les propriétés attendues
-        return {
-          id: input.id,
-          name: "Antenne Example",
-          slug: "antenne-example",
-          description: "Description de l'antenne",
-          city: "Paris",
-          address: "123 Rue de la Paix",
-          phone: "+33 1 23 45 67 89",
-          email: "antenne@example.com",
-          isActive: 1,
-          responsibleId: null,
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-        } as any;
-      } catch (error) {
-        console.error("Erreur lors de la récupération de l'antenne:", error);
-        throw new TRPCError({
-          code: "INTERNAL_SERVER_ERROR",
-          message: "Erreur lors de la récupération de l'antenne",
-        });
-      }
-    }),
-
-  // Mettre à jour une antenne
-  update: protectedProcedure
-    .input(z.object({ id: z.number(), ...UpdateAntenneSchema.shape }))
-    .mutation(async ({ input, ctx }) => {
-      try {
-        const db = getDb();
-        if (!db) throw new Error("Database not available");
-
-        const { id, ...updateData } = input;
-
-        // Retourner un objet simulé
-        return {
-          id,
-          ...updateData,
-          updatedAt: new Date().toISOString(),
-        };
-      } catch (error) {
-        console.error("Erreur lors de la mise à jour de l'antenne:", error);
-        throw new TRPCError({
-          code: "INTERNAL_SERVER_ERROR",
-          message: "Erreur lors de la mise à jour de l'antenne",
-        });
-      }
-    }),
-
-  // Supprimer une antenne
-  delete: protectedProcedure
-    .input(z.object({ id: z.number() }))
-    .mutation(async ({ input, ctx }) => {
-      try {
-        const db = getDb();
-        if (!db) throw new Error("Database not available");
-
-        // Retourner un succès simulé
-        return { success: true };
-      } catch (error) {
-        console.error("Erreur lors de la suppression de l'antenne:", error);
-        throw new TRPCError({
-          code: "INTERNAL_SERVER_ERROR",
-          message: "Erreur lors de la suppression de l'antenne",
-        });
-      }
-    }),
+  delete: protectedProcedure.input(z.object({ id: z.number().int().positive() })).mutation(async ({ input, ctx }) => {
+    await assertPermission(ctx.user, "structures.manage");
+    const db = await getDb();
+    if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Base de données indisponible" });
+    const linkedGroups = await db.select({ id: groupes.id }).from(groupes).where(eq(groupes.antenneId, input.id)).limit(1);
+    if (linkedGroups.length > 0) throw new TRPCError({ code: "CONFLICT", message: "Supprimez ou déplacez d’abord les groupes rattachés à cette antenne." });
+    await db.delete(antennes).where(eq(antennes.id, input.id));
+    await logAudit({ userId: ctx.user.id, action: "DELETE", entityType: "antenne", entityId: input.id, description: `Suppression de l’antenne ${input.id}`, status: "success" });
+    return { success: true } as const;
+  }),
 });
 
-// ============================================================================
-// PROCÉDURES GROUPES
-// ============================================================================
-
 export const groupesRouter = router({
-  // Lister tous les groupes
-  list: publicProcedure
-    .input(ListSchema)
-    .query(async ({ input }) => {
-      try {
-        const db = getDb();
-        if (!db) throw new Error("Database not available");
+  list: protectedProcedure.input(GroupListSchema).query(async ({ input, ctx }) => {
+    await assertPermission(ctx.user, "structures.view");
+    const db = await getDb();
+    if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Base de données indisponible" });
+    const rows = await db.select().from(groupes);
+    const search = input.search?.trim().toLowerCase();
+    const filtered = search ? rows.filter((row) => [row.name, row.slug, row.description ?? ""].some((value) => value.toLowerCase().includes(search))) : rows;
+    const direction = input.sortOrder === "asc" ? 1 : -1;
+    const sorted = [...filtered].sort((a, b) => String(a[input.sortBy] ?? "").localeCompare(String(b[input.sortBy] ?? ""), "fr", { numeric: true }) * direction);
+    const start = (input.page - 1) * input.limit;
+    return {
+      data: sorted.slice(start, start + input.limit).map(normalizeGroupe),
+      pagination: { page: input.page, limit: input.limit, total: sorted.length, pages: Math.ceil(sorted.length / input.limit) },
+    };
+  }),
 
-        const { search = "", sortBy = "name", sortOrder = "asc", page = 1, limit = 10 } = input;
+  listByAntenne: protectedProcedure.input(z.object({ antenneId: z.number().int().positive() })).query(async ({ input, ctx }) => {
+    await assertPermission(ctx.user, "structures.view");
+    const db = await getDb();
+    if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Base de données indisponible" });
+    const rows = await db.select().from(groupes).where(eq(groupes.antenneId, input.antenneId));
+    return rows.map(normalizeGroupe);
+  }),
 
-        return {
-          data: [],
-          pagination: {
-            page,
-            limit,
-            total: 0,
-            pages: 0,
-          },
-        };
-      } catch (error) {
-        console.error("Erreur lors de la récupération des groupes:", error);
-        throw new TRPCError({
-          code: "INTERNAL_SERVER_ERROR",
-          message: "Erreur lors de la récupération des groupes",
-        });
-      }
-    }),
+  create: protectedProcedure.input(CreateGroupeSchema).mutation(async ({ input, ctx }) => {
+    await assertPermission(ctx.user, "structures.manage");
+    const db = await getDb();
+    if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Base de données indisponible" });
+    if (input.antenneId != null) {
+      const parent = await db.select({ id: antennes.id }).from(antennes).where(eq(antennes.id, input.antenneId)).limit(1);
+      if (!parent[0]) throw new TRPCError({ code: "BAD_REQUEST", message: "Antenne introuvable" });
+    }
+    const slug = input.slug || generateSlug(input.name);
+    await ensureUniqueSlug(groupes, slug);
+    const result = await db.insert(groupes).values({
+      name: input.name,
+      slug,
+      description: input.description || null,
+      antenneId: input.antenneId ?? null,
+      responsibleId: input.responsibleId ?? null,
+      status: "active",
+    });
+    const created = await db.select().from(groupes).where(eq(groupes.id, Number(result[0].insertId))).limit(1);
+    if (!created[0]) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Groupe non créé" });
+    await logAudit({ userId: ctx.user.id, action: "CREATE", entityType: "groupe", entityId: created[0].id, entityName: created[0].name, description: `Création du groupe ${created[0].name}`, status: "success" });
+    return normalizeGroupe(created[0]);
+  }),
 
-  // Lister les groupes par antenne
-  listByAntenne: publicProcedure
-    .input(z.object({ antenneId: z.number() }))
-    .query(async ({ input }) => {
-      try {
-        const db = getDb();
-        if (!db) throw new Error("Database not available");
+  getById: protectedProcedure.input(z.object({ id: z.number().int().positive() })).query(async ({ input, ctx }) => {
+    await assertPermission(ctx.user, "structures.view");
+    const db = await getDb();
+    if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Base de données indisponible" });
+    const row = await db.select().from(groupes).where(eq(groupes.id, input.id)).limit(1);
+    if (!row[0]) throw new TRPCError({ code: "NOT_FOUND", message: "Groupe introuvable" });
+    return normalizeGroupe(row[0]);
+  }),
 
-        return [];
-      } catch (error) {
-        console.error("Erreur lors de la récupération des groupes:", error);
-        throw new TRPCError({
-          code: "INTERNAL_SERVER_ERROR",
-          message: "Erreur lors de la récupération des groupes",
-        });
-      }
-    }),
+  update: protectedProcedure.input(z.object({ id: z.number().int().positive(), data: CreateGroupeSchema.partial().optional(), ...CreateGroupeSchema.partial().shape })).mutation(async ({ input, ctx }) => {
+    await assertPermission(ctx.user, "structures.manage");
+    const db = await getDb();
+    if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Base de données indisponible" });
+    const { id, data, ...flatData } = input;
+    const updateData = { ...(data ?? {}), ...flatData };
+    if (Object.keys(updateData).length === 0) throw new TRPCError({ code: "BAD_REQUEST", message: "Aucune modification fournie" });
+    if (updateData.slug) await ensureUniqueSlug(groupes, updateData.slug, id);
+    const values = Object.fromEntries(Object.entries(updateData).map(([key, value]) => [key, value === "" ? null : value]));
+    await db.update(groupes).set(values as any).where(eq(groupes.id, id));
+    const updated = await db.select().from(groupes).where(eq(groupes.id, id)).limit(1);
+    if (!updated[0]) throw new TRPCError({ code: "NOT_FOUND", message: "Groupe introuvable" });
+    await logAudit({ userId: ctx.user.id, action: "UPDATE", entityType: "groupe", entityId: id, entityName: updated[0].name, description: `Modification du groupe ${updated[0].name}`, status: "success" });
+    return normalizeGroupe(updated[0]);
+  }),
 
-  // Créer un groupe
-  create: protectedProcedure
-    .input(CreateGroupeSchema)
-    .mutation(async ({ input, ctx }) => {
-      try {
-        const db = getDb();
-        if (!db) throw new Error("Database not available");
-
-        const slug = input.slug || generateSlug(input.name);
-
-        return {
-          id: Math.floor(Math.random() * 10000),
-          ...input,
-          slug,
-          isActive: 1,
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-        };
-      } catch (error) {
-        console.error("Erreur lors de la création d'un groupe:", error);
-        throw new TRPCError({
-          code: "INTERNAL_SERVER_ERROR",
-          message: "Erreur lors de la création du groupe",
-        });
-      }
-    }),
-
-  // Récupérer un groupe par ID
-  getById: publicProcedure
-    .input(z.object({ id: z.number() }))
-    .query(async ({ input }) => {
-      try {
-        const db = getDb();
-        if (!db) throw new Error("Database not available");
-
-        return null;
-      } catch (error) {
-        console.error("Erreur lors de la récupération du groupe:", error);
-        throw new TRPCError({
-          code: "INTERNAL_SERVER_ERROR",
-          message: "Erreur lors de la récupération du groupe",
-        });
-      }
-    }),
-
-  // Mettre à jour un groupe
-  update: protectedProcedure
-    .input(z.object({ id: z.number(), ...UpdateGroupeSchema.shape }))
-    .mutation(async ({ input, ctx }) => {
-      try {
-        const db = getDb();
-        if (!db) throw new Error("Database not available");
-
-        const { id, ...updateData } = input;
-
-        return {
-          id,
-          ...updateData,
-          updatedAt: new Date().toISOString(),
-        };
-      } catch (error) {
-        console.error("Erreur lors de la mise à jour du groupe:", error);
-        throw new TRPCError({
-          code: "INTERNAL_SERVER_ERROR",
-          message: "Erreur lors de la mise à jour du groupe",
-        });
-      }
-    }),
-
-  // Supprimer un groupe
-  delete: protectedProcedure
-    .input(z.object({ id: z.number() }))
-    .mutation(async ({ input, ctx }) => {
-      try {
-        const db = getDb();
-        if (!db) throw new Error("Database not available");
-
-        return { success: true };
-      } catch (error) {
-        console.error("Erreur lors de la suppression du groupe:", error);
-        throw new TRPCError({
-          code: "INTERNAL_SERVER_ERROR",
-          message: "Erreur lors de la suppression du groupe",
-        });
-      }
-    }),
+  delete: protectedProcedure.input(z.object({ id: z.number().int().positive() })).mutation(async ({ input, ctx }) => {
+    await assertPermission(ctx.user, "structures.manage");
+    const db = await getDb();
+    if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Base de données indisponible" });
+    await db.delete(groupes).where(eq(groupes.id, input.id));
+    await logAudit({ userId: ctx.user.id, action: "DELETE", entityType: "groupe", entityId: input.id, description: `Suppression du groupe ${input.id}`, status: "success" });
+    return { success: true } as const;
+  }),
 });

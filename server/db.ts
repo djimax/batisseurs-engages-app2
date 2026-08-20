@@ -32,6 +32,12 @@ import {
   auditLogs,
   roles,
   rolePermissions,
+  userRoles,
+  userScopes,
+  permissions,
+  antennes,
+  groupes,
+  groupeMembers,
   campaigns,
   events
 } from "../drizzle/schema";
@@ -61,7 +67,21 @@ const schema = {
   crmReports,
   crmEmailIntegration,
   globalSettings,
-  passwordResetRequests
+  passwordResetRequests,
+  roles,
+  permissions,
+  rolePermissions,
+  userRoles,
+  userScopes,
+  antennes,
+  groupes,
+  groupeMembers,
+  projects,
+  projectMembers,
+  projectTasks,
+  projectMilestones,
+  projectUpdates,
+  projectBudgetItems
 };
 
 export async function getDb() {
