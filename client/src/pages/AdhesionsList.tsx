@@ -404,7 +404,7 @@ export default function AdhesionsList() {
               id: adhesions.find((a: any) => a.member.id === selectedMemberId)!.member.id,
               firstName: adhesions.find((a: any) => a.member.id === selectedMemberId)!.member.firstName,
               lastName: adhesions.find((a: any) => a.member.id === selectedMemberId)!.member.lastName,
-              memberID: adhesions.find((a: any) => a.member.id === selectedMemberId)!.member.memberId,
+              memberID: adhesions.find((a: any) => a.member.id === selectedMemberId)!.member.memberId || "",
               photo: adhesions.find((a: any) => a.member.id === selectedMemberId)!.member.photo || undefined,
               email: adhesions.find((a: any) => a.member.id === selectedMemberId)!.member.email || undefined
             }} />
@@ -421,7 +421,7 @@ export default function AdhesionsList() {
             id: adhesions.find((a: any) => a.member.id === selectedMemberId)!.member.id,
             firstName: adhesions.find((a: any) => a.member.id === selectedMemberId)!.member.firstName,
             lastName: adhesions.find((a: any) => a.member.id === selectedMemberId)!.member.lastName,
-            memberID: adhesions.find((a: any) => a.member.id === selectedMemberId)!.member.memberId,
+            memberID: adhesions.find((a: any) => a.member.id === selectedMemberId)!.member.memberId || "",
             photo: adhesions.find((a: any) => a.member.id === selectedMemberId)!.member.photo || undefined,
             email: adhesions.find((a: any) => a.member.id === selectedMemberId)!.member.email || undefined,
             phone: adhesions.find((a: any) => a.member.id === selectedMemberId)!.member.phone || undefined,
@@ -434,7 +434,7 @@ export default function AdhesionsList() {
             annee: adhesions.find((a: any) => a.member.id === selectedMemberId)!.annee || new Date().getFullYear(),
             montant: Number(adhesions.find((a: any) => a.member.id === selectedMemberId)!.montant) || 0,
             status: adhesions.find((a: any) => a.member.id === selectedMemberId)!.status || undefined,
-            dateExpiration: adhesions.find((a: any) => a.member.id === selectedMemberId)!.dateExpiration || undefined,
+            dateExpiration: adhesions.find((a: any) => a.member.id === selectedMemberId)!.dateExpiration ? new Date(adhesions.find((a: any) => a.member.id === selectedMemberId)!.dateExpiration) : undefined,
           }}
         />
       )}

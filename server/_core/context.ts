@@ -11,7 +11,7 @@ export type TrpcContext = {
 export async function createContext(
   opts: CreateExpressContextOptions
 ): Promise<TrpcContext> {
-  let user: User | null = null;
+  let user: typeof users.$inferSelect | null = null;
 
   try {
     user = await sdk.authenticateRequest(opts.req);

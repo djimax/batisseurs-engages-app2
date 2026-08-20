@@ -20,10 +20,10 @@ import {
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Plus, Search, MapPin, Mail, Phone, Edit, Trash2, ChevronRight } from "lucide-react";
-import { useRouter } from "wouter";
+import { useLocation } from "wouter";
 
 export function Antennes() {
-  const [, navigate] = useRouter();
+  const [, navigate] = useLocation();
   const [search, setSearch] = useState("");
   const [sortBy, setSortBy] = useState<"name" | "city" | "createdAt">("name");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");

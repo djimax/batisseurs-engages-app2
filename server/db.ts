@@ -33,9 +33,7 @@ import {
   roles,
   rolePermissions,
   campaigns,
-  events,
-  antennes,
-  groupes
+  events
 } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
@@ -122,11 +120,11 @@ export async function upsertUser(user: InsertUser): Promise<void> {
     }
 
     if (!values.lastSignedIn) {
-      values.lastSignedIn = new Date();
+      values.lastSignedIn = new Date().toISOString();
     }
 
     if (Object.keys(updateSet).length === 0) {
-      updateSet.lastSignedIn = new Date();
+      updateSet.lastSignedIn = new Date().toISOString();
     }
 
     await db.insert(users).values(values).onDuplicateKeyUpdate({
@@ -382,20 +380,28 @@ export async function createMember(data: InsertMember) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
   
-  // Generate memberID if not provided
-  let memberID = data.memberID;
-  if (!memberID) {
+  // Generate memberId if not provided; accept legacy memberID input for backward compatibility.
+  const legacyMemberId = (data as InsertMember & { memberID?: string }).memberID;
+  let memberId = data.memberId || legacyMemberId;
+  if (!memberId) {
     const { generateMemberId } = await import("../shared/memberIdGenerator");
     const genderCode = data.gender || "3";
     const genderMap: Record<string, "male" | "female" | "other"> = { "1": "male", "2": "female", "3": "other" };
     const gender = genderMap[genderCode] || "other";
-    const joinedAt = data.joinedAt || new Date();
-    const orderNumber = await getNextOrderNumberForMember(genderCode, joinedAt);
-    memberID = generateMemberId(gender, joinedAt, orderNumber);
+    const joinedAt = data.joinedAt || new Date().toISOString();
+    const joinedAtDate = typeof joinedAt === "string" ? new Date(joinedAt) : joinedAt;
+    const orderNumber = await getNextOrderNumberForMember(genderCode, joinedAtDate);
+    memberId = generateMemberId(gender, joinedAtDate, orderNumber);
   }
-  
-  const result = await db.insert(members).values({ ...data, memberID });
-  return { id: result[0].insertId, ...data, memberID };
+
+  const { memberID: _legacyMemberID, ...memberData } = data as InsertMember & { memberID?: string };
+  const normalizedData = {
+    ...memberData,
+    joinedAt: memberData.joinedAt,
+    memberId,
+  };
+  const result = await db.insert(members).values(normalizedData);
+  return { id: result[0].insertId, ...data, memberId, memberID: memberId };
 }
 
 export async function updateMember(id: number, data: Partial<InsertMember>) {
@@ -645,7 +651,7 @@ export async function updateAppSetting(key: string, value: string, updatedBy: nu
   
   const existing = await getAppSetting(key);
   if (existing) {
-    await db.update(appSettings).set({ value, description, updatedBy, updatedAt: new Date() }).where(eq(appSettings.key, key));
+    await db.update(appSettings).set({ value, description, updatedBy, updatedAt: new Date().toISOString() }).where(eq(appSettings.key, key));
     return getAppSetting(key);
   } else {
     const result = await db.insert(appSettings).values({
@@ -655,7 +661,7 @@ export async function updateAppSetting(key: string, value: string, updatedBy: nu
       type: "string",
       updatedBy,
     });
-    return { id: result[0].insertId, key, value, description, type: "string", updatedBy, updatedAt: new Date(), createdAt: new Date() };
+    return { id: result[0].insertId, key, value, description, type: "string", updatedBy, updatedAt: new Date().toISOString(), createdAt: new Date() };
   }
 }
 
@@ -690,7 +696,7 @@ export async function listCrmContacts(filters?: { segment?: string; status?: str
 export async function updateCrmContact(id: number, data: Partial<InsertCrmContact>): Promise<CrmContact> {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
-  await (db as any).update(crmContacts).set({ ...data, updatedAt: new Date() }).where(eq(crmContacts.id, id));
+  await (db as any).update(crmContacts).set({ ...data, updatedAt: new Date().toISOString() }).where(eq(crmContacts.id, id));
   const contact = await (db as any).query.crmContacts.findFirst({ where: eq(crmContacts.id, id) });
   return contact as CrmContact;
 }
@@ -719,7 +725,7 @@ export async function listCrmActivities(contactId: number): Promise<CrmActivity[
 export async function updateCrmActivity(id: number, data: Partial<InsertCrmActivity>): Promise<CrmActivity> {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
-  await (db as any).update(crmActivities).set({ ...data, updatedAt: new Date() }).where(eq(crmActivities.id, id));
+  await (db as any).update(crmActivities).set({ ...data, updatedAt: new Date().toISOString() }).where(eq(crmActivities.id, id));
   const activity = await (db as any).query.crmActivities.findFirst({ where: eq(crmActivities.id, id) });
   return activity as CrmActivity;
 }
@@ -742,7 +748,7 @@ export async function createAdhesionPipeline(data: InsertAdhesionPipeline): Prom
 export async function updateAdhesionPipeline(id: number, data: Partial<InsertAdhesionPipeline>): Promise<AdhesionPipeline> {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
-  await (db as any).update(adhesionPipeline).set({ ...data, updatedAt: new Date() }).where(eq(adhesionPipeline.id, id));
+  await (db as any).update(adhesionPipeline).set({ ...data, updatedAt: new Date().toISOString() }).where(eq(adhesionPipeline.id, id));
   const pipeline = await (db as any).query.adhesionPipeline.findFirst({ where: eq(adhesionPipeline.id, id) });
   return pipeline as AdhesionPipeline;
 }
@@ -1177,7 +1183,7 @@ export async function getTasksStatistics() {
     db.select({ count: sql<number>`count(*)` }).from(projectTasks).where(eq(projectTasks.status, "in-progress")),
     db.select({ count: sql<number>`count(*)` }).from(projectTasks).where(eq(projectTasks.status, "todo")),
     db.select({ count: sql<number>`count(*)` }).from(projectTasks).where(and(
-      lt(projectTasks.dueDate, new Date()),
+      lt(projectTasks.dueDate, new Date().toISOString()),
       ne(projectTasks.status, "completed")
     )),
   ]);

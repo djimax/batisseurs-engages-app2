@@ -917,7 +917,7 @@
 - [x] Vérifier la logique de routage (Home.tsx) - Corrigée
 - [ ] Corriger les liens cassés dans la navigation
 - [ ] Valider les procédures tRPC
-- [ ] Corriger les erreurs TypeScript
+- [x] Corriger les erreurs TypeScript (0 erreur après vérification tsc)
 - [ ] Optimiser les performances
 
 

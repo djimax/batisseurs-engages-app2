@@ -153,7 +153,7 @@ export const emailRouter = router({
               if (lastRecipient) {
                 await updateEmailRecipient(lastRecipient.id, {
                   status: "sent",
-                  sentAt: new Date(),
+                  sentAt: new Date().toISOString(),
                 });
               }
             } else {
@@ -170,7 +170,7 @@ export const emailRouter = router({
           status: failureCount === 0 ? "sent" : "failed",
           successCount,
           failureCount,
-          sentAt: new Date(),
+          sentAt: new Date().toISOString(),
         });
 
         await logAudit({
@@ -240,8 +240,9 @@ export const emailRouter = router({
         const token = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
         
         // Create password reset request
-        const expiresAt = new Date();
-        expiresAt.setHours(expiresAt.getHours() + 24); // Expire in 24 hours
+        const expiresAtDate = new Date();
+        expiresAtDate.setHours(expiresAtDate.getHours() + 24); // Expire in 24 hours
+        const expiresAt = expiresAtDate.toISOString();
         
         await createPasswordResetRequest({
           email: input.email,
@@ -318,7 +319,7 @@ export const emailRouter = router({
         await updatePasswordResetRequest(input.id, {
           temporaryPassword: input.temporaryPassword,
           status: "completed",
-          completedAt: new Date(),
+          completedAt: new Date().toISOString(),
         });
         
         // Send email with temporary password
@@ -357,7 +358,7 @@ export const emailRouter = router({
         
         await updatePasswordResetRequest(input.id, {
           status: "completed",
-          completedAt: new Date(),
+          completedAt: new Date().toISOString(),
         });
         
         await logAudit({

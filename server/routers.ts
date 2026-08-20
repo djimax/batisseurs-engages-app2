@@ -415,11 +415,11 @@ export const appRouter = router({
           action: "create",
           entityType: "member",
           entityId: result.id as number,
-          details: `Membre "${input.firstName} ${input.lastName}" ajouté avec l'ID ${result.memberID}`,
+          details: `Membre "${input.firstName} ${input.lastName}" ajouté avec l'ID ${result.memberId}`,
         });
         await notifyOwner({
           title: "Nouveau membre ajouté",
-          content: `${input.firstName} ${input.lastName} a été ajouté comme membre avec l'ID: ${result.memberID}`,
+          content: `${input.firstName} ${input.lastName} a été ajouté comme membre avec l'ID: ${result.memberId}`,
         });
         return result;
       }),

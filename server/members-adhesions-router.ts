@@ -132,8 +132,8 @@ export const membersAdhesionsRouter = router({
         memberId: input.memberId,
         montant: input.montant,
         annee: input.annee || now.getFullYear(),
-        dateAdhesion: now,
-        dateExpiration,
+        dateAdhesion: now.toISOString(),
+        dateExpiration: dateExpiration.toISOString(),
         status: "pending",
       });
 
@@ -163,8 +163,8 @@ export const membersAdhesionsRouter = router({
         memberId: input.memberId,
         montant: input.montant,
         annee: input.annee || now.getFullYear(),
-        dateAdhesion: now,
-        dateExpiration,
+        dateAdhesion: now.toISOString(),
+        dateExpiration: dateExpiration.toISOString(),
         status: "pending",
       });
 

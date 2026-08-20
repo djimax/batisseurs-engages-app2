@@ -49,7 +49,7 @@ const entityLabels: Record<string, string> = {
 export default function Activity() {
   const { data: activities, isLoading } = trpc.activity.recent.useQuery({ limit: 50 });
 
-  const formatDate = (date: Date) => {
+  const formatDate = (date: Date | string) => {
     return new Date(date).toLocaleDateString("fr-FR", {
       day: "numeric",
       month: "long",
@@ -59,7 +59,7 @@ export default function Activity() {
     });
   };
 
-  const getRelativeTime = (date: Date) => {
+  const getRelativeTime = (date: Date | string) => {
     const now = new Date();
     const diff = now.getTime() - new Date(date).getTime();
     const minutes = Math.floor(diff / 60000);

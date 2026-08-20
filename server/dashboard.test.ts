@@ -51,7 +51,7 @@ describe("Dashboard Statistics", () => {
       expect(stats.recentDocuments.length).toBeLessThanOrEqual(5);
       expect(stats.urgentTasks.length).toBeLessThanOrEqual(5);
       expect(stats.activeProjects.length).toBeLessThanOrEqual(5);
-    });}
+    });
   });
 
   describe("getProjectsStatistics", () => {

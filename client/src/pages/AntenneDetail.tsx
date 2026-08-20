@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useParams, useRouter } from "wouter";
+import { useParams, useLocation } from "wouter";
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -16,7 +16,7 @@ import { Badge } from "@/components/ui/badge";
 import { Plus, ArrowLeft, Mail, Phone, MapPin, Edit, Trash2, Users } from "lucide-react";
 
 export function AntenneDetail() {
-  const [, navigate] = useRouter();
+  const [, navigate] = useLocation();
   const { id } = useParams<{ id: string }>();
   const antenneId = parseInt(id || "0");
   const [isCreateGroupOpen, setIsCreateGroupOpen] = useState(false);

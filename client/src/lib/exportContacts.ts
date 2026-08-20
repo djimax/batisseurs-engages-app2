@@ -11,7 +11,7 @@ export interface ContactExportData {
   segment: string | null;
   status: string;
   company?: string | null;
-  createdAt: Date;
+  createdAt: Date | string;
   engagementScore?: number | null;
 }
 

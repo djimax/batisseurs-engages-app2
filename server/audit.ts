@@ -1,6 +1,7 @@
 import { getDb } from "./db";
 import { auditLogs } from "../drizzle/schema";
-import type { InsertAuditLog } from "../drizzle/schema";
+
+type InsertAuditLog = typeof auditLogs.$inferInsert;
 
 /**
  * Log an audit entry for tracking modifications

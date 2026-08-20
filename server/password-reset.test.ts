@@ -122,7 +122,7 @@ describe("Password Reset Requests", () => {
 
     const request = await createPasswordResetRequest({
       email: "invalid-email",
-      token: "test-token-invalid",
+      token: `test-token-invalid-${Date.now()}`,
       status: "pending",
       expiresAt,
     });
