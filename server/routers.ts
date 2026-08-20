@@ -25,6 +25,7 @@ import {
   createProjectTask, getProjectTasks, updateProjectTask, deleteProjectTask,
   createProjectMilestone, getProjectMilestones, updateProjectMilestone, deleteProjectMilestone,
   createProjectUpdate, getProjectUpdates,
+  createProjectTaskComment, getProjectTaskComments, deleteProjectTaskComment, getProjectReport,
   getProjectBudgetItems, createProjectBudgetItem, updateProjectBudgetItem, deleteProjectBudgetItem,
   getDashboardStatistics, getProjectsStatistics, getTasksStatistics, getFinanceStatistics, getMembersStatistics,
   getAllUsers, getUserById, updateUserRole, getAdminCount, isUserAdmin
@@ -1196,6 +1197,33 @@ export const appRouter = router({
       .input(z.object({ id: z.number() }))
       .mutation(async ({ input }) => {
         return await deleteProjectTask(input.id);
+      }),
+
+    getTaskComments: protectedProcedure
+      .input(z.object({ taskId: z.number() }))
+      .query(async ({ input }) => {
+        return await getProjectTaskComments(input.taskId);
+      }),
+
+    addTaskComment: protectedProcedure
+      .input(z.object({ projectId: z.number(), taskId: z.number(), content: z.string().trim().min(1).max(5000) }))
+      .mutation(async ({ input, ctx }) => {
+        return await createProjectTaskComment({
+          ...input,
+          authorId: ctx.user?.id || 0,
+        });
+      }),
+
+    deleteTaskComment: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input }) => {
+        return await deleteProjectTaskComment(input.id);
+      }),
+
+    report: protectedProcedure
+      .input(z.object({ projectId: z.number() }))
+      .query(async ({ input }) => {
+        return await getProjectReport(input.projectId);
       }),
 
     // Project Milestones

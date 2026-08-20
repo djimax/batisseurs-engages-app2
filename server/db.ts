@@ -28,6 +28,7 @@ import {
   projectTasks,
   projectMilestones,
   projectUpdates,
+  projectTaskComments,
   projectBudgetItems,
   auditLogs,
   roles,
@@ -81,6 +82,7 @@ const schema = {
   projectTasks,
   projectMilestones,
   projectUpdates,
+  projectTaskComments,
   projectBudgetItems
 };
 
@@ -1091,6 +1093,93 @@ export async function getProjectUpdates(projectId: number) {
   return await db.select().from(projectUpdates).where(eq(projectUpdates.projectId, projectId)).orderBy(desc(projectUpdates.createdAt));
 }
 
+// Project Task Comments
+export async function createProjectTaskComment(data: InsertProjectTaskComment) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  const result = await db.insert(projectTaskComments).values(data);
+  const id = result[0].insertId;
+  const rows = await db.select().from(projectTaskComments).where(eq(projectTaskComments.id, Number(id)));
+  return rows[0];
+}
+
+export async function getProjectTaskComments(taskId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  return await db.select().from(projectTaskComments)
+    .where(eq(projectTaskComments.taskId, taskId))
+    .orderBy(projectTaskComments.createdAt);
+}
+
+export async function deleteProjectTaskComment(id: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  await db.delete(projectTaskComments).where(eq(projectTaskComments.id, id));
+  return { success: true };
+}
+
+export async function getProjectReport(projectId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  const [project, taskMetrics, overdueTasks, milestoneMetrics, budgetMetrics, updateCount, commentCount] = await Promise.all([
+    getProject(projectId),
+    db.select({
+      total: sql<number>`count(*)`,
+      completed: sql<number>`sum(case when status = 'completed' then 1 else 0 end)`,
+      inProgress: sql<number>`sum(case when status = 'in-progress' then 1 else 0 end)`,
+    }).from(projectTasks).where(eq(projectTasks.projectId, projectId)),
+    db.select({ count: sql<number>`count(*)` }).from(projectTasks).where(and(
+      eq(projectTasks.projectId, projectId),
+      lt(projectTasks.dueDate, new Date().toISOString()),
+      ne(projectTasks.status, "completed"),
+    )),
+    db.select({
+      total: sql<number>`count(*)`,
+      completed: sql<number>`sum(case when status = 'completed' then 1 else 0 end)`,
+    }).from(projectMilestones).where(eq(projectMilestones.projectId, projectId)),
+    db.select({
+      budget: sql<number>`coalesce(sum(cast(amount as decimal(15,2))), 0)`,
+      spent: sql<number>`coalesce(sum(cast(spent as decimal(15,2))), 0)`,
+    }).from(projectBudgetItems).where(eq(projectBudgetItems.projectId, projectId)),
+    db.select({ count: sql<number>`count(*)` }).from(projectUpdates).where(eq(projectUpdates.projectId, projectId)),
+    db.select({ count: sql<number>`count(*)` }).from(projectTaskComments).where(eq(projectTaskComments.projectId, projectId)),
+  ]);
+
+  const tasks = taskMetrics[0] ?? { total: 0, completed: 0, inProgress: 0 };
+  const milestones = milestoneMetrics[0] ?? { total: 0, completed: 0 };
+  const budget = budgetMetrics[0] ?? { budget: 0, spent: 0 };
+  const taskTotal = Number(tasks.total ?? 0);
+  const taskCompleted = Number(tasks.completed ?? 0);
+  const progressPercentage = taskTotal > 0 ? Math.round((taskCompleted / taskTotal) * 100) : 0;
+
+  return {
+    project,
+    tasks: {
+      total: taskTotal,
+      completed: taskCompleted,
+      inProgress: Number(tasks.inProgress ?? 0),
+      overdue: Number(overdueTasks[0]?.count ?? 0),
+    },
+    milestones: {
+      total: Number(milestones.total ?? 0),
+      completed: Number(milestones.completed ?? 0),
+    },
+    budget: {
+      planned: Number(budget.budget ?? 0),
+      spent: Number(budget.spent ?? 0),
+      remaining: Number(budget.budget ?? 0) - Number(budget.spent ?? 0),
+    },
+    progressPercentage,
+    updatesCount: Number(updateCount[0]?.count ?? 0),
+    commentsCount: Number(commentCount[0]?.count ?? 0),
+    generatedAt: new Date().toISOString(),
+  };
+}
+
 // Project Budget Items
 export async function getProjectBudgetItems(projectId: number) {
   const db = await getDb();
@@ -1367,6 +1456,7 @@ export type InsertProjectMember = typeof projectMembers.$inferInsert;
 export type InsertProjectTask = typeof projectTasks.$inferInsert;
 export type InsertProjectMilestone = typeof projectMilestones.$inferInsert;
 export type InsertProjectUpdate = typeof projectUpdates.$inferInsert;
+export type InsertProjectTaskComment = typeof projectTaskComments.$inferInsert;
 export type InsertProjectBudgetItem = typeof projectBudgetItems.$inferInsert;
 export type InsertAuditLog = typeof auditLogs.$inferInsert;
 

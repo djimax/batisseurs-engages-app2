@@ -676,6 +676,20 @@ export const projectUpdates = mysqlTable("project_updates", {
 	createdAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
 });
 
+export const projectTaskComments = mysqlTable("project_task_comments", {
+	id: int().autoincrement().notNull(),
+	taskId: int().notNull(),
+	projectId: int().notNull(),
+	authorId: int().notNull(),
+	content: text().notNull(),
+	createdAt: timestamp({ mode: 'string' }).defaultNow().notNull(),
+	updatedAt: timestamp({ mode: 'string' }).defaultNow().onUpdateNow().notNull(),
+},
+(table) => [
+	index("project_task_comments_task_idx").on(table.taskId),
+	index("project_task_comments_project_idx").on(table.projectId),
+]);
+
 export const projects = mysqlTable("projects", {
 	id: int().autoincrement().notNull(),
 	name: varchar({ length: 255 }).notNull(),

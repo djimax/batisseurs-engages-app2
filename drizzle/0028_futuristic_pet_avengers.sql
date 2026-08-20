@@ -1,0 +1,1 @@
+ALTER TABLE `project_task_comments` MODIFY COLUMN `createdAt` timestamp NOT NULL DEFAULT (now());

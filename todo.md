@@ -1547,3 +1547,13 @@
 - [x] Ajouter les tests de quorum, éligibilité et unicité du vote
 - [x] Valider TypeScript, tests, build et serveur
 
+
+## Implémentation réelle — Rapports et collaboration projets
+- [x] Auditer les procédures et la page de détail projet existantes
+- [x] Ajouter les commentaires de tâches et leur historique d’activité
+- [x] Ajouter les statistiques de progression, tâches en retard et budget consommé
+- [x] Ajouter l’export du rapport d’avancement projet en PDF/CSV
+- [x] Intégrer les procédures et l’interface au contrôle de périmètre projet (routes protégées, renforcement de périmètre à poursuivre)
+- [x] Ajouter les tests des commentaires, statistiques et exports
+- [x] Valider TypeScript, tests, build et serveur
+

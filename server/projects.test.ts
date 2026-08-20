@@ -18,6 +18,10 @@ import {
   deleteProjectMilestone,
   createProjectUpdate,
   getProjectUpdates,
+  createProjectTaskComment,
+  getProjectTaskComments,
+  deleteProjectTaskComment,
+  getProjectReport,
   getProjectBudgetItems,
   createProjectBudgetItem,
   updateProjectBudgetItem,
@@ -330,6 +334,67 @@ describe("Projects Management", () => {
 
     afterAll(async () => {
       await deleteProject(projectId);
+    });
+  });
+
+  describe("Project Reports and Task Comments", () => {
+    let reportProjectId: number;
+    let reportTaskId: number;
+    let commentId: number;
+
+    beforeAll(async () => {
+      const project = await createProject({
+        name: "Report Test Project",
+        description: "Project for report and discussion tests",
+        status: "in-progress",
+        budget: "2500",
+        leaderId: 1,
+        createdBy: 1,
+      });
+      reportProjectId = project.id;
+
+      const task = await createProjectTask({
+        projectId: reportProjectId,
+        title: "Report task",
+        status: "completed",
+        priority: "high",
+      });
+      reportTaskId = task.id;
+    });
+
+    it("should create, list and delete a task comment", async () => {
+      const comment = await createProjectTaskComment({
+        projectId: reportProjectId,
+        taskId: reportTaskId,
+        authorId: 1,
+        content: "Décision validée pendant la réunion projet.",
+      });
+
+      expect(comment).toBeDefined();
+      expect(comment.content).toContain("Décision validée");
+      commentId = comment.id;
+
+      const comments = await getProjectTaskComments(reportTaskId);
+      expect(comments.some((item) => item.id === commentId)).toBe(true);
+
+      const deletion = await deleteProjectTaskComment(commentId);
+      expect(deletion.success).toBe(true);
+    });
+
+    it("should return a coherent project report", async () => {
+      const report = await getProjectReport(reportProjectId);
+
+      expect(report.project?.id).toBe(reportProjectId);
+      expect(report.tasks.total).toBeGreaterThanOrEqual(1);
+      expect(report.tasks.completed).toBeGreaterThanOrEqual(1);
+      expect(report.progressPercentage).toBeGreaterThanOrEqual(0);
+      expect(report.progressPercentage).toBeLessThanOrEqual(100);
+      expect(report.budget.remaining).toBe(report.budget.planned - report.budget.spent);
+      expect(typeof report.generatedAt).toBe("string");
+    });
+
+    afterAll(async () => {
+      await deleteProject(reportProjectId);
     });
   });
 });
