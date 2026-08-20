@@ -29,6 +29,9 @@ export const DEFAULT_PERMISSIONS = [
   { name: "projects.manage", category: "projects", description: "Gérer les projets" },
   { name: "structures.view", category: "structures", description: "Consulter les antennes et groupes" },
   { name: "structures.manage", category: "structures", description: "Créer et modifier les antennes et groupes" },
+  { name: "governance.view", category: "governance", description: "Consulter les assemblées, résolutions et procès-verbaux" },
+  { name: "governance.manage", category: "governance", description: "Créer et administrer les assemblées et résolutions" },
+  { name: "governance.vote", category: "governance", description: "Participer aux votes des assemblées autorisées" },
 ] as const;
 
 const ACCESS_LEVEL_RANK: Record<AccessLevel, number> = {

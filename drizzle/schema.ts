@@ -38,6 +38,82 @@ export const adhesions = mysqlTable("adhesions", {
 	updatedAt: timestamp({ mode: 'string' }).defaultNow().onUpdateNow().notNull(),
 });
 
+export const assemblies = mysqlTable("assemblies", {
+	id: int().autoincrement().notNull(),
+	title: varchar({ length: 255 }).notNull(),
+	description: text(),
+	type: mysqlEnum(['ordinary','extraordinary']).default('ordinary').notNull(),
+	status: mysqlEnum(['draft','scheduled','open','closed','archived']).default('draft').notNull(),
+	scheduledAt: timestamp({ mode: 'string' }),
+	opensAt: timestamp({ mode: 'string' }),
+	closesAt: timestamp({ mode: 'string' }),
+	quorumPercentage: int().default(50).notNull(),
+	minutes: text(),
+	createdBy: int().notNull(),
+	createdAt: timestamp({ mode: 'string' }).defaultNow().notNull(),
+	updatedAt: timestamp({ mode: 'string' }).defaultNow().onUpdateNow().notNull(),
+},
+(table) => [
+	index("assemblies_status_idx").on(table.status),
+	index("assemblies_scheduled_idx").on(table.scheduledAt),
+]);
+
+export const assemblyParticipants = mysqlTable("assembly_participants", {
+	id: int().autoincrement().notNull(),
+	assemblyId: int().notNull(),
+	memberId: int().notNull(),
+	attendance: mysqlEnum(['invited','present','absent','represented']).default('invited').notNull(),
+	checkedInAt: timestamp({ mode: 'string' }),
+	createdAt: timestamp({ mode: 'string' }).defaultNow().notNull(),
+	updatedAt: timestamp({ mode: 'string' }).defaultNow().onUpdateNow().notNull(),
+},
+(table) => [
+	uniqueIndex("assembly_participant_unique").on(table.assemblyId, table.memberId),
+	index("assembly_participants_member_idx").on(table.memberId),
+]);
+
+export const assemblyProxies = mysqlTable("assembly_proxies", {
+	id: int().autoincrement().notNull(),
+	assemblyId: int().notNull(),
+	representedMemberId: int().notNull(),
+	proxyMemberId: int().notNull(),
+	status: mysqlEnum(['pending','approved','rejected']).default('pending').notNull(),
+	createdAt: timestamp({ mode: 'string' }).defaultNow().notNull(),
+	updatedAt: timestamp({ mode: 'string' }).defaultNow().onUpdateNow().notNull(),
+},
+(table) => [
+	uniqueIndex("assembly_proxy_unique").on(table.assemblyId, table.representedMemberId),
+	index("assembly_proxies_proxy_member_idx").on(table.proxyMemberId),
+]);
+
+export const assemblyResolutions = mysqlTable("assembly_resolutions", {
+	id: int().autoincrement().notNull(),
+	assemblyId: int().notNull(),
+	title: varchar({ length: 255 }).notNull(),
+	description: text(),
+	orderIndex: int().default(0).notNull(),
+	status: mysqlEnum(['draft','open','closed']).default('draft').notNull(),
+	closedAt: timestamp({ mode: 'string' }),
+	createdAt: timestamp({ mode: 'string' }).defaultNow().notNull(),
+	updatedAt: timestamp({ mode: 'string' }).defaultNow().onUpdateNow().notNull(),
+},
+(table) => [
+	index("assembly_resolutions_assembly_idx").on(table.assemblyId),
+]);
+
+export const assemblyVotes = mysqlTable("assembly_votes", {
+	id: int().autoincrement().notNull(),
+	resolutionId: int().notNull(),
+	memberId: int().notNull(),
+	choice: mysqlEnum(['for','against','abstain']).notNull(),
+	createdAt: timestamp({ mode: 'string' }).defaultNow().notNull(),
+	updatedAt: timestamp({ mode: 'string' }).defaultNow().onUpdateNow().notNull(),
+},
+(table) => [
+	uniqueIndex("assembly_vote_unique").on(table.resolutionId, table.memberId),
+	index("assembly_votes_member_idx").on(table.memberId),
+]);
+
 export const announcements = mysqlTable("announcements", {
 	id: int().autoincrement().notNull(),
 	title: varchar({ length: 255 }).notNull(),

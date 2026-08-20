@@ -46,6 +46,7 @@ import {
   Cog,
   Lock,
   Briefcase,
+  Gavel,
   ChevronDown,
   MapPin
 } from "lucide-react";
@@ -91,6 +92,7 @@ const menuItems: MenuItem[] = [
     { icon: Briefcase, label: "Projets", path: "/projects" },
     { icon: Calendar, label: "Événements", path: "/events" },
     { icon: Megaphone, label: "Campagnes", path: "/campaigns" },
+    { icon: Gavel, label: "Gouvernance & AG", path: "/governance" },
   ]},
   
   // Groupes & Antennes

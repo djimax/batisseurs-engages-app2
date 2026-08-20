@@ -713,7 +713,7 @@
 
 ### Pages d'Interface
 - [x] Créer page AdminRoles.tsx pour gérer les rôles
-- [ ] Créer page AdminPermissions.tsx pour gérer les permissions
+- [x] Créer page AdminPermissions.tsx pour gérer les permissions
 - [x] Créer page AdminAuditLogs.tsx pour consulter les logs
 - [x] Ajouter les routes dans App.tsx
 - [x] Ajouter les liens de navigation
@@ -1440,10 +1440,10 @@
 
 ## Audit d’Expert et Évolution Stratégique de la Plateforme
 - [x] Réaliser un diagnostic fonctionnel et technique complet de l’application actuelle
-- [ ] Mettre en place la gouvernance des assemblées générales et du quorum (vote électronique)
-- [ ] Intégrer la gestion des reçus fiscaux et des justificatifs de dons (conformité réglementaire)
-- [ ] Connecter une passerelle de paiement en ligne (Stripe / HelloAsso) pour les cotisations autonomes
-- [ ] Implémenter le portail adhérent en self-service (mise à jour du profil, téléchargement de carte d’adhérent)
+- [x] Mettre en place la gouvernance des assemblées générales et du quorum (vote électronique)
+- [x] Intégrer la gestion des reçus fiscaux et des justificatifs de dons (conformité réglementaire)
+- [x] Connecter une passerelle de paiement en ligne (Stripe / HelloAsso) pour les cotisations autonomes
+- [x] Implémenter le portail adhérent en self-service (mise à jour du profil, téléchargement de carte d’adhérent)
 - [ ] Développer l’application mobile compagnon ou l’optimisation PWA pour les terrains et antennes locales
 
 ## Phase d’Implémentation Étape par Étape — Étape 1 : Permissions Granulaires et Périmètres
@@ -1520,7 +1520,7 @@
 
 ## Prochains modules — Notifications, gouvernance et projets
 - [x] Ajouter les notifications persistantes et rappels idempotents
-- [ ] Ajouter les assemblées, résolutions, quorum et votes
+- [x] Ajouter les assemblées, résolutions, quorum et votes
 - [ ] Ajouter les budgets, discussions et rapports de projets
 - [ ] Renforcer la conformité documentaire et la synchronisation terrain
 
@@ -1536,4 +1536,14 @@
 - [x] Monter le handler Heartbeat idempotent et le registre durable de tâche
 - [ ] Créer/activer le rappel périodique après déploiement confirmé
 - [ ] Ajouter la diffusion temps réel WebSocket après décision de mode d’hébergement persistant
+
+
+## Implémentation réelle — Gouvernance associative
+- [x] Auditer le schéma et les routeurs existants d’assemblées, résolutions et votes
+- [x] Ajouter les tables d’assemblées, participants, résolutions, procurations et votes si absentes
+- [x] Ajouter le calcul contrôlé du quorum et la clôture immuable des scrutins
+- [x] Ajouter les procédures tRPC protégées par périmètre
+- [x] Créer l’interface assemblée, présence, ordre du jour et vote
+- [x] Ajouter les tests de quorum, éligibilité et unicité du vote
+- [x] Valider TypeScript, tests, build et serveur
 
