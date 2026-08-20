@@ -438,9 +438,9 @@ export default function Settings() {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               {darkMode ? (
-                <Moon className="w-5 h-5 text-gray-600" />
+                <Moon className="w-5 h-5 text-primary" />
               ) : (
-                <Sun className="w-5 h-5 text-yellow-600" />
+                <Sun className="w-5 h-5 text-accent-foreground" />
               )}
               <label htmlFor="dark-mode" className="cursor-pointer">
                 Mode Sombre

@@ -1570,4 +1570,7 @@
 - [x] Harmoniser les cartes, boutons, tableaux, formulaires, dialogs et badges
 - [x] Ajouter une finition responsive mobile/tablette pour le layout principal
 - [x] Vérifier visuellement les écrans principaux et corriger les régressions TypeScript/build/tests
-- [x] Sauvegarder un checkpoint de la refonte visuelle
+- [x] Nettoyer les styles historiques restants de Settings et des outils de développement
+- [x] Vérifier les composants d’authentification et les contrôles de formulaire sur mobile
+- [x] Exécuter la validation finale TypeScript, tests, build et aperçu visuel
+- [x] Sauvegarder un checkpoint consolidé de la refonte visuelle

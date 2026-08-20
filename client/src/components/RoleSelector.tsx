@@ -21,10 +21,10 @@ export function RoleSelector() {
   const roles: UserRole[] = ["admin", "membre"];
 
   return (
-    <Card className="border-blue-200 bg-blue-50 dark:border-blue-900 dark:bg-blue-950">
+      <Card className="border-primary/15 bg-primary/5">
       <CardHeader className="pb-3">
         <div className="flex items-center gap-2">
-          <Shield className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+          <Shield className="h-4 w-4 text-primary" />
           <CardTitle className="text-sm">Sélecteur de Rôle (Dev)</CardTitle>
         </div>
         <CardDescription className="text-xs">
@@ -57,7 +57,7 @@ export function RoleSelector() {
           <p>{ROLE_DESCRIPTIONS[currentRole]}</p>
         </div>
 
-        <div className="bg-white dark:bg-slate-900 rounded p-2 text-xs">
+        <div className="rounded-xl border border-border/70 bg-card/75 p-3 text-xs">
           <p className="font-medium mb-1">Permissions:</p>
           <ul className="space-y-1 text-muted-foreground">
             <li>✓ Lecture : {isAdmin ? "Tous les documents" : "Documents publics"}</li>
