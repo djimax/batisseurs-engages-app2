@@ -1425,3 +1425,9 @@
 - [ ] Créer le plan de déploiement
 - [ ] Implémenter le CI/CD
 - [ ] Configurer le monitoring en production
+
+## Amélioration UX — Retours visuels
+
+- [x] Ajouter des animations de chargement cohérentes aux listes, formulaires et mutations principales
+- [x] Ajouter des notifications toast de succès et d’erreur aux actions utilisateur principales
+- [x] Vérifier l’accessibilité, le typage, les tests et le build après l’amélioration UX

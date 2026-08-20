@@ -21,6 +21,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Plus, Search, MapPin, Mail, Phone, Edit, Trash2, ChevronRight } from "lucide-react";
 import { useLocation } from "wouter";
+import { toast } from "sonner";
+import { LoadingButtonContent, LoadingState } from "@/components/LoadingState";
+import { getErrorMessage } from "@/lib/uxFeedback";
 
 export function Antennes() {
   const [, navigate] = useLocation();
@@ -33,7 +36,7 @@ export function Antennes() {
   const [editingId, setEditingId] = useState<number | null>(null);
 
   // Récupérer les antennes
-  const { data: antennasData, isLoading, refetch } = trpc.antennes.list.useQuery({
+  const { data: antennasData, isLoading, isFetching, refetch } = trpc.antennes.list.useQuery({
     search,
     sortBy,
     sortOrder,
@@ -44,21 +47,33 @@ export function Antennes() {
   // Mutations
   const createMutation = trpc.antennes.create.useMutation({
     onSuccess: () => {
+      toast.success("Antenne créée avec succès");
       refetch();
       setIsCreateOpen(false);
+    },
+    onError: (error) => {
+      toast.error(getErrorMessage(error, "Impossible de créer l’antenne"));
     },
   });
 
   const updateMutation = trpc.antennes.update.useMutation({
     onSuccess: () => {
+      toast.success("Antenne mise à jour");
       refetch();
       setEditingId(null);
+    },
+    onError: (error) => {
+      toast.error(getErrorMessage(error, "Impossible de mettre à jour l’antenne"));
     },
   });
 
   const deleteMutation = trpc.antennes.delete.useMutation({
     onSuccess: () => {
+      toast.success("Antenne supprimée");
       refetch();
+    },
+    onError: (error) => {
+      toast.error(getErrorMessage(error, "Impossible de supprimer l’antenne"));
     },
   });
 
@@ -138,7 +153,9 @@ export function Antennes() {
                 />
               </div>
               <Button type="submit" className="w-full" disabled={createMutation.isPending}>
-                {createMutation.isPending ? "Création..." : "Créer"}
+                <LoadingButtonContent loading={createMutation.isPending} loadingLabel="Création…">
+                  Créer
+                </LoadingButtonContent>
               </Button>
             </form>
           </DialogContent>
@@ -146,6 +163,9 @@ export function Antennes() {
       </div>
 
       {/* Filtres et Recherche */}
+      {isFetching && !isLoading && (
+        <LoadingState variant="inline" label="Actualisation des antennes…" />
+      )}
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div className="flex-1 relative">
           <Search className="absolute left-3 top-3 w-4 h-4 text-muted-foreground" />
@@ -197,9 +217,7 @@ export function Antennes() {
 
       {/* Liste des Antennes */}
       {isLoading ? (
-        <div className="text-center py-12">
-          <p className="text-muted-foreground">Chargement...</p>
-        </div>
+        <LoadingState variant="cards" label="Chargement des antennes…" rows={3} />
       ) : antennes.length === 0 ? (
         <Card>
           <CardContent className="py-12 text-center">

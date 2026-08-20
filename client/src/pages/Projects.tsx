@@ -10,6 +10,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Plus, Search, Trash2, Edit2, Eye } from "lucide-react";
 import { toast } from "sonner";
 import { Link } from "wouter";
+import { LoadingButtonContent, LoadingState } from "@/components/LoadingState";
+import { getErrorMessage } from "@/lib/uxFeedback";
 
 export function Projects() {
   const [limit, setLimit] = useState(20);
@@ -41,7 +43,7 @@ export function Projects() {
       refetch();
     },
     onError: (error) => {
-      toast.error(error.message || "Erreur lors de la création du projet");
+      toast.error(getErrorMessage(error, "Erreur lors de la création du projet"));
     },
   });
 
@@ -52,7 +54,7 @@ export function Projects() {
       refetch();
     },
     onError: (error) => {
-      toast.error(error.message || "Erreur lors de la suppression");
+      toast.error(getErrorMessage(error, "Erreur lors de la suppression"));
     },
   });
 
@@ -159,7 +161,9 @@ export function Projects() {
                 />
               </div>
               <Button onClick={handleCreateProject} disabled={createMutation.isPending} className="w-full">
-                {createMutation.isPending ? "Création..." : "Créer le projet"}
+                <LoadingButtonContent loading={createMutation.isPending} loadingLabel="Création…">
+                  Créer le projet
+                </LoadingButtonContent>
               </Button>
             </div>
           </DialogContent>
@@ -222,9 +226,7 @@ export function Projects() {
       {/* Projects Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {isLoading ? (
-          <div className="col-span-full text-center py-8 text-muted-foreground">
-            Chargement...
-          </div>
+          <LoadingState variant="cards" label="Chargement des projets…" rows={6} className="col-span-full" />
         ) : filteredProjects && filteredProjects.length > 0 ? (
           filteredProjects.map((project: any) => (
             <Card key={project.id} className="hover:shadow-lg transition-shadow">
@@ -262,8 +264,9 @@ export function Projects() {
                     variant="outline"
                     onClick={() => deleteMutation.mutate({ id: project.id })}
                     disabled={deleteMutation.isPending}
+                    aria-label="Supprimer le projet"
                   >
-                    <Trash2 className="w-4 h-4" />
+                    {deleteMutation.isPending ? <LoadingState variant="inline" label="" /> : <Trash2 className="w-4 h-4" />}
                   </Button>
                 </div>
               </CardContent>

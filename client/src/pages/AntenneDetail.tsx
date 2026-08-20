@@ -14,6 +14,9 @@ import {
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Plus, ArrowLeft, Mail, Phone, MapPin, Edit, Trash2, Users } from "lucide-react";
+import { toast } from "sonner";
+import { LoadingButtonContent, LoadingState } from "@/components/LoadingState";
+import { getErrorMessage } from "@/lib/uxFeedback";
 
 export function AntenneDetail() {
   const [, navigate] = useLocation();
@@ -32,20 +35,32 @@ export function AntenneDetail() {
   // Mutations
   const createGroupeMutation = trpc.groupes.create.useMutation({
     onSuccess: () => {
+      toast.success("Groupe créé avec succès");
       refetchGroupes();
       setIsCreateGroupOpen(false);
+    },
+    onError: (error) => {
+      toast.error(getErrorMessage(error, "Impossible de créer le groupe"));
     },
   });
 
   const deleteGroupeMutation = trpc.groupes.delete.useMutation({
     onSuccess: () => {
+      toast.success("Groupe supprimé");
       refetchGroupes();
+    },
+    onError: (error) => {
+      toast.error(getErrorMessage(error, "Impossible de supprimer le groupe"));
     },
   });
 
   const deleteAntenneMutation = trpc.antennes.delete.useMutation({
     onSuccess: () => {
+      toast.success("Antenne supprimée");
       navigate("/antennes");
+    },
+    onError: (error) => {
+      toast.error(getErrorMessage(error, "Impossible de supprimer l’antenne"));
     },
   });
 
@@ -61,11 +76,7 @@ export function AntenneDetail() {
   };
 
   if (isLoadingAntenne) {
-    return (
-      <div className="text-center py-12">
-        <p className="text-muted-foreground">Chargement...</p>
-      </div>
-    );
+    return <LoadingState label="Chargement de l’antenne…" />;
   }
 
   if (!antenne) {
@@ -207,7 +218,9 @@ export function AntenneDetail() {
                   />
                 </div>
                 <Button type="submit" className="w-full" disabled={createGroupeMutation.isPending}>
-                  {createGroupeMutation.isPending ? "Création..." : "Créer"}
+                  <LoadingButtonContent loading={createGroupeMutation.isPending} loadingLabel="Création…">
+                    Créer
+                  </LoadingButtonContent>
                 </Button>
               </form>
             </DialogContent>
@@ -215,9 +228,7 @@ export function AntenneDetail() {
         </div>
 
         {isLoadingGroupes ? (
-          <div className="text-center py-12">
-            <p className="text-muted-foreground">Chargement des groupes...</p>
-          </div>
+          <LoadingState variant="cards" label="Chargement des groupes…" rows={3} />
         ) : groupes.length === 0 ? (
           <Card>
             <CardContent className="py-12 text-center">
