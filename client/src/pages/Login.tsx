@@ -28,25 +28,24 @@ export default function Login({ onLogin, error, onForgotPassword }: LoginProps) 
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-slate-50 to-blue-100 dark:from-blue-950 dark:via-slate-950 dark:to-blue-900 px-4 relative overflow-hidden">
-      {/* Animated background elements */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-0 right-0 w-96 h-96 bg-blue-200 dark:bg-blue-900/30 rounded-full blur-3xl opacity-20 animate-pulse"></div>
-        <div className="absolute bottom-0 left-0 w-96 h-96 bg-blue-300 dark:bg-blue-800/30 rounded-full blur-3xl opacity-20 animate-pulse" style={{ animationDelay: "1s" }}></div>
+    <div className="app-auth-shell flex min-h-screen items-center justify-center px-4 relative overflow-hidden">
+      <div className="pointer-events-none absolute inset-0 overflow-hidden">
+        <div className="absolute right-[8%] top-[12%] h-40 w-40 rounded-full bg-accent/10 blur-3xl animate-pulse"></div>
+        <div className="absolute bottom-[12%] left-[8%] h-48 w-48 rounded-full bg-primary/10 blur-3xl animate-pulse" style={{ animationDelay: "1s" }}></div>
       </div>
 
       <div className="relative z-10 w-full max-w-md">
-        <Card className="shadow-2xl border-0 backdrop-blur-sm bg-white/95 dark:bg-slate-900/95">
+        <Card className="border-primary/10 bg-card/90 shadow-[0_28px_70px_-42px_oklch(0.25_0.08_184_/_0.75)] backdrop-blur-xl">
           <CardHeader className="space-y-4 text-center pb-8">
-            <div className="flex justify-center mb-4 animate-fade-in-up">
-              <div className="p-4 rounded-2xl bg-gradient-to-br from-blue-500 to-blue-600 shadow-lg">
+              <div className="flex justify-center mb-4 animate-fade-in-up">
+              <div className="brand-mark h-20 w-20 rounded-[1.6rem]">
                 <img src="/logo.png" alt="Les Bâtisseurs Engagés" className="h-12 w-12" />
               </div>
             </div>
             <div className="space-y-2 animate-fade-in-up delay-1">
               <div className="flex items-center justify-center gap-2">
-                <Sparkles className="h-5 w-5 text-blue-600" />
-                <CardTitle className="text-3xl bg-gradient-to-r from-blue-600 to-blue-700 bg-clip-text text-transparent">
+                <Sparkles className="h-5 w-5 text-accent" />
+                <CardTitle className="font-display text-3xl font-bold tracking-tight text-primary">
                   Les Bâtisseurs Engagés
                 </CardTitle>
               </div>
@@ -70,7 +69,7 @@ export default function Login({ onLogin, error, onForgotPassword }: LoginProps) 
                   Adresse Email
                 </label>
                 <div className="relative group">
-                  <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-blue-500 group-focus-within:text-blue-600 transition-colors" />
+                  <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-primary/60 group-focus-within:text-primary transition-colors" />
                   <Input
                     id="email"
                     type="text"
@@ -78,7 +77,7 @@ export default function Login({ onLogin, error, onForgotPassword }: LoginProps) 
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     disabled={isLoading}
-                    className="pl-10 h-11 bg-blue-50 dark:bg-blue-950/30 border-blue-200 dark:border-blue-800 focus:border-blue-500 focus:ring-blue-500 transition-all"
+                    className="pl-10 h-11 rounded-xl border-border/80 bg-background/70 focus:border-primary focus:ring-primary/20 transition-all"
                     autoFocus
                   />
                 </div>
@@ -89,7 +88,7 @@ export default function Login({ onLogin, error, onForgotPassword }: LoginProps) 
                   Mot de passe
                 </label>
                 <div className="relative group">
-                  <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-blue-500 group-focus-within:text-blue-600 transition-colors" />
+                  <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-primary/60 group-focus-within:text-primary transition-colors" />
                   <Input
                     id="password"
                     type="password"
@@ -102,7 +101,7 @@ export default function Login({ onLogin, error, onForgotPassword }: LoginProps) 
                       }
                     }}
                     disabled={isLoading}
-                    className="pl-10 h-11 bg-blue-50 dark:bg-blue-950/30 border-blue-200 dark:border-blue-800 focus:border-blue-500 focus:ring-blue-500 transition-all"
+                    className="pl-10 h-11 rounded-xl border-border/80 bg-background/70 focus:border-primary focus:ring-primary/20 transition-all"
                   />
                 </div>
                 <div className="flex items-center justify-between pt-2">
@@ -113,7 +112,7 @@ export default function Login({ onLogin, error, onForgotPassword }: LoginProps) 
                     <button
                       type="button"
                       onClick={onForgotPassword}
-                      className="text-xs font-semibold text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 transition-colors"
+                      className="text-xs font-semibold text-primary hover:text-primary/75 transition-colors"
                     >
                       Réinitialiser
                     </button>
@@ -123,7 +122,7 @@ export default function Login({ onLogin, error, onForgotPassword }: LoginProps) 
 
               <Button
                 type="submit"
-                className="w-full h-11 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-semibold shadow-lg hover:shadow-xl transition-all duration-300 btn-glow"
+                className="button-interactive w-full h-11 rounded-xl bg-primary text-primary-foreground font-semibold shadow-[0_14px_26px_-18px_var(--primary)] hover:bg-primary/90"
                 disabled={isLoading || !email || !password}
                 size="lg"
               >
@@ -138,11 +137,11 @@ export default function Login({ onLogin, error, onForgotPassword }: LoginProps) 
               </Button>
             </form>
 
-            <div className="mt-8 pt-6 border-t border-blue-100 dark:border-blue-900">
+            <div className="mt-8 pt-6 border-t border-border/70">
               <p className="text-xs text-center text-muted-foreground leading-relaxed">
                 Cette application est protégée par authentification.
                 <br />
-                <span className="font-semibold text-blue-600 dark:text-blue-400">
+                <span className="font-semibold text-primary">
                   Accès réservé aux membres de l'association.
                 </span>
               </p>

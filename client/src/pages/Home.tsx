@@ -22,7 +22,8 @@ import {
   Mail,
   MapPin,
   FileCheck,
-  Building2
+  Building2,
+  ShieldCheck
 } from "lucide-react";
 import { useLocation } from "wouter";
 import { RoleSelector } from "@/components/RoleSelector";
@@ -54,33 +55,33 @@ export default function Home() {
       title: "Total Documents",
       value: stats?.total || 0,
       icon: FileText,
-      color: "text-blue-600",
-      bgColor: "bg-blue-100 dark:bg-blue-900/30",
-      gradient: "from-blue-500 to-blue-600",
+      color: "text-primary",
+      bgColor: "bg-primary/10",
+      gradient: "from-primary/80 to-primary",
     },
     {
       title: "Complétés",
       value: stats?.completed || 0,
       icon: CheckCircle2,
-      color: "text-emerald-600",
-      bgColor: "bg-emerald-100 dark:bg-emerald-900/30",
-      gradient: "from-emerald-500 to-emerald-600",
+      color: "text-emerald-700",
+      bgColor: "bg-emerald-100/80",
+      gradient: "from-emerald-500/80 to-emerald-600",
     },
     {
       title: "En cours",
       value: stats?.inProgress || 0,
       icon: TrendingUp,
-      color: "text-orange-600",
-      bgColor: "bg-orange-100 dark:bg-orange-900/30",
-      gradient: "from-orange-500 to-orange-600",
+      color: "text-accent-foreground",
+      bgColor: "bg-accent/15",
+      gradient: "from-accent/80 to-accent",
     },
     {
       title: "En attente",
       value: stats?.pending || 0,
       icon: Clock,
-      color: "text-amber-600",
-      bgColor: "bg-amber-100 dark:bg-amber-900/30",
-      gradient: "from-amber-500 to-amber-600",
+      color: "text-amber-700",
+      bgColor: "bg-amber-100/80",
+      gradient: "from-amber-500/80 to-amber-600",
     },
   ];
 
@@ -109,9 +110,9 @@ export default function Home() {
   };
 
   return (
-    <div className="space-y-8">
-      {/* 🎨 HERO SECTION avec sélecteur de mode */}
-      <div className="gradient-hero rounded-3xl p-8 text-white shadow-2xl animate-fade-in-up">
+    <div className="space-y-10">
+      {/* Hero d’accueil */}
+      <div className="hero-gradient-primary relative overflow-hidden rounded-[1.75rem] p-6 text-white shadow-[0_24px_55px_-34px_oklch(0.25_0.08_184_/_0.75)] animate-fade-in-up sm:p-8">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
           <div className="space-y-3">
             <div className="flex items-center gap-2">
@@ -120,24 +121,24 @@ export default function Home() {
                 Bienvenue sur votre Portail
               </h1>
             </div>
-            <p className="text-blue-100 text-lg max-w-2xl">
+            <p className="max-w-2xl text-lg text-white/75">
               Plateforme complète de gestion documentaire, financière et administrative pour votre association
             </p>
             
             {/* Mini stats inline dans le hero */}
             <div className="flex flex-wrap gap-6 pt-4">
               <div className="flex items-center gap-2">
-                <Activity className="h-5 w-5 text-blue-200" />
+                <Activity className="h-5 w-5 text-white/65" />
                 <div>
                   <p className="text-2xl font-bold">{stats?.total || 0}</p>
-                  <p className="text-xs text-blue-200">Documents</p>
+                  <p className="text-xs text-white/65">Documents</p>
                 </div>
               </div>
               <div className="flex items-center gap-2">
-                <Users className="h-5 w-5 text-blue-200" />
+                <Users className="h-5 w-5 text-white/65" />
                 <div>
                   <p className="text-2xl font-bold">{categories?.length || 0}</p>
-                  <p className="text-xs text-blue-200">Catégories</p>
+                  <p className="text-xs text-white/65">Catégories</p>
                 </div>
               </div>
             </div>
@@ -146,7 +147,7 @@ export default function Home() {
           <div className="flex flex-col sm:flex-row gap-3">
             <Button 
               onClick={() => setLocation("/documents")} 
-              className="bg-white text-blue-600 hover:bg-blue-50 gap-2 shadow-lg btn-glow h-12 px-6"
+              className="button-interactive gap-2 bg-white/95 text-primary shadow-lg hover:bg-white h-12 px-6"
               size="lg"
             >
               <Plus className="h-5 w-5" />
@@ -154,7 +155,7 @@ export default function Home() {
             </Button>
             <Button 
               onClick={() => window.open("https://www.lesbatisseursengages.com/", "_blank")} 
-              className="bg-blue-100 text-blue-700 hover:bg-blue-200 gap-2 shadow-lg h-12 px-6"
+              className="button-interactive gap-2 border border-white/25 bg-white/10 text-white shadow-lg hover:bg-white/20 h-12 px-6"
               size="lg"
               variant="outline"
             >
@@ -174,15 +175,15 @@ export default function Home() {
         
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {/* Online Mode */}
-          <Card className={`hover:shadow-lg transition-all cursor-pointer border-2 ${mode === 'online' ? 'border-blue-500 bg-blue-50 dark:bg-blue-950/30' : 'hover:border-primary'}`}>
+          <Card className={`card-hover cursor-pointer border ${mode === 'online' ? 'border-primary bg-primary/5 shadow-md' : 'border-border/70 hover:border-primary/30'}`}>
             <CardHeader>
               <div className="flex items-center gap-3 mb-2">
-                <div className="w-12 h-12 rounded-lg bg-blue-100 dark:bg-blue-900/50 flex items-center justify-center">
-                  <Cloud className="w-6 h-6 text-blue-600" />
+                <div className="grid h-12 w-12 place-items-center rounded-2xl bg-primary/10 text-primary">
+                  <Cloud className="w-6 h-6" />
                 </div>
                 <div>
                   <CardTitle>Mode En Ligne</CardTitle>
-                  {mode === 'online' && <Badge className="mt-1 bg-blue-600">Actif</Badge>}
+                  {mode === 'online' && <Badge className="mt-1 bg-primary text-primary-foreground">Actif</Badge>}
                 </div>
               </div>
               <CardDescription>
@@ -191,7 +192,7 @@ export default function Home() {
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-2">
-                <h4 className="font-semibold text-sm">✨ Avantages :</h4>
+                <h4 className="text-sm font-semibold text-primary">Avantages</h4>
                 <ul className="text-sm text-muted-foreground space-y-1">
                   <li>✅ Accès depuis n'importe quel ordinateur</li>
                   <li>✅ Données synchronisées en temps réel</li>
@@ -201,7 +202,7 @@ export default function Home() {
                 </ul>
               </div>
               <div className="space-y-2">
-                <h4 className="font-semibold text-sm">⚠️ Requis :</h4>
+                <h4 className="text-sm font-semibold text-muted-foreground">Pré-requis</h4>
                 <ul className="text-sm text-muted-foreground space-y-1">
                   <li>• Connexion Internet</li>
                   <li>• Compte Manus</li>
@@ -212,7 +213,7 @@ export default function Home() {
                   setMode('online');
                   setLocation('/documents');
                 }}
-                className="w-full bg-blue-600 hover:bg-blue-700"
+                className="button-interactive w-full bg-primary hover:bg-primary/90"
                 size="lg"
               >
                 <Globe className="w-4 h-4 mr-2" />
@@ -222,15 +223,15 @@ export default function Home() {
           </Card>
 
           {/* Offline Mode */}
-          <Card className={`hover:shadow-lg transition-all cursor-pointer border-2 ${mode === 'offline' ? 'border-green-500 bg-green-50 dark:bg-green-950/30' : 'hover:border-primary'}`}>
+          <Card className={`card-hover cursor-pointer border ${mode === 'offline' ? 'border-accent bg-accent/5 shadow-md' : 'border-border/70 hover:border-accent/40'}`}>
             <CardHeader>
               <div className="flex items-center gap-3 mb-2">
-                <div className="w-12 h-12 rounded-lg bg-green-100 dark:bg-green-900/50 flex items-center justify-center">
-                  <Zap className="w-6 h-6 text-green-600" />
+                <div className="grid h-12 w-12 place-items-center rounded-2xl bg-accent/15 text-accent-foreground">
+                  <Zap className="w-6 h-6" />
                 </div>
                 <div>
                   <CardTitle>Mode Hors Ligne</CardTitle>
-                  {mode === 'offline' && <Badge className="mt-1 bg-green-600">Actif</Badge>}
+                  {mode === 'offline' && <Badge className="mt-1 bg-accent text-accent-foreground">Actif</Badge>}
                 </div>
               </div>
               <CardDescription>
@@ -239,7 +240,7 @@ export default function Home() {
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-2">
-                <h4 className="font-semibold text-sm">✨ Avantages :</h4>
+                <h4 className="text-sm font-semibold text-primary">Avantages</h4>
                 <ul className="text-sm text-muted-foreground space-y-1">
                   <li>✅ Aucune connexion Internet requise</li>
                   <li>✅ Données stockées localement</li>
@@ -249,7 +250,7 @@ export default function Home() {
                 </ul>
               </div>
               <div className="space-y-2">
-                <h4 className="font-semibold text-sm">⚠️ Limitations :</h4>
+                <h4 className="text-sm font-semibold text-muted-foreground">À savoir</h4>
                 <ul className="text-sm text-muted-foreground space-y-1">
                   <li>• Données locales uniquement</li>
                   <li>• Pas de synchronisation</li>
@@ -260,7 +261,7 @@ export default function Home() {
                   setMode('offline');
                   setLocation('/offline');
                 }}
-                className="w-full bg-green-600 hover:bg-green-700"
+                className="button-interactive w-full bg-accent text-accent-foreground hover:bg-accent/90"
                 size="lg"
               >
                 <Wifi className="w-4 h-4 mr-2" />
@@ -271,13 +272,13 @@ export default function Home() {
         </div>
 
         {/* Info Box */}
-        <Card className="bg-blue-50 dark:bg-blue-950/30 border-blue-200 dark:border-blue-900">
+        <Card className="border-primary/15 bg-primary/5">
           <CardContent className="pt-6">
             <div className="flex gap-3">
-              <div className="text-2xl">ℹ️</div>
+              <div className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-primary/10 text-primary"><ShieldCheck className="h-5 w-5" /></div>
               <div>
-                <p className="font-semibold text-blue-900 dark:text-blue-300 mb-1">Vous pouvez changer de mode à tout moment</p>
-                <p className="text-sm text-blue-800 dark:text-blue-400">
+                <p className="mb-1 font-semibold text-primary">Vous pouvez changer de mode à tout moment</p>
+                <p className="text-sm text-muted-foreground">
                   Vous pouvez passer du mode en ligne au mode hors ligne (et vice versa) en utilisant les boutons ci-dessus.
                 </p>
               </div>
@@ -314,7 +315,7 @@ export default function Home() {
                 <Mail className="h-5 w-5 text-primary mt-1 flex-shrink-0" />
                 <div>
                   <p className="text-sm font-medium text-muted-foreground">Email</p>
-                  <a href={`mailto:${ORGANIZATION_INFO.email}`} className="text-base font-semibold text-blue-600 hover:underline">
+                  <a href={`mailto:${ORGANIZATION_INFO.email}`} className="text-base font-semibold text-primary underline-offset-4 hover:underline">
                     {ORGANIZATION_INFO.email}
                   </a>
                 </div>
@@ -323,7 +324,7 @@ export default function Home() {
                 <Globe className="h-5 w-5 text-primary mt-1 flex-shrink-0" />
                 <div>
                   <p className="text-sm font-medium text-muted-foreground">Site Web</p>
-                  <a href={`https://${ORGANIZATION_INFO.website}`} target="_blank" rel="noopener noreferrer" className="text-base font-semibold text-blue-600 hover:underline">
+                  <a href={`https://${ORGANIZATION_INFO.website}`} target="_blank" rel="noopener noreferrer" className="text-base font-semibold text-primary underline-offset-4 hover:underline">
                     {ORGANIZATION_INFO.website}
                   </a>
                 </div>
@@ -333,7 +334,7 @@ export default function Home() {
         </Card>
       </div>
 
-      {/* 📊 STATS GRID - Cartes avec animations */}
+      {/* Statistiques en direct */}
       <div className="space-y-4">
         <h2 className="text-2xl font-bold tracking-tight flex items-center gap-2 animate-slide-in-right">
           <TrendingUp className="h-6 w-6 text-primary" />
@@ -382,16 +383,16 @@ export default function Home() {
         </div>
       </div>
 
-      {/* 🚨 URGENT DOCUMENTS - Avec animation pulse */}
+      {/* Documents urgents */}
       {urgentDocs.length > 0 && (
-        <Card className="border-red-200 dark:border-red-900/50 bg-gradient-to-br from-red-50/80 to-red-100/50 dark:from-red-950/30 dark:to-red-900/20 animate-fade-in-up shadow-lg shadow-red-500/10" style={{ animationDelay: `0.5s` }}>
+        <Card className="border-red-200/70 bg-red-50/60 animate-fade-in-up shadow-lg shadow-red-500/10" style={{ animationDelay: `0.5s` }}>
           <CardHeader className="pb-3">
             <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-red-100 dark:bg-red-900/50">
-                <AlertTriangle className="h-5 w-5 text-red-600 dark:text-red-400 animate-pulse" />
+              <div className="rounded-xl bg-red-100 p-2.5">
+                <AlertTriangle className="h-5 w-5 text-red-600 animate-pulse" />
               </div>
-              <CardTitle className="text-lg text-red-800 dark:text-red-300">
-                🔥 Documents urgents ({urgentDocs.length})
+              <CardTitle className="text-lg text-red-800">
+                Documents urgents ({urgentDocs.length})
               </CardTitle>
             </div>
           </CardHeader>
@@ -400,12 +401,12 @@ export default function Home() {
               {urgentDocs.slice(0, 3).map((doc) => (
                 <div 
                   key={doc.id} 
-                  className="flex items-center justify-between p-4 bg-white dark:bg-card rounded-xl border border-red-100 dark:border-red-900/30 hover:shadow-md transition-all cursor-pointer card-hover"
+                  className="card-hover flex items-center justify-between rounded-xl border border-red-100 bg-white/80 p-4 transition-all cursor-pointer"
                   onClick={() => setLocation("/documents")}
                 >
                   <div className="flex items-center gap-3">
-                    <div className="p-2 rounded-lg bg-red-50 dark:bg-red-900/30">
-                      <FileText className="h-4 w-4 text-red-600 dark:text-red-400" />
+                    <div className="rounded-lg bg-red-50 p-2">
+                      <FileText className="h-4 w-4 text-red-600" />
                     </div>
                     <span className="font-medium">{doc.title}</span>
                   </div>
@@ -415,7 +416,7 @@ export default function Home() {
               {urgentDocs.length > 3 && (
                 <Button 
                   variant="ghost" 
-                  className="w-full text-red-600 hover:text-red-700 hover:bg-red-100 dark:hover:bg-red-900/30"
+                  className="w-full text-red-700 hover:bg-red-100"
                   onClick={() => setLocation("/documents")}
                 >
                   Voir tous les documents urgents ({urgentDocs.length - 3} de plus)
@@ -427,7 +428,7 @@ export default function Home() {
         </Card>
       )}
 
-      {/* 📂 OVERVIEW SECTION */}
+      {/* Vue d’ensemble */}
       <div className="space-y-4">
         <h2 className="text-2xl font-bold tracking-tight flex items-center gap-2 animate-slide-in-right">
           <FolderOpen className="h-6 w-6 text-primary" />
@@ -435,7 +436,7 @@ export default function Home() {
         </h2>
         
         <div className="grid gap-6 lg:grid-cols-2">
-          {/* 📄 Recent Documents - Card avec glassmorphism */}
+          {/* Documents récents */}
           <Card className="glass-card card-hover animate-fade-in-up delay-1">
             <CardHeader className="flex flex-row items-center justify-between">
               <div>
@@ -495,7 +496,7 @@ export default function Home() {
             </CardContent>
           </Card>
 
-          {/* 📊 Quick Stats */}
+              {/* Résumé rapide */}
           <Card className="glass-card card-hover animate-fade-in-up delay-2">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -544,7 +545,7 @@ export default function Home() {
       {/* Role Selector (Dev) - Hidden by default */}
       <details className="group">
         <summary className="cursor-pointer text-xs text-muted-foreground hover:text-foreground transition-colors py-2 px-3 rounded-lg hover:bg-muted/50">
-          ⚙️ Outils de développement
+          Outils de développement
         </summary>
         <div className="mt-4 p-4 bg-muted/30 rounded-lg border border-muted">
           <div className="grid gap-4 md:grid-cols-3 lg:grid-cols-4">

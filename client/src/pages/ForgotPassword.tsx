@@ -55,12 +55,12 @@ export default function ForgotPassword({ onBack }: ForgotPasswordProps) {
 
   if (isSubmitted) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-950 dark:to-slate-900 px-4">
-        <Card className="w-full max-w-md shadow-lg">
+      <div className="app-auth-shell flex min-h-screen items-center justify-center px-4">
+        <Card className="w-full max-w-md border-primary/10 bg-card/90 shadow-[0_28px_70px_-42px_oklch(0.25_0.08_184_/_0.75)] backdrop-blur-xl">
           <CardHeader className="space-y-4 text-center">
             <div className="flex justify-center mb-4">
-              <div className="rounded-full bg-green-100 dark:bg-green-900 p-3">
-                <CheckCircle className="h-8 w-8 text-green-600 dark:text-green-400" />
+              <div className="brand-mark h-16 w-16 rounded-2xl">
+                <CheckCircle className="h-8 w-8 text-emerald-700" />
               </div>
             </div>
             <CardTitle className="text-2xl">Demande envoyée !</CardTitle>
@@ -70,14 +70,14 @@ export default function ForgotPassword({ onBack }: ForgotPasswordProps) {
           </CardHeader>
 
           <CardContent className="space-y-4">
-            <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
-              <p className="text-sm text-blue-800 dark:text-blue-200">
+            <div className="rounded-xl border border-primary/15 bg-primary/5 p-4">
+              <p className="text-sm text-primary">
                 Une demande de réinitialisation de mot de passe a été envoyée à <strong>{SUPPORT_EMAIL}</strong>.
               </p>
             </div>
 
-            <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-4">
-              <p className="text-sm text-amber-800 dark:text-amber-200">
+            <div className="rounded-xl border border-accent/20 bg-accent/10 p-4">
+              <p className="text-sm text-accent-foreground">
                 <strong>Prochaines étapes :</strong>
                 <br />
                 L'administrateur vous enverra un nouveau mot de passe à l'adresse <strong>{email}</strong>.
@@ -104,10 +104,10 @@ export default function ForgotPassword({ onBack }: ForgotPasswordProps) {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-950 dark:to-slate-900 px-4">
-      <Card className="w-full max-w-md shadow-lg">
+      <div className="app-auth-shell flex min-h-screen items-center justify-center px-4">
+        <Card className="w-full max-w-md border-primary/10 bg-card/90 shadow-[0_28px_70px_-42px_oklch(0.25_0.08_184_/_0.75)] backdrop-blur-xl">
         <CardHeader className="space-y-4">
-          <CardTitle className="text-2xl">Mot de passe oublié ?</CardTitle>
+          <CardTitle className="font-display text-2xl text-primary">Mot de passe oublié ?</CardTitle>
           <CardDescription>
             Entrez votre adresse email pour demander une réinitialisation
           </CardDescription>
@@ -135,7 +135,7 @@ export default function ForgotPassword({ onBack }: ForgotPasswordProps) {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   disabled={resetPasswordMutation.isPending}
-                  className="pl-10"
+                    className="pl-10 rounded-xl border-border/80 bg-background/70 focus:border-primary focus:ring-primary/20"
                   autoFocus
                 />
               </div>
@@ -146,7 +146,7 @@ export default function ForgotPassword({ onBack }: ForgotPasswordProps) {
 
             <Button
               type="submit"
-              className="w-full"
+              className="button-interactive w-full rounded-xl"
               disabled={resetPasswordMutation.isPending || !email}
               size="lg"
             >
@@ -172,7 +172,7 @@ export default function ForgotPassword({ onBack }: ForgotPasswordProps) {
             </Button>
           </form>
 
-          <div className="mt-6 pt-6 border-t">
+            <div className="mt-6 border-t border-border/70 pt-6">
             <p className="text-xs text-center text-muted-foreground">
               Besoin d'aide immédiate ?
               <br />

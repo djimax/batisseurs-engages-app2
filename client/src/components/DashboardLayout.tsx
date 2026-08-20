@@ -69,16 +69,16 @@ type MenuItem = {
 const menuItems: MenuItem[] = [
   { icon: LayoutDashboard, label: "Tableau de bord", path: "/dashboard" },
   
-  // Gestion Documentaire
-  { label: "📁 Gestion Documentaire", isGroup: true, items: [
+  // Gestion documentaire
+  { icon: FolderOpen, label: "Gestion documentaire", isGroup: true, items: [
     { icon: FileText, label: "Documents", path: "/documents" },
     { icon: FolderOpen, label: "Catégories", path: "/categories" },
     { icon: Archive, label: "Archives", path: "/archives" },
   ]},
   
-  // Gestion des Membres
+  // Gestion des membres
   { icon: Bell, label: "Notifications", path: "/notifications" },
-  { label: "👥 Gestion des Membres", isGroup: true, items: [
+  { icon: Users, label: "Gestion des membres", isGroup: true, items: [
     { icon: Users, label: "Membres", path: "/members" },
     { icon: UserCheck, label: "Adhésions", path: "/members/adhesions" },
     { icon: UserCheck, label: "Liste des Adhérents", path: "/adhesions-list" },
@@ -87,27 +87,27 @@ const menuItems: MenuItem[] = [
     { icon: Lock, label: "Permissions & Périmètres", path: "/admin/permissions", adminOnly: true },
   ]},
   
-  // Projets & Événements
-  { label: "💼 Projets & Événements", isGroup: true, items: [
+  // Projets et événements
+  { icon: Briefcase, label: "Projets et événements", isGroup: true, items: [
     { icon: Briefcase, label: "Projets", path: "/projects" },
     { icon: Calendar, label: "Événements", path: "/events" },
     { icon: Megaphone, label: "Campagnes", path: "/campaigns" },
     { icon: Gavel, label: "Gouvernance & AG", path: "/governance" },
   ]},
   
-  // Groupes & Antennes
-  { label: "🏢 Groupes & Antennes", isGroup: true, items: [
+  // Groupes et antennes
+  { icon: MapPin, label: "Groupes et antennes", isGroup: true, items: [
     { icon: MapPin, label: "Antennes", path: "/antennes" },
     { icon: MapPin, label: "Groupes & Antennes (Legacy)", path: "/groupes-antennes" },
   ]},
   
   // Finances
-  { label: "💰 Finances", isGroup: true, items: [
+  { icon: DollarSign, label: "Finances", isGroup: true, items: [
     { icon: DollarSign, label: "Finance", path: "/finance" },
   ]},
   
   // CRM
-  { label: "📞 CRM", isGroup: true, adminOnly: true, items: [
+  { icon: PhoneCall, label: "CRM", isGroup: true, adminOnly: true, items: [
     { icon: Users, label: "Tableau de Bord CRM", path: "/crm", adminOnly: true },
     { icon: Users, label: "Contacts", path: "/crm/contacts", adminOnly: true },
     { icon: PhoneCall, label: "Activités", path: "/crm/activities", adminOnly: true },
@@ -115,21 +115,21 @@ const menuItems: MenuItem[] = [
   ]},
   
   // Communication
-  { label: "📢 Communication", isGroup: true, items: [
+  { icon: Megaphone, label: "Communication", isGroup: true, items: [
     { icon: Megaphone, label: "Annonces", path: "/announcements" },
     { icon: Mail, label: "Emails", path: "/email-composer" },
   ]},
   
   // Administration
-  { label: "⚙️ Administration", isGroup: true, adminOnly: true, items: [
+  { icon: Settings, label: "Administration", isGroup: true, adminOnly: true, items: [
     { icon: Settings, label: "Paramètres Globaux", path: "/global-settings", adminOnly: true },
     { icon: Users, label: "Utilisateurs", path: "/users", adminOnly: true },
     { icon: Eye, label: "Journaux d'Audit", path: "/admin/audit-logs", adminOnly: true },
     { icon: Shield, label: "Réinitialisations MDP", path: "/admin/password-resets", adminOnly: true },
   ]},
   
-  // Activité & Logs
-  { label: "📊 Activité & Logs", isGroup: true, items: [
+  // Activité et logs
+  { icon: BarChart3, label: "Activité et logs", isGroup: true, items: [
     { icon: Activity, label: "Activité", path: "/activity" },
     { icon: History, label: "Historique d'audit", path: "/audit-history" },
   ]},
@@ -163,11 +163,11 @@ export default function DashboardLayout({
 
   if (!user) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-primary/5 via-background to-accent/10">
+        <div className="app-auth-shell flex items-center justify-center min-h-screen p-4">
         <div className="flex flex-col items-center gap-8 p-8 max-w-md w-full">
           <div className="flex flex-col items-center gap-4">
-            <div className="flex items-center gap-3 mb-4">
-              <img src="/logo.png" alt="Les Batisseurs Engages" className="w-16 h-16 object-contain" />
+            <div className="brand-mark mb-4">
+              <img src="/logo.png" alt="Les Bâtisseurs Engagés" className="h-14 w-14 object-contain" />
             </div>
             <h1 className="text-2xl font-bold tracking-tight text-center">
               Les Bâtisseurs Engagés
@@ -181,7 +181,7 @@ export default function DashboardLayout({
               window.location.href = getLoginUrl();
             }}
             size="lg"
-            className="w-full shadow-lg hover:shadow-xl transition-all"
+            className="w-full button-interactive shadow-[0_12px_24px_-16px_var(--primary)]"
           >
             Se connecter
           </Button>
@@ -289,8 +289,9 @@ function DashboardLayoutContent({
             <div key={`group-${index}`}>
               <button
                 onClick={() => toggleGroup(item.label)}
-                className="w-full flex items-center gap-2 px-2 py-2 text-xs font-semibold text-white/70 hover:text-white transition-colors group-data-[collapsible=icon]:hidden"
+                className="sidebar-section-label w-full flex items-center gap-2 px-2.5 pt-4 pb-1.5 text-[10px] font-bold uppercase tracking-[0.16em] text-sidebar-foreground/55 hover:text-sidebar-foreground transition-colors group-data-[collapsible=icon]:hidden"
               >
+                {item.icon && <item.icon className="h-3.5 w-3.5 opacity-80" />}
                 <span>{item.label}</span>
                 <ChevronDown
                   className={`h-3 w-3 ml-auto transition-transform ${
@@ -315,12 +316,12 @@ function DashboardLayoutContent({
                 isActive={isActive}
                 onClick={() => setLocation(item.path!)}
                 tooltip={item.label}
-                className={`h-10 transition-all font-normal ${
+                  className={`h-10 rounded-xl font-medium transition-[background-color,color,transform,box-shadow] duration-200 active:scale-[0.98] ${
                   level > 0 ? "pl-6" : ""
                 } ${
                   isActive
-                    ? "bg-accent text-primary hover:bg-accent"
-                    : "text-white/80 hover:bg-primary/80 hover:text-white"
+                    ? "bg-sidebar-accent text-sidebar-accent-foreground shadow-[0_8px_18px_-14px_oklch(0.78_0.14_39_/_0.9)] hover:bg-sidebar-accent"
+                    : "text-sidebar-foreground/78 hover:bg-sidebar-foreground/10 hover:text-sidebar-foreground"
                 }`}
               >
                 {item.icon && <item.icon className="h-4 w-4" />}
@@ -337,24 +338,26 @@ function DashboardLayoutContent({
   return (
     <>
       <div className="relative" ref={sidebarRef}>
-        <Sidebar
+          <Sidebar
           collapsible="icon"
-          className="border-r-0"
+          className="border-r-0 shadow-[12px_0_35px_-28px_oklch(0.18_0.06_184_/_0.7)]"
           disableTransition={isResizing}
         >
-          <SidebarHeader className="h-16 justify-center border-b border-primary/20">
+          <SidebarHeader className="h-20 justify-center border-b border-sidebar-border/60">
             <div className="flex items-center gap-3 px-2 transition-all w-full">
               <button
                 onClick={toggleSidebar}
-                className="h-8 w-8 flex items-center justify-center hover:bg-primary/80 rounded-lg transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-accent shrink-0"
+                className="h-8 w-8 flex items-center justify-center rounded-xl text-sidebar-foreground/80 hover:bg-sidebar-foreground/10 hover:text-sidebar-foreground transition-[background-color,color,transform] duration-200 active:scale-95 focus:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring shrink-0"
                 aria-label="Toggle navigation"
               >
-                <PanelLeft className="h-4 w-4 text-white/80" />
+                <PanelLeft className="h-4 w-4 text-sidebar-foreground/80" />
               </button>
               {!isCollapsed ? (
                 <div className="flex items-center gap-2 min-w-0">
-                  <img src="/logo.png" alt="Logo" className="w-8 h-8 object-contain shrink-0" />
-                  <span className="font-semibold tracking-tight truncate text-sm text-white">
+                  <div className="h-9 w-9 rounded-xl bg-sidebar-foreground/95 p-1 shadow-sm">
+                    <img src="/logo.png" alt="Logo" className="h-full w-full object-contain" />
+                  </div>
+                  <span className="font-extrabold tracking-tight truncate text-sm text-sidebar-foreground">
                     Bâtisseurs Engagés
                   </span>
                 </div>
@@ -368,20 +371,20 @@ function DashboardLayoutContent({
             </SidebarMenu>
           </SidebarContent>
 
-          <SidebarFooter className="p-3 border-t border-primary/20">
+          <SidebarFooter className="p-3 border-t border-sidebar-border/60">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <button className="flex items-center gap-3 rounded-lg px-1 py-1 hover:bg-primary/80 transition-colors w-full text-left group-data-[collapsible=icon]:justify-center focus:outline-none focus-visible:ring-2 focus-visible:ring-accent">
+                <button className="flex items-center gap-3 rounded-xl px-1.5 py-1.5 hover:bg-sidebar-foreground/10 transition-[background-color,transform] duration-200 active:scale-[0.99] w-full text-left group-data-[collapsible=icon]:justify-center focus:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring">
                   <Avatar className="h-9 w-9 border shrink-0 bg-accent">
-                    <AvatarFallback className="text-xs font-medium bg-accent text-primary">
+                    <AvatarFallback className="text-xs font-bold bg-sidebar-accent text-sidebar-accent-foreground">
                       {user?.name?.charAt(0).toUpperCase() || "U"}
                     </AvatarFallback>
                   </Avatar>
                   <div className="flex-1 min-w-0 group-data-[collapsible=icon]:hidden">
-                    <p className="text-sm font-medium truncate leading-none text-white">
+                    <p className="text-sm font-semibold truncate leading-none text-sidebar-foreground">
                       {user?.name || "Utilisateur"}
                     </p>
-                    <p className="text-xs text-white/60 truncate mt-1.5">
+                    <p className="text-xs text-sidebar-foreground/60 truncate mt-1.5">
                       {user?.email || "-"}
                     </p>
                   </div>
@@ -408,19 +411,23 @@ function DashboardLayoutContent({
           {!isCollapsed && (
             <div
               onMouseDown={() => setIsResizing(true)}
-              className="absolute right-0 top-0 bottom-0 w-1 hover:bg-accent/50 cursor-col-resize transition-colors"
+              className="absolute right-0 top-0 bottom-0 w-1 hover:bg-sidebar-accent/60 cursor-col-resize transition-colors"
             />
           )}
         </Sidebar>
       </div>
 
       <SidebarInset>
-        <div className="flex flex-col h-full">
-          <div className="flex items-center gap-2 border-b border-border/50 px-4 py-3 h-16">
-            <SidebarTrigger className="-ml-1" />
+        <div className="app-shell flex flex-col h-full">
+          <div className="sticky top-0 z-20 flex items-center gap-3 border-b border-border/70 bg-background/85 px-4 py-3 h-16 backdrop-blur-xl sm:px-6">
+            <SidebarTrigger className="-ml-1 rounded-xl text-primary hover:bg-primary/10 hover:text-primary" />
+            <div className="hidden min-w-0 items-center gap-2 text-sm text-muted-foreground sm:flex">
+              <span className="h-2 w-2 rounded-full bg-emerald-500 shadow-[0_0_0_4px_oklch(0.72_0.14_150_/_0.14)]" />
+              <span>Plateforme associative</span>
+            </div>
           </div>
           <main className="flex-1 overflow-auto">
-            <div className="p-6">
+            <div className="app-page p-4 sm:p-6 lg:p-8">
               {children}
             </div>
           </main>

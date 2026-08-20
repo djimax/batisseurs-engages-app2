@@ -52,122 +52,86 @@
 }
 
 :root {
-  /* 🎨 THEME HELLOASSO - BLEU FONCÉ, VERT ÉMERAUDE, TURQUOISE */
-  
-  /* Primary: Bleu foncé HelloAsso (#1a2a5c) */
-  --primary: oklch(0.35 0.15 260);
-  --primary-foreground: oklch(0.98 0 0);
-  --sidebar-primary: oklch(0.35 0.15 260);
-  --sidebar-primary-foreground: oklch(0.98 0 0);
-  
-  /* Accent: Vert émeraude HelloAsso (#2ecc71) */
-  --accent: oklch(0.65 0.22 130);
-  --accent-foreground: oklch(0.98 0 0);
-  
-  /* Charts: Palette HelloAsso */
-  --chart-1: oklch(0.35 0.15 260); /* Bleu foncé */
-  --chart-2: oklch(0.65 0.22 130); /* Vert émeraude */
-  --chart-3: oklch(0.55 0.18 200); /* Bleu turquoise */
-  --chart-4: oklch(0.7 0.18 50);   /* Orange */
-  --chart-5: oklch(0.45 0.15 280); /* Violet */
-  
-  /* Radius: Coins plus arrondis pour un look moderne */
-  --radius: 0.75rem;
-  
-  /* Background: Blanc avec légère teinte */
-  --background: oklch(0.98 0.002 260);
-  --foreground: oklch(0.25 0.02 260);
-  
-  /* Cards: Blanc pur */
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.25 0.02 260);
-  
-  /* Popover */
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.2 0.02 250);
-  
-  /* Secondary: Vert émeraude très clair */
-  --secondary: oklch(0.92 0.05 130);
-  --secondary-foreground: oklch(0.35 0.12 130);
-  
-  /* Muted: Gris bleuté doux */
-  --muted: oklch(0.94 0.008 250);
-  --muted-foreground: oklch(0.5 0.03 250);
-  
-  /* Destructive: Rouge vif */
-  --destructive: oklch(0.577 0.245 27.325);
-  --destructive-foreground: oklch(0.985 0 0);
-  
-  /* Border: Gris subtil */
-  --border: oklch(0.88 0.01 260);
-  --input: oklch(0.88 0.01 260);
-  --ring: oklch(0.35 0.15 260);
-  
-  /* Sidebar: Bleu foncé HelloAsso */
-  --sidebar: oklch(0.35 0.15 260);
-  --sidebar-foreground: oklch(0.98 0 0);
-  --sidebar-accent: oklch(0.65 0.22 130);
-  --sidebar-accent-foreground: oklch(0.15 0.02 130);
-  --sidebar-border: oklch(0.35 0.15 260);
-  --sidebar-ring: oklch(0.65 0.22 130);
+  /* Palette associative lumineuse : pétrole, ivoire, corail et sauge */
+  --primary: oklch(0.38 0.105 184);
+  --primary-foreground: oklch(0.99 0.01 90);
+  --sidebar-primary: oklch(0.38 0.105 184);
+  --sidebar-primary-foreground: oklch(0.99 0.01 90);
+
+  --accent: oklch(0.72 0.16 39);
+  --accent-foreground: oklch(0.24 0.045 35);
+
+  --chart-1: oklch(0.38 0.105 184);
+  --chart-2: oklch(0.63 0.12 150);
+  --chart-3: oklch(0.72 0.16 39);
+  --chart-4: oklch(0.7 0.14 87);
+  --chart-5: oklch(0.55 0.12 275);
+
+  --radius: 1rem;
+  --background: oklch(0.975 0.018 92);
+  --foreground: oklch(0.25 0.035 185);
+
+  --card: oklch(0.995 0.006 92);
+  --card-foreground: oklch(0.25 0.035 185);
+
+  --popover: oklch(1 0.003 92);
+  --popover-foreground: oklch(0.25 0.035 185);
+
+  --secondary: oklch(0.93 0.035 151);
+  --secondary-foreground: oklch(0.32 0.075 165);
+
+  --muted: oklch(0.945 0.018 92);
+  --muted-foreground: oklch(0.49 0.04 185);
+
+  --destructive: oklch(0.59 0.19 28);
+  --destructive-foreground: oklch(0.99 0.01 90);
+
+  --border: oklch(0.875 0.025 100);
+  --input: oklch(0.875 0.025 100);
+  --ring: oklch(0.58 0.12 184);
+
+  --sidebar: oklch(0.32 0.085 184);
+  --sidebar-foreground: oklch(0.97 0.018 92);
+  --sidebar-accent: oklch(0.72 0.16 39);
+  --sidebar-accent-foreground: oklch(0.24 0.045 35);
+  --sidebar-border: oklch(0.42 0.08 184);
+  --sidebar-ring: oklch(0.72 0.16 39);
 }
 
 .dark {
-  /* 🌜 DARK MODE - HelloAsso sombre */
-  
-  /* Primary: Bleu foncé clair */
-  --primary: oklch(0.55 0.15 260);
-  --primary-foreground: oklch(0.98 0 0);
-  --sidebar-primary: oklch(0.5 0.15 260);
-  --sidebar-primary-foreground: oklch(0.98 0 0);
-  
-  /* Accent: Vert émeraude vif */
-  --accent: oklch(0.7 0.22 130);
-  --accent-foreground: oklch(0.15 0.02 130);
-  
-  /* Background: Noir bleuté profond */
-  --background: oklch(0.15 0.015 250);
-  --foreground: oklch(0.92 0.01 250);
-  
-  /* Card: Gris foncé avec transparence */
-  --card: oklch(0.2 0.02 250);
-  --card-foreground: oklch(0.92 0.01 250);
-  
-  /* Popover */
-  --popover: oklch(0.2 0.02 250);
-  --popover-foreground: oklch(0.92 0.01 250);
-  
-  /* Secondary: Gris bleuté foncé */
-  --secondary: oklch(0.25 0.025 250);
-  --secondary-foreground: oklch(0.85 0.015 250);
-  
-  /* Muted */
-  --muted: oklch(0.28 0.025 250);
-  --muted-foreground: oklch(0.65 0.02 250);
-  
-  /* Destructive */
-  --destructive: oklch(0.704 0.191 22.216);
-  --destructive-foreground: oklch(0.985 0 0);
-  
-  /* Border */
-  --border: oklch(0.3 0.025 250);
-  --input: oklch(0.3 0.025 250);
-  --ring: oklch(0.6 0.2 250);
-  
-  /* Charts - versions dark */
-  --chart-1: oklch(0.65 0.22 250);
-  --chart-2: oklch(0.7 0.2 40);
-  --chart-3: oklch(0.65 0.18 170);
-  --chart-4: oklch(0.6 0.2 280);
-  --chart-5: oklch(0.75 0.15 340);
-  
-  /* Sidebar dark */
-  --sidebar: oklch(0.18 0.02 250);
-  --sidebar-foreground: oklch(0.92 0.01 250);
-  --sidebar-accent: oklch(0.28 0.03 250);
-  --sidebar-accent-foreground: oklch(0.95 0.015 250);
-  --sidebar-border: oklch(0.3 0.025 250);
-  --sidebar-ring: oklch(0.6 0.2 250);
+  /* Mode sombre optionnel, conservant la chaleur de la palette */
+  --primary: oklch(0.67 0.12 184);
+  --primary-foreground: oklch(0.18 0.035 185);
+  --sidebar-primary: oklch(0.67 0.12 184);
+  --sidebar-primary-foreground: oklch(0.18 0.035 185);
+  --accent: oklch(0.78 0.14 39);
+  --accent-foreground: oklch(0.2 0.035 35);
+  --background: oklch(0.19 0.025 185);
+  --foreground: oklch(0.95 0.02 92);
+  --card: oklch(0.235 0.03 185);
+  --card-foreground: oklch(0.95 0.02 92);
+  --popover: oklch(0.25 0.03 185);
+  --popover-foreground: oklch(0.95 0.02 92);
+  --secondary: oklch(0.29 0.045 165);
+  --secondary-foreground: oklch(0.9 0.025 92);
+  --muted: oklch(0.29 0.03 185);
+  --muted-foreground: oklch(0.75 0.03 92);
+  --destructive: oklch(0.68 0.16 28);
+  --destructive-foreground: oklch(0.99 0.01 90);
+  --border: oklch(0.36 0.04 185);
+  --input: oklch(0.36 0.04 185);
+  --ring: oklch(0.67 0.12 184);
+  --chart-1: oklch(0.67 0.12 184);
+  --chart-2: oklch(0.72 0.14 150);
+  --chart-3: oklch(0.78 0.14 39);
+  --chart-4: oklch(0.76 0.12 87);
+  --chart-5: oklch(0.68 0.12 275);
+  --sidebar: oklch(0.235 0.045 185);
+  --sidebar-foreground: oklch(0.95 0.02 92);
+  --sidebar-accent: oklch(0.32 0.065 185);
+  --sidebar-accent-foreground: oklch(0.99 0.01 90);
+  --sidebar-border: oklch(0.36 0.04 185);
+  --sidebar-ring: oklch(0.78 0.14 39);
 }
 
 @layer base {
@@ -176,6 +140,22 @@
   }
   body {
     @apply bg-background text-foreground;
+    font-family: "Manrope", ui-sans-serif, system-ui, sans-serif;
+    background-image: radial-gradient(circle at 15% 0%, oklch(0.98 0.03 80 / 0.85), transparent 34rem), radial-gradient(circle at 100% 10%, oklch(0.95 0.05 170 / 0.45), transparent 30rem);
+    background-attachment: fixed;
+  }
+
+  ::selection {
+    background: oklch(0.72 0.16 39 / 0.28);
+    color: oklch(0.25 0.035 185);
+  }
+
+  button,
+  a,
+  input,
+  textarea,
+  select {
+    -webkit-tap-highlight-color: transparent;
   }
   button:not(:disabled),
   [role="button"]:not([aria-disabled="true"]),
@@ -220,6 +200,79 @@
   }
 }
 
+/* Primitives de la nouvelle identité visuelle */
+.font-display {
+  font-family: "DM Sans", "Manrope", ui-sans-serif, system-ui, sans-serif;
+}
+
+.app-auth-shell {
+  background: linear-gradient(135deg, oklch(0.98 0.025 92) 0%, oklch(0.95 0.04 151) 52%, oklch(0.96 0.035 39) 100%);
+  position: relative;
+  overflow: hidden;
+}
+
+.app-auth-shell::before,
+.app-auth-shell::after {
+  content: "";
+  position: absolute;
+  width: 22rem;
+  height: 22rem;
+  border-radius: 999px;
+  filter: blur(8px);
+  opacity: 0.45;
+  pointer-events: none;
+}
+
+.app-auth-shell::before {
+  top: -9rem;
+  right: -6rem;
+  background: oklch(0.78 0.14 39 / 0.35);
+}
+
+.app-auth-shell::after {
+  bottom: -11rem;
+  left: -7rem;
+  background: oklch(0.67 0.13 170 / 0.28);
+}
+
+.brand-mark {
+  display: grid;
+  place-items: center;
+  width: 4.5rem;
+  height: 4.5rem;
+  border-radius: 1.45rem;
+  background: oklch(1 0.006 92 / 0.9);
+  border: 1px solid oklch(1 0 0 / 0.72);
+  box-shadow: 0 18px 38px -24px oklch(0.28 0.09 184 / 0.45);
+  animation: brandFloat 4s ease-in-out infinite;
+}
+
+.button-interactive {
+  transition: transform 160ms cubic-bezier(0.23, 1, 0.32, 1), box-shadow 200ms cubic-bezier(0.23, 1, 0.32, 1), background-color 180ms ease;
+}
+
+.button-interactive:hover {
+  transform: translateY(-1px);
+}
+
+.button-interactive:active {
+  transform: scale(0.97);
+}
+
+.app-page {
+  animation: pageReveal 360ms cubic-bezier(0.23, 1, 0.32, 1) both;
+}
+
+@keyframes brandFloat {
+  0%, 100% { transform: translateY(0) rotate(-1deg); }
+  50% { transform: translateY(-4px) rotate(1deg); }
+}
+
+@keyframes pageReveal {
+  from { opacity: 0; transform: translateY(7px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
 /* Status badges - Modernisés avec gradients subtils */
 .status-pending {
   @apply bg-gradient-to-br from-amber-100 to-amber-50 text-amber-900 dark:from-amber-900/30 dark:to-amber-800/20 dark:text-amber-300 border border-amber-200/50 dark:border-amber-700/50;
@@ -245,7 +298,7 @@
   @apply bg-gradient-to-br from-red-100 to-red-50 text-red-900 dark:from-red-900/30 dark:to-red-800/20 dark:text-red-300 border border-red-200/50 dark:border-red-700/50 shadow-sm shadow-red-500/20;
 }
 
-/* 🎨 NOUVELLES ANIMATIONS - Fade in cascade */
+/* Animations légères : les actions restent rapides et lisibles */
 @keyframes fadeInUp {
   from {
     opacity: 0;
@@ -278,13 +331,11 @@
 }
 
 .animate-fade-in-up {
-  animation: fadeInUp 0.6s ease-out;
-  animation-fill-mode: both;
+  animation: fadeInUp 0.42s cubic-bezier(0.23, 1, 0.32, 1) both;
 }
 
 .animate-slide-in-right {
-  animation: slideInRight 0.5s ease-out;
-  animation-fill-mode: both;
+  animation: slideInRight 0.36s cubic-bezier(0.23, 1, 0.32, 1) both;
 }
 
 /* Délais en cascade pour les animations */
@@ -297,22 +348,22 @@
 
 /* 🎨 GLASSMORPHISM EFFECT */
 .glass-card {
-  @apply backdrop-blur-md bg-white/70 dark:bg-slate-800/50 border border-white/20 dark:border-slate-700/50 shadow-xl;
+  @apply backdrop-blur-md bg-white/80 dark:bg-card/80 border border-white/70 dark:border-border shadow-[0_18px_50px_-30px_oklch(0.3_0.08_184_/_0.35)];
 }
 
 /* 🎨 HOVER EFFECTS améliorés */
 .card-hover {
-  @apply transition-all duration-300 ease-out;
+  @apply transition-[transform,box-shadow,border-color] duration-200;
 }
 
 .card-hover:hover {
-  @apply -translate-y-1 shadow-lg;
+  @apply -translate-y-0.5 shadow-[0_16px_35px_-24px_oklch(0.3_0.08_184_/_0.5)] border-primary/20;
 }
 
 .card-3d:hover {
-  @apply -translate-y-2 shadow-2xl;
-  transform: perspective(1000px) rotateX(2deg);
-  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  @apply -translate-y-1 shadow-xl;
+  transform: perspective(1000px) rotateX(1deg);
+  transition: transform 220ms cubic-bezier(0.23, 1, 0.32, 1), box-shadow 220ms cubic-bezier(0.23, 1, 0.32, 1);
 }
 
 /* 🎨 GRADIENT BACKGROUNDS */
@@ -360,6 +411,17 @@
 }
 
 /* Print styles */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
 @media print {
   .no-print {
     display: none !important;
@@ -387,17 +449,17 @@
 }
 
 
-/* 🎨 HERO SECTIONS - Dégradés bleu-turquoise HelloAsso */
+/* Surfaces de marque et états de page */
 .hero-gradient-primary {
-  @apply bg-gradient-to-br from-primary via-primary/90 to-accent/40;
+  background: linear-gradient(135deg, oklch(0.39 0.1 184) 0%, oklch(0.46 0.105 175) 58%, oklch(0.72 0.16 39) 150%);
 }
 
 .hero-gradient-secondary {
-  @apply bg-gradient-to-br from-accent via-primary/80 to-accent/60;
+  background: linear-gradient(135deg, oklch(0.78 0.14 39) 0%, oklch(0.7 0.12 58) 45%, oklch(0.55 0.1 166) 130%);
 }
 
 .hero-gradient-accent {
-  @apply bg-gradient-to-br from-primary via-accent to-primary/60;
+  background: linear-gradient(135deg, oklch(0.43 0.1 184) 0%, oklch(0.66 0.14 150) 60%, oklch(0.78 0.14 39) 140%);
 }
 
 /* Formes organiques fluides */
@@ -480,7 +542,7 @@
 }
 
 .hero-section-animate {
-  animation: heroFadeIn 0.6s ease-out;
+  animation: heroFadeIn 0.5s cubic-bezier(0.23, 1, 0.32, 1) both;
 }
 
 /* Effets de blur sur les formes de fond */

@@ -1557,3 +1557,17 @@
 - [x] Ajouter les tests des commentaires, statistiques et exports
 - [x] Valider TypeScript, tests, build et serveur
 
+
+
+## Refonte visuelle — Interface claire, chaleureuse et animée
+- [x] Auditer les tokens visuels, la typographie, les contrastes et la structure de DashboardLayout
+- [x] Définir une direction visuelle claire : ivoire, bleu pétrole, corail et vert sauge, avec surfaces lumineuses
+- [x] Refaire le thème global Tailwind/CSS sans aspect gothique et avec contraste accessible
+- [x] Ajouter une typographie plus accueillante et une hiérarchie visuelle cohérente
+- [x] Ajouter les animations globales d’entrée, de survol, de clic et de chargement en respectant prefers-reduced-motion
+- [x] Repenser la sidebar, l’en-tête et les états actifs de navigation
+- [x] Refaire l’écran de sélection des modes en ligne/hors ligne
+- [x] Harmoniser les cartes, boutons, tableaux, formulaires, dialogs et badges
+- [x] Ajouter une finition responsive mobile/tablette pour le layout principal
+- [x] Vérifier visuellement les écrans principaux et corriger les régressions TypeScript/build/tests
+- [x] Sauvegarder un checkpoint de la refonte visuelle

@@ -137,9 +137,9 @@ export default function Settings() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             {currentMode === 'online' ? (
-              <Globe className="w-5 h-5 text-blue-600" />
+              <Globe className="w-5 h-5 text-primary" />
             ) : (
-              <Wifi className="w-5 h-5 text-green-600" />
+              <Wifi className="w-5 h-5 text-accent-foreground" />
             )}
             Mode Actuel
           </CardTitle>
@@ -148,8 +148,8 @@ export default function Settings() {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
-            <p className="text-sm text-blue-900 dark:text-blue-100">
+          <div className="bg-primary/5 border border-primary/15 rounded-lg p-4">
+            <p className="text-sm text-primary">
               {currentMode === 'online' 
                 ? '✅ Mode En Ligne : Vos données sont synchronisées avec le serveur cloud.'
                 : '✅ Mode Hors Ligne : Vos données sont stockées localement sur cet ordinateur.'}
@@ -188,8 +188,8 @@ export default function Settings() {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="bg-amber-50 dark:bg-amber-950 border border-amber-200 dark:border-amber-800 rounded-lg p-4">
-            <p className="text-sm text-amber-900 dark:text-amber-100">
+          <div className="bg-accent/10 border border-accent/20 rounded-lg p-4">
+            <p className="text-sm text-accent-foreground">
               Taille de la sauvegarde: <strong>{getBackupSize()} KB</strong>
             </p>
           </div>
@@ -246,7 +246,7 @@ export default function Settings() {
             </div>
             <div>
               <p className="text-sm text-muted-foreground">Réussis</p>
-              <p className="text-2xl font-bold text-green-600">{syncStats.successCount}</p>
+              <p className="text-2xl font-bold text-emerald-700">{syncStats.successCount}</p>
             </div>
             <div>
               <p className="text-sm text-muted-foreground">Erreurs</p>
@@ -254,8 +254,8 @@ export default function Settings() {
             </div>
           </div>
           {lastSync && (
-            <div className="bg-green-50 dark:bg-green-950 border border-green-200 dark:border-green-800 rounded-lg p-4">
-              <p className="text-sm text-green-900 dark:text-green-100">
+            <div className="bg-secondary/60 border border-secondary rounded-lg p-4">
+              <p className="text-sm text-secondary-foreground">
                 ✅ Dernière synchronisation: {new Date(lastSync.timestamp).toLocaleString('fr-FR')}
               </p>
             </div>
@@ -360,8 +360,8 @@ export default function Settings() {
               <span className="mr-2">F</span> CFA
             </Button>
           </div>
-          <div className="bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
-            <p className="text-sm text-blue-900 dark:text-blue-100">
+          <div className="bg-primary/5 border border-primary/15 rounded-lg p-4">
+            <p className="text-sm text-primary">
               Devise sélectionnée: <strong>{currency === 'EUR' ? 'Euro (€)' : 'CFA (F)'}</strong>
             </p>
           </div>
@@ -380,8 +380,8 @@ export default function Settings() {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
-            <p className="text-sm text-blue-900 dark:text-blue-100">
+          <div className="bg-primary/5 border border-primary/15 rounded-lg p-4">
+            <p className="text-sm text-primary">
               Taux actuel: <strong>1 EUR = {exchangeRate.toFixed(3)} CFA</strong>
             </p>
           </div>
@@ -415,8 +415,8 @@ export default function Settings() {
             Reinitialiser au taux par defaut (655.957)
           </Button>
 
-          <div className="bg-amber-50 dark:bg-amber-950 border border-amber-200 dark:border-amber-800 rounded-lg p-4">
-            <p className="text-xs text-amber-900 dark:text-amber-100">
+          <div className="bg-accent/10 border border-accent/20 rounded-lg p-4">
+            <p className="text-xs text-accent-foreground">
               Le taux de change est utilise pour convertir automatiquement les montants entre EUR et CFA dans toute l'application.
             </p>
           </div>
@@ -490,9 +490,9 @@ export default function Settings() {
       </Card>
 
       {/* Danger Zone */}
-      <Card className="border-red-200 dark:border-red-900">
+      <Card className="border-red-200/70">
         <CardHeader>
-          <CardTitle className="text-red-600 dark:text-red-400">Zone Dangereuse</CardTitle>
+          <CardTitle className="text-red-700">Zone Dangereuse</CardTitle>
           <CardDescription>
             Actions irréversibles
           </CardDescription>
