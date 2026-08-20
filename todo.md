@@ -1574,3 +1574,10 @@
 - [x] Vérifier les composants d’authentification et les contrôles de formulaire sur mobile
 - [x] Exécuter la validation finale TypeScript, tests, build et aperçu visuel
 - [x] Sauvegarder un checkpoint consolidé de la refonte visuelle
+
+## Prochaine tranche — Visualisations projets
+- [x] Ajouter une timeline/Gantt simplifiée dans ProjectDetail
+- [x] Ajouter une visualisation budget planifié, consommé et restant
+- [x] Réutiliser les primitives de graphiques partagées et les tokens de la nouvelle identité
+- [x] Ajouter les tests de calculs et de rendu des indicateurs projets
+- [x] Valider TypeScript, tests, build, aperçu et checkpoint

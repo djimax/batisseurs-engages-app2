@@ -9,11 +9,14 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, CheckCircle2, Clock, AlertCircle, Trash2, MessageCircle, BarChart3, Download } from "lucide-react";
+import { Plus, CheckCircle2, Clock, AlertCircle, Trash2, MessageCircle, BarChart3, Download, CalendarDays, WalletCards } from "lucide-react";
 import { toast } from "sonner";
 import { useLocation } from "wouter";
 import { Textarea } from "@/components/ui/textarea";
 import { exportRowsToCSV, exportRowsToPDF, generateListExportFilename } from "@/lib/exportLists";
+import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
+import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from "recharts";
+import { buildProjectTimeline, createTimelineTicks, summarizeBudget } from "@/lib/projectVisualizations";
 
 export function ProjectDetail() {
   const [, params] = useRoute("/projects/:id");
@@ -177,6 +180,18 @@ export function ProjectDetail() {
 
   const budgetTotal = budgetItems?.reduce((sum: number, item: any) => sum + parseFloat(item.amount || 0), 0) || 0;
   const budgetSpent = budgetItems?.reduce((sum: number, item: any) => sum + parseFloat(item.spent || 0), 0) || 0;
+  const projectTimeline = buildProjectTimeline({
+    projectStartDate: project.startDate,
+    projectEndDate: project.endDate,
+    tasks: tasks ?? [],
+    milestones: milestones ?? [],
+  });
+  const timelineTicks = createTimelineTicks(projectTimeline.start, projectTimeline.end);
+  const budgetSummary = summarizeBudget(budgetItems ?? [], report?.budget);
+  const budgetChartConfig = {
+    planned: { label: "Prévu", color: "var(--chart-1)" },
+    spent: { label: "Dépensé", color: "var(--chart-2)" },
+  };
 
   return (
     <div className="space-y-6">
@@ -253,6 +268,81 @@ export function ProjectDetail() {
               <Card><CardHeader className="pb-2"><CardTitle className="text-sm font-medium">Budget consommé</CardTitle></CardHeader><CardContent><div className="text-3xl font-bold">{report.budget.spent.toLocaleString("fr-FR")} F</div><p className="text-xs text-muted-foreground">sur {report.budget.planned.toLocaleString("fr-FR")} F</p></CardContent></Card>
             </div>
             <Card><CardHeader><CardTitle className="flex items-center gap-2"><BarChart3 className="h-5 w-5 text-primary" />Synthèse d’activité</CardTitle><CardDescription>Dernière génération : {new Date(report.generatedAt).toLocaleString("fr-FR")}</CardDescription></CardHeader><CardContent className="grid gap-3 sm:grid-cols-3"><div className="rounded-lg border p-3"><div className="text-xs text-muted-foreground">Tâches en cours</div><div className="text-xl font-semibold">{report.tasks.inProgress}</div></div><div className="rounded-lg border p-3"><div className="text-xs text-muted-foreground">Mises à jour</div><div className="text-xl font-semibold">{report.updatesCount}</div></div><div className="rounded-lg border p-3"><div className="text-xs text-muted-foreground">Commentaires</div><div className="text-xl font-semibold">{report.commentsCount}</div></div></CardContent></Card>
+
+            <div className="grid gap-4 xl:grid-cols-[1.35fr_1fr]">
+              <Card className="overflow-hidden border-primary/10">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2"><CalendarDays className="h-5 w-5 text-primary" />Timeline du projet</CardTitle>
+                  <CardDescription>
+                    {projectTimeline.start && projectTimeline.end
+                      ? `${projectTimeline.durationDays} jours planifiés · échéances des tâches et jalons`
+                      : "Ajoutez des dates au projet ou à ses jalons pour visualiser la planification."}
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {projectTimeline.items.length > 0 && projectTimeline.start && projectTimeline.end ? (
+                    <div className="space-y-3">
+                      <div className="ml-[7.5rem] flex justify-between text-[11px] text-muted-foreground sm:ml-[10rem]">
+                        {timelineTicks.map((tick) => <span key={tick.position}>{tick.date.toLocaleDateString("fr-FR", { month: "short", year: "2-digit" })}</span>)}
+                      </div>
+                      <div className="space-y-2">
+                        {projectTimeline.items.slice(0, 10).map((item) => (
+                          <div key={item.id} className="grid grid-cols-[7rem_minmax(0,1fr)] items-center gap-3 sm:grid-cols-[10rem_minmax(0,1fr)]">
+                            <div className="min-w-0">
+                              <div className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
+                                <span className={item.kind === "milestone" ? "h-2 w-2 rotate-45 rounded-[2px] bg-accent" : "h-2 w-2 rounded-full bg-primary"} />
+                                {item.kind === "milestone" ? "Jalon" : "Tâche"}
+                              </div>
+                              <p className="truncate text-sm font-medium" title={item.label}>{item.label}</p>
+                            </div>
+                            <div className="relative h-9 overflow-hidden rounded-xl bg-muted/70">
+                              {timelineTicks.map((tick) => <span key={tick.position} className="absolute inset-y-0 w-px bg-border/70" style={{ left: `${tick.position}%` }} />)}
+                              {item.position === null ? (
+                                <span className="absolute inset-y-0 left-3 flex items-center text-xs text-muted-foreground">Sans date</span>
+                              ) : (
+                                <span className="absolute inset-y-1 flex items-center" style={{ left: `calc(${item.position}% - 0.45rem)` }} title={`${item.label} · ${item.date?.toLocaleDateString("fr-FR")}`}>
+                                  <span className={item.kind === "milestone" ? "h-4 w-4 rotate-45 rounded-[3px] bg-accent shadow-sm ring-4 ring-accent/15" : "h-3.5 w-3.5 rounded-full bg-primary shadow-sm ring-4 ring-primary/15"} />
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                      {projectTimeline.items.length > 10 ? <p className="pt-2 text-xs text-muted-foreground">10 échéances affichées sur {projectTimeline.items.length}. Consultez les onglets Tâches et Jalons pour le détail complet.</p> : null}
+                    </div>
+                  ) : (
+                    <div className="rounded-xl border border-dashed border-primary/20 bg-primary/5 p-6 text-center text-sm text-muted-foreground">Aucune échéance planifiée pour le moment.</div>
+                  )}
+                </CardContent>
+              </Card>
+
+              <Card className="border-accent/20">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2"><WalletCards className="h-5 w-5 text-accent-foreground" />Suivi du budget</CardTitle>
+                  <CardDescription>{budgetSummary.utilizationPercent}% consommé · {budgetSummary.remaining.toLocaleString("fr-FR")} F restant(s)</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {budgetSummary.items.length > 0 ? (
+                    <ChartContainer config={budgetChartConfig} className="h-64 w-full aspect-auto">
+                      <BarChart data={budgetSummary.items} layout="vertical" margin={{ left: 0, right: 12, top: 4, bottom: 4 }}>
+                        <CartesianGrid horizontal={false} strokeDasharray="3 3" />
+                        <XAxis type="number" tickLine={false} axisLine={false} tickFormatter={(value) => `${Number(value).toLocaleString("fr-FR")} F`} />
+                        <YAxis type="category" dataKey="label" width={92} tickLine={false} axisLine={false} tick={{ fontSize: 11 }} />
+                        <ChartTooltip content={<ChartTooltipContent />} />
+                        <Bar dataKey="planned" fill="var(--color-planned)" radius={[0, 6, 6, 0]} />
+                        <Bar dataKey="spent" fill="var(--color-spent)" radius={[0, 6, 6, 0]} />
+                      </BarChart>
+                    </ChartContainer>
+                  ) : (
+                    <div className="rounded-xl border border-dashed border-accent/25 bg-accent/5 p-6 text-center text-sm text-muted-foreground">Aucun budget renseigné.</div>
+                  )}
+                  <div className="mt-3 flex flex-wrap gap-4 text-xs text-muted-foreground">
+                    <span className="inline-flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-chart-1" />Prévu</span>
+                    <span className="inline-flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-chart-2" />Dépensé</span>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
           </> : <div className="rounded-lg border border-dashed p-8 text-center text-sm text-muted-foreground">Génération du rapport…</div>}
         </TabsContent>
 
