@@ -119,7 +119,9 @@ const menuItems: MenuItem[] = [
   { icon: Megaphone, label: "Communication", isGroup: true, items: [
     { icon: Megaphone, label: "Annonces", path: "/announcements" },
     { icon: Newspaper, label: "Actualités", path: "/news" },
-    { icon: Mail, label: "Emails", path: "/email-composer" },
+    { icon: Mail, label: "Composer un email", path: "/email-composer" },
+    { icon: FileText, label: "Templates email", path: "/email-templates" },
+    { icon: History, label: "Historique emails", path: "/email-history" },
   ]},
   
   // Administration

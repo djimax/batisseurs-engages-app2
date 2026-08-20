@@ -777,8 +777,8 @@
 
 ### Pages d'Interface
 - [x] Créer page EmailComposer.tsx pour composer les emails
-- [ ] Créer page EmailTemplates.tsx pour gérer les templates
-- [ ] Créer page EmailHistory.tsx pour voir l'historique
+- [x] Créer page EmailTemplates.tsx pour gérer les templates
+- [x] Créer page EmailHistory.tsx pour voir l'historique
 - [x] Ajouter les routes dans App.tsx
 - [x] Ajouter les liens de navigation
 

@@ -32,6 +32,8 @@ import AdminAuditLogs from "./pages/AdminAuditLogs";
 import News from "./pages/News";
 import Announcements from "./pages/Announcements";
 import EmailComposer from "./pages/EmailComposer";
+import EmailTemplates from "./pages/EmailTemplates";
+import EmailHistory from "./pages/EmailHistory";
 import AdminSettings from "./pages/AdminSettings";
 import { CRMDashboard } from "./pages/CRMDashboard";
 import CRMContacts from "./pages/CRMContacts";
@@ -80,6 +82,8 @@ function OnlineRouter({ isAuthenticated, error, onLogin, onLogout, onForgotPassw
         <Route path="/announcements" component={Announcements} />
         <Route path="/news" component={News} />
         <Route path="/email-composer" component={EmailComposer} />
+        <Route path="/email-templates" component={EmailTemplates} />
+        <Route path="/email-history" component={EmailHistory} />
         <Route path="/audit-history" component={AuditHistory} />
         <Route path="/admin/roles" component={AdminRoles} />
         <Route path="/admin/permissions" component={AdminPermissions} />
