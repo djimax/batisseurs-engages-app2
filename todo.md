@@ -1519,8 +1519,21 @@
 - [x] Ajouter les tests et validations du module financier
 
 ## Prochains modules — Notifications, gouvernance et projets
-- [ ] Ajouter les notifications persistantes et rappels idempotents
+- [x] Ajouter les notifications persistantes et rappels idempotents
 - [ ] Ajouter les assemblées, résolutions, quorum et votes
 - [ ] Ajouter les budgets, discussions et rapports de projets
 - [ ] Renforcer la conformité documentaire et la synchronisation terrain
+
+
+## Implémentation réelle — Notifications et rappels
+- [x] Ajouter les champs d’événement et la clé d’idempotence aux notifications
+- [x] Ajouter la table `notification_preferences` et les préférences par utilisateur
+- [x] Ajouter le centre tRPC : liste, filtres non lus, lecture et préférences
+- [x] Ajouter la page `/notifications` et sa navigation
+- [x] Ajouter la génération idempotente des rappels d’adhésion
+- [x] Ajouter les tests des préférences, statuts de rappel et déduplication
+- [x] Valider TypeScript, 239 tests et le build de production
+- [x] Monter le handler Heartbeat idempotent et le registre durable de tâche
+- [ ] Créer/activer le rappel périodique après déploiement confirmé
+- [ ] Ajouter la diffusion temps réel WebSocket après décision de mode d’hébergement persistant
 

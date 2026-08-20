@@ -1,0 +1,1 @@
+ALTER TABLE `notification_schedules` MODIFY COLUMN `createdAt` timestamp NOT NULL DEFAULT (now());

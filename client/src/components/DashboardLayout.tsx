@@ -33,6 +33,7 @@ import {
   Archive,
   DollarSign,
   Megaphone,
+  Bell,
   UserCheck,
   Calendar,
   History,
@@ -75,6 +76,7 @@ const menuItems: MenuItem[] = [
   ]},
   
   // Gestion des Membres
+  { icon: Bell, label: "Notifications", path: "/notifications" },
   { label: "👥 Gestion des Membres", isGroup: true, items: [
     { icon: Users, label: "Membres", path: "/members" },
     { icon: UserCheck, label: "Adhésions", path: "/members/adhesions" },

@@ -7,6 +7,7 @@ import { registerOAuthRoutes } from "./oauth";
 import { appRouter } from "../routers";
 import { createContext } from "./context";
 import { serveStatic, setupVite } from "./vite";
+import { membershipRemindersHandler } from "../membership-reminders-handler";
 
 function isPortAvailable(port: number): Promise<boolean> {
   return new Promise(resolve => {
@@ -35,6 +36,8 @@ async function startServer() {
   app.use(express.urlencoded({ limit: "50mb", extended: true }));
   // OAuth callback under /api/oauth/callback
   registerOAuthRoutes(app);
+  // Platform-managed Heartbeat callbacks must be mounted before the Vite/static fallback.
+  app.post("/api/scheduled/membership-reminders", membershipRemindersHandler);
   // tRPC API
   app.use(
     "/api/trpc",

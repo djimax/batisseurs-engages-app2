@@ -27,6 +27,29 @@ export type SessionPayload = {
 const EXCHANGE_TOKEN_PATH = `/webdev.v1.WebDevAuthPublicService/ExchangeToken`;
 const GET_USER_INFO_PATH = `/webdev.v1.WebDevAuthPublicService/GetUserInfo`;
 const GET_USER_INFO_WITH_JWT_PATH = `/webdev.v1.WebDevAuthPublicService/GetUserInfoWithJwt`;
+const CRON_OPEN_ID_PREFIX = "cron_";
+
+export type AuthenticatedUser = typeof users.$inferSelect & {
+  taskUid?: string;
+  isCron?: boolean;
+};
+
+function buildCronUser(userInfo: GetUserInfoWithJwtResponse): AuthenticatedUser {
+  const now = new Date().toISOString();
+  return {
+    id: -1,
+    openId: userInfo.openId,
+    name: userInfo.name || "Manus Scheduled Task",
+    email: userInfo.email ?? null,
+    loginMethod: userInfo.loginMethod ?? userInfo.platform ?? null,
+    role: "user",
+    createdAt: now,
+    updatedAt: now,
+    lastSignedIn: now,
+    taskUid: userInfo.taskUid ?? undefined,
+    isCron: true,
+  };
+}
 
 class OAuthService {
   constructor(private client: ReturnType<typeof axios.create>) {
@@ -256,8 +279,8 @@ class SDKServer {
     } as GetUserInfoWithJwtResponse;
   }
 
-  async authenticateRequest(req: Request): Promise<typeof users.$inferSelect> {
-    // Regular authentication flow
+  async authenticateRequest(req: Request): Promise<AuthenticatedUser> {
+    // Scheduled callbacks use a cron identity supplied by the platform.
     const cookies = this.parseCookies(req.headers.cookie);
     const sessionCookie = cookies.get(COOKIE_NAME);
     const session = await this.verifySession(sessionCookie);
@@ -266,6 +289,13 @@ class SDKServer {
       throw ForbiddenError("Invalid session cookie");
     }
 
+    if (session.openId.startsWith(CRON_OPEN_ID_PREFIX)) {
+      const userInfo = await this.getUserInfoWithJwt(sessionCookie ?? "");
+      if (!userInfo.taskUid) throw ForbiddenError("Cron session missing task_uid");
+      return buildCronUser(userInfo);
+    }
+
+    // Regular authentication flow
     const sessionUserId = session.openId;
     const signedInAt = new Date();
     let user = await db.getUserByOpenId(sessionUserId);

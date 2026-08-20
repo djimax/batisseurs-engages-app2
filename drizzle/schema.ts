@@ -1,4 +1,4 @@
-import { mysqlTable, mysqlSchema, AnyMySqlColumn, int, varchar, text, timestamp, mysqlEnum, date, index, json, tinyint } from "drizzle-orm/mysql-core"
+import { mysqlTable, mysqlSchema, AnyMySqlColumn, int, varchar, text, timestamp, mysqlEnum, date, index, uniqueIndex, json, tinyint } from "drizzle-orm/mysql-core"
 import { sql } from "drizzle-orm"
 
 export const activityLogs = mysqlTable("activity_logs", {
@@ -482,8 +482,44 @@ export const notifications = mysqlTable("notifications", {
 	type: mysqlEnum(['info','warning','error','success']).default('info').notNull(),
 	isRead: int().default(0),
 	actionUrl: text(),
+	eventKey: varchar({ length: 100 }),
+	entityType: varchar({ length: 80 }),
+	entityId: int(),
+	dedupeKey: varchar({ length: 255 }),
 	createdAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
-});
+},
+(table) => [
+	index("notifications_user_idx").on(table.userId),
+	index("notifications_read_idx").on(table.userId, table.isRead),
+	uniqueIndex("notifications_dedupe_unique").on(table.dedupeKey),
+]);
+
+export const notificationPreferences = mysqlTable("notification_preferences", {
+	id: int().autoincrement().notNull(),
+	userId: int().notNull(),
+	inAppEnabled: int().default(1).notNull(),
+	emailEnabled: int().default(1).notNull(),
+	typePreferences: json(),
+	updatedAt: timestamp({ mode: 'string' }).defaultNow().onUpdateNow().notNull(),
+},
+(table) => [
+	uniqueIndex("notification_preferences_user_unique").on(table.userId),
+]);
+
+export const notificationSchedules = mysqlTable("notification_schedules", {
+	id: int().autoincrement().notNull(),
+	name: varchar({ length: 120 }).notNull(),
+	scheduleCronTaskUid: varchar({ length: 65 }),
+	cronExpression: varchar({ length: 32 }).notNull(),
+	isEnabled: int().default(1).notNull(),
+	lastRunAt: timestamp({ mode: 'string' }),
+	createdAt: timestamp({ mode: 'string' }).defaultNow().notNull(),
+	updatedAt: timestamp({ mode: 'string' }).defaultNow().onUpdateNow().notNull(),
+},
+(table) => [
+	uniqueIndex("notification_schedules_name_unique").on(table.name),
+	uniqueIndex("notification_schedules_task_uid_unique").on(table.scheduleCronTaskUid),
+]);
 
 export const passwordResetRequests = mysqlTable("password_reset_requests", {
 	id: int().autoincrement().notNull(),

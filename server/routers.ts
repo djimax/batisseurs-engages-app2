@@ -29,9 +29,12 @@ import {
   getDashboardStatistics, getProjectsStatistics, getTasksStatistics, getFinanceStatistics, getMembersStatistics,
   getAllUsers, getUserById, updateUserRole, getAdminCount, isUserAdmin
 } from "./db";
-import { roles, permissions, rolePermissions, userRoles, userScopes, auditLogs, emailTemplates, emailHistory, emailRecipients, members, adhesions } from "../drizzle/schema";
+import { roles, permissions, rolePermissions, userRoles, userScopes, auditLogs, emailTemplates, emailHistory, emailRecipients, members, adhesions, notificationSchedules } from "../drizzle/schema";
 import { buildMemberCardPayload, getMemberHistory, getMemberStatusHistory, memberStatusSchema, recordMemberHistory, recordMemberStatus } from "./member-lifecycle";
+import { createUserNotification, generateMembershipReminderNotifications, getOrCreateNotificationPreferences, listUserNotifications, markAllNotificationsRead, markNotificationRead, updateNotificationPreferences } from "./notification-center";
 import { and, eq, desc } from "drizzle-orm";
+import { parse as parseCookieHeader } from "cookie";
+import { createHeartbeatJob } from "./_core/heartbeat";
 import { logAudit } from "./audit";
 import { assertPermission, ensureDefaultPermissions } from "./authorization";
 import { storagePut } from "./storage";
@@ -693,7 +696,48 @@ export const appRouter = router({
     }),
   }),
 
-  // ============ ACTIVITY ============
+  // ============ NOTIFICATIONS ============
+  notifications: router({
+    list: protectedProcedure
+      .input(z.object({ unreadOnly: z.boolean().optional(), limit: z.number().int().min(1).max(100).optional(), offset: z.number().int().min(0).optional() }).optional())
+      .query(({ ctx, input }) => listUserNotifications({ userId: ctx.user.id, ...input })),
+
+    markRead: protectedProcedure
+      .input(z.object({ notificationId: z.number().int().positive() }))
+      .mutation(({ ctx, input }) => markNotificationRead(ctx.user.id, input.notificationId)),
+
+    markAllRead: protectedProcedure
+      .mutation(({ ctx }) => markAllNotificationsRead(ctx.user.id)),
+
+    preferences: protectedProcedure.query(({ ctx }) => getOrCreateNotificationPreferences(ctx.user.id)),
+
+    updatePreferences: protectedProcedure
+      .input(z.object({
+        inAppEnabled: z.boolean().optional(),
+        emailEnabled: z.boolean().optional(),
+        typePreferences: z.record(z.string(), z.boolean()).optional(),
+      }))
+      .mutation(({ ctx, input }) => updateNotificationPreferences({ userId: ctx.user.id, ...input })),
+
+    createForUser: protectedProcedure
+      .input(z.object({
+        userId: z.number().int().positive(),
+        title: z.string().trim().min(1).max(255),
+        message: z.string().trim().min(1),
+        type: z.enum(["info", "warning", "error", "success"]).optional(),
+        actionUrl: z.string().max(1000).optional(),
+        eventKey: z.string().max(100).optional(),
+        entityType: z.string().max(80).optional(),
+        entityId: z.number().int().positive().optional(),
+        dedupeKey: z.string().max(255).optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        await assertPermission(ctx.user, "admin.users.manage");
+        return createUserNotification(input);
+      }),
+  }),
+
+  // ============ ACTIVITY =========###
   activity: router({
     recent: protectedProcedure
       .input(z.object({ limit: z.number().optional() }).optional())
@@ -703,6 +747,35 @@ export const appRouter = router({
   // ============ FINANCES ============
   finances: router({
     stats: protectedProcedure.query(async () => getFinancialStats()),
+    generateMembershipReminders: protectedProcedure.mutation(async ({ ctx }) => {
+      await assertPermission(ctx.user, "finances.manage");
+      return generateMembershipReminderNotifications();
+    }),
+
+    setupMembershipReminderSchedule: protectedProcedure
+      .input(z.object({ cron: z.string().regex(/^\\d+ \\d+ \\d+ \\* \\* \\*$/).default("0 0 9 * * *") }))
+      .mutation(async ({ ctx, input }) => {
+        await assertPermission(ctx.user, "finances.manage");
+        const db = await getDb();
+        if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Base de données indisponible" });
+        const existing = await db.select().from(notificationSchedules).where(eq(notificationSchedules.name, "membership-reminders")).limit(1);
+        if (existing[0]?.scheduleCronTaskUid) return { success: true as const, schedule: existing[0], alreadyConfigured: true as const };
+        const cookie = parseCookieHeader(ctx.req.headers.cookie ?? "");
+        const sessionToken = cookie[COOKIE_NAME] ?? "";
+        const job = await createHeartbeatJob({
+          name: "membership-reminders",
+          cron: input.cron,
+          path: "/api/scheduled/membership-reminders",
+          description: "Rappels quotidiens des adhésions expirées ou proches de l’échéance",
+        }, sessionToken);
+        if (existing[0]) {
+          await db.update(notificationSchedules).set({ scheduleCronTaskUid: job.taskUid, cronExpression: input.cron, isEnabled: 1 }).where(eq(notificationSchedules.id, existing[0].id));
+        } else {
+          await db.insert(notificationSchedules).values({ name: "membership-reminders", scheduleCronTaskUid: job.taskUid, cronExpression: input.cron, isEnabled: 1 });
+        }
+        const schedule = await db.select().from(notificationSchedules).where(eq(notificationSchedules.name, "membership-reminders")).limit(1);
+        return { success: true as const, schedule: schedule[0] ?? null, alreadyConfigured: false as const };
+      }),
   }),
 
   // ============ ADMIN - ROLES & PERMISSIONS ============
