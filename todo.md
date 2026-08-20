@@ -1431,3 +1431,9 @@
 - [x] Ajouter des animations de chargement cohérentes aux listes, formulaires et mutations principales
 - [x] Ajouter des notifications toast de succès et d’erreur aux actions utilisateur principales
 - [x] Vérifier l’accessibilité, le typage, les tests et le build après l’amélioration UX
+
+## Export des listes — Antennes et Projets
+
+- [x] Ajouter l’export CSV des listes d’antennes et de projets
+- [x] Ajouter l’export PDF des listes d’antennes et de projets
+- [x] Ajouter les états de génération, notifications et tests des exports

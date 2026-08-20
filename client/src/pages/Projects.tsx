@@ -7,11 +7,12 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Plus, Search, Trash2, Edit2, Eye } from "lucide-react";
+import { Plus, Search, Trash2, Edit2, Eye, FileText, FileDown } from "lucide-react";
 import { toast } from "sonner";
 import { Link } from "wouter";
 import { LoadingButtonContent, LoadingState } from "@/components/LoadingState";
 import { getErrorMessage } from "@/lib/uxFeedback";
+import { exportRowsToCSV, exportRowsToPDF, generateListExportFilename, type ExportColumn } from "@/lib/exportLists";
 
 export function Projects() {
   const [limit, setLimit] = useState(20);
@@ -26,6 +27,7 @@ export function Projects() {
     budget: "",
     leaderId: "",
   });
+  const [isExporting, setIsExporting] = useState<"csv" | "pdf" | null>(null);
 
   // Fetch projects
   const { data: projects, isLoading, refetch } = trpc.projects.list.useQuery({
@@ -87,6 +89,38 @@ export function Projects() {
   const filteredProjects = projects?.filter((p: any) =>
     p.name.toLowerCase().includes(searchTerm.toLowerCase())
   ) || [];
+  const exportColumns: ExportColumn<any>[] = [
+    { header: "ID", value: (project) => project.id },
+    { header: "Nom", value: (project) => project.name },
+    { header: "Description", value: (project) => project.description || "" },
+    { header: "Statut", value: (project) => project.status },
+    { header: "Budget", value: (project) => project.budget || "" },
+    { header: "Chef de projet", value: (project) => project.leaderId || "" },
+    { header: "Début", value: (project) => project.startDate ? new Date(project.startDate).toLocaleDateString("fr-FR") : "" },
+    { header: "Fin", value: (project) => project.endDate ? new Date(project.endDate).toLocaleDateString("fr-FR") : "" },
+  ];
+
+  const handleExport = async (format: "csv" | "pdf") => {
+    if (filteredProjects.length === 0) {
+      toast.error("Aucun projet à exporter");
+      return;
+    }
+
+    setIsExporting(format);
+    try {
+      const filename = generateListExportFilename("projets", format);
+      if (format === "csv") {
+        exportRowsToCSV(filteredProjects, exportColumns, filename);
+      } else {
+        await exportRowsToPDF("Liste des projets", filteredProjects, exportColumns, filename);
+      }
+      toast.success(`Export ${format.toUpperCase()} des projets téléchargé`);
+    } catch (error) {
+      toast.error(getErrorMessage(error, "Impossible de générer l’export"));
+    } finally {
+      setIsExporting(null);
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -95,6 +129,16 @@ export function Projects() {
         <div className="space-y-2">
           <h1 className="text-3xl font-bold tracking-tight">Projets</h1>
           <p className="text-muted-foreground">Gérez les projets de l'association</p>
+        </div>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" size="sm" onClick={() => handleExport("csv")} disabled={isExporting !== null || isLoading}>
+            <FileText className="mr-2 h-4 w-4" />
+            {isExporting === "csv" ? "Export…" : "CSV"}
+          </Button>
+          <Button variant="outline" size="sm" onClick={() => handleExport("pdf")} disabled={isExporting !== null || isLoading}>
+            <FileDown className="mr-2 h-4 w-4" />
+            {isExporting === "pdf" ? "Export…" : "PDF"}
+          </Button>
         </div>
         <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
           <DialogTrigger asChild>

@@ -19,11 +19,12 @@ import {
 } from "@/components/ui/dialog";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Search, MapPin, Mail, Phone, Edit, Trash2, ChevronRight } from "lucide-react";
+import { Plus, Search, MapPin, Mail, Phone, Edit, Trash2, ChevronRight, FileText, FileDown } from "lucide-react";
 import { useLocation } from "wouter";
 import { toast } from "sonner";
 import { LoadingButtonContent, LoadingState } from "@/components/LoadingState";
 import { getErrorMessage } from "@/lib/uxFeedback";
+import { exportRowsToCSV, exportRowsToPDF, generateListExportFilename, type ExportColumn } from "@/lib/exportLists";
 
 export function Antennes() {
   const [, navigate] = useLocation();
@@ -34,6 +35,7 @@ export function Antennes() {
   const [limit, setLimit] = useState(10);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
+  const [isExporting, setIsExporting] = useState<"csv" | "pdf" | null>(null);
 
   // Récupérer les antennes
   const { data: antennasData, isLoading, isFetching, refetch } = trpc.antennes.list.useQuery({
@@ -93,6 +95,38 @@ export function Antennes() {
 
   const antennes = antennasData?.data || [];
   const pagination = antennasData?.pagination;
+  const exportColumns: ExportColumn<any>[] = [
+    { header: "ID", value: (antenne) => antenne.id },
+    { header: "Nom", value: (antenne) => antenne.name },
+    { header: "Slug", value: (antenne) => antenne.slug },
+    { header: "Ville", value: (antenne) => antenne.city },
+    { header: "Adresse", value: (antenne) => antenne.address || "" },
+    { header: "Email", value: (antenne) => antenne.email || "" },
+    { header: "Téléphone", value: (antenne) => antenne.phone || "" },
+    { header: "Statut", value: (antenne) => antenne.isActive ? "Active" : "Inactive" },
+  ];
+
+  const handleExport = async (format: "csv" | "pdf") => {
+    if (antennes.length === 0) {
+      toast.error("Aucune antenne à exporter");
+      return;
+    }
+
+    setIsExporting(format);
+    try {
+      const filename = generateListExportFilename("antennes", format);
+      if (format === "csv") {
+        exportRowsToCSV(antennes, exportColumns, filename);
+      } else {
+        await exportRowsToPDF("Liste des antennes", antennes, exportColumns, filename);
+      }
+      toast.success(`Export ${format.toUpperCase()} des antennes téléchargé`);
+    } catch (error) {
+      toast.error(getErrorMessage(error, "Impossible de générer l’export"));
+    } finally {
+      setIsExporting(null);
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -103,6 +137,16 @@ export function Antennes() {
           <p className="text-muted-foreground mt-2">
             Gérez les antennes et branches de votre association
           </p>
+        </div>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" size="sm" onClick={() => handleExport("csv")} disabled={isExporting !== null || isLoading}>
+            <FileText className="mr-2 h-4 w-4" />
+            {isExporting === "csv" ? "Export…" : "CSV"}
+          </Button>
+          <Button variant="outline" size="sm" onClick={() => handleExport("pdf")} disabled={isExporting !== null || isLoading}>
+            <FileDown className="mr-2 h-4 w-4" />
+            {isExporting === "pdf" ? "Export…" : "PDF"}
+          </Button>
         </div>
         <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
           <DialogTrigger asChild>
