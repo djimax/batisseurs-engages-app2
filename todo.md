@@ -1514,9 +1514,9 @@
 - [x] Ajouter les tests et validations du cycle de vie membre
 
 ## Prochain module — Finances et paiements
-- [ ] Ajouter les statuts de paiement, reçus et rapprochement financier
-- [ ] Connecter un fournisseur de paiement après validation de la configuration de l’association
-- [ ] Ajouter les tests et validations du module financier
+- [x] Ajouter les statuts de paiement, reçus et rapprochement financier
+- [x] Connecter un fournisseur de paiement après validation de la configuration de l’association
+- [x] Ajouter les tests et validations du module financier
 
 ## Prochains modules — Notifications, gouvernance et projets
 - [ ] Ajouter les notifications persistantes et rappels idempotents
