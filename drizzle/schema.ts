@@ -379,7 +379,7 @@ export const memberHistory = mysqlTable("member_history", {
 export const memberStatuses = mysqlTable("member_statuses", {
 	id: int().autoincrement().notNull(),
 	memberId: int().notNull(),
-	status: mysqlEnum(['active','inactive','suspended','resigned','deceased']).notNull(),
+	status: mysqlEnum(['active','inactive','pending','suspended','resigned','deceased','archived']).notNull(),
 	reason: text(),
 	changedBy: int(),
 	changedAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
@@ -441,7 +441,7 @@ export const members = mysqlTable("members", {
 	phone: varchar({ length: 20 }),
 	role: varchar({ length: 100 }).default('Membre'),
 	function: varchar({ length: 100 }),
-	status: mysqlEnum(['active','inactive','pending']).default('active').notNull(),
+	status: mysqlEnum(['active','inactive','pending','suspended','resigned','deceased','archived']).default('active').notNull(),
 	joinedAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
 	createdAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
 	updatedAt: timestamp({ mode: 'string' }).defaultNow().onUpdateNow().notNull(),

@@ -6,6 +6,7 @@ import { emailRouter } from "./email-router";
 import { adminSettingsRouter } from "./admin-settings-router";
 import { crmRouter } from "./crm-router";
 import { z } from "zod";
+import { TRPCError } from "@trpc/server";
 import { 
   getAllCategories, getCategoryById, createCategory, seedDefaultCategories,
   getAllDocuments, getDocumentById, createDocument, updateDocument, deleteDocument, getDocumentStats, seedDefaultDocuments,
@@ -29,6 +30,7 @@ import {
   getAllUsers, getUserById, updateUserRole, getAdminCount, isUserAdmin
 } from "./db";
 import { roles, permissions, rolePermissions, userRoles, userScopes, auditLogs, emailTemplates, emailHistory, emailRecipients, members, adhesions } from "../drizzle/schema";
+import { buildMemberCardPayload, getMemberHistory, getMemberStatusHistory, memberStatusSchema, recordMemberHistory, recordMemberStatus } from "./member-lifecycle";
 import { and, eq, desc } from "drizzle-orm";
 import { logAudit } from "./audit";
 import { assertPermission, ensureDefaultPermissions } from "./authorization";
@@ -404,13 +406,19 @@ export const appRouter = router({
         phone: z.string().optional(),
         role: z.string().optional(),
         function: z.string().optional(),
-        status: z.enum(["active", "inactive", "pending"]).optional(),
+        status: memberStatusSchema.optional(),
         gender: z.enum(["1", "2", "3"]).optional().default("3"),
         memberID: z.string().optional(),
         photo: z.string().optional(),
       }))
       .mutation(async ({ input, ctx }) => {
         const result = await createMember(input as any);
+        await recordMemberStatus({
+          memberId: result.id as number,
+          status: input.status ?? "active",
+          reason: "Création du membre",
+          changedBy: ctx.user.id,
+        });
         await logActivity({
           userId: ctx.user.id,
           action: "create",
@@ -434,18 +442,34 @@ export const appRouter = router({
         phone: z.string().optional(),
         role: z.string().optional(),
         function: z.string().optional(),
-        status: z.enum(["active", "inactive", "pending"]).optional(),
+        status: memberStatusSchema.optional(),
         photo: z.string().optional(),
+        statusReason: z.string().trim().max(500).optional(),
       }))
       .mutation(async ({ input, ctx }) => {
-        const { id, ...data } = input;
+        const { id, statusReason, ...data } = input;
+        const current = await getMemberById(id);
+        if (!current) throw new Error("Membre non trouvé");
         const result = await updateMember(id, data);
+
+        for (const [fieldName, newValue] of Object.entries(data)) {
+          if (newValue === undefined) continue;
+          const oldValue = (current as Record<string, unknown>)[fieldName];
+          if (String(oldValue ?? "") !== String(newValue ?? "")) {
+            await recordMemberHistory({ memberId: id, fieldName, oldValue, newValue, changedBy: ctx.user.id });
+          }
+        }
+        if (data.status && data.status !== current.status) {
+          await recordMemberStatus({ memberId: id, status: data.status, reason: statusReason, changedBy: ctx.user.id });
+        }
         await logActivity({
           userId: ctx.user.id,
           action: "update",
           entityType: "member",
           entityId: id,
-          details: `Membre mis à jour`,
+          details: data.status && data.status !== current.status
+            ? `Statut du membre modifié : ${current.status} → ${data.status}`
+            : `Membre mis à jour`,
         });
         return result;
       }),
@@ -549,9 +573,106 @@ export const appRouter = router({
         return {
           member,
           adhesion: latestAdhesion[0] || null,
+          card: {
+            memberCode: member.memberId,
+            status: member.status,
+            statusLabel: member.status,
+            qrPayload: buildMemberCardPayload(member),
+          },
         };
       }),
     
+    history: protectedProcedure
+      .input(z.object({ memberId: z.number().int().positive() }))
+      .query(async ({ input, ctx }) => {
+        await assertPermission(ctx.user, "members.view");
+        return getMemberHistory(input.memberId);
+      }),
+
+    statusHistory: protectedProcedure
+      .input(z.object({ memberId: z.number().int().positive() }))
+      .query(async ({ input, ctx }) => {
+        await assertPermission(ctx.user, "members.view");
+        return getMemberStatusHistory(input.memberId);
+      }),
+
+    changeStatus: protectedProcedure
+      .input(z.object({
+        memberId: z.number().int().positive(),
+        status: memberStatusSchema,
+        reason: z.string().trim().max(500).optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        await assertPermission(ctx.user, "members.manage");
+        const current = await getMemberById(input.memberId);
+        if (!current) throw new TRPCError({ code: "NOT_FOUND", message: "Membre introuvable" });
+        if (current.status === input.status) return current;
+        const result = await updateMember(input.memberId, { status: input.status } as any);
+        await recordMemberHistory({ memberId: input.memberId, fieldName: "status", oldValue: current.status, newValue: input.status, changedBy: ctx.user.id });
+        await recordMemberStatus({ memberId: input.memberId, status: input.status, reason: input.reason, changedBy: ctx.user.id });
+        await logAudit({
+          userId: ctx.user.id,
+          action: "UPDATE",
+          entityType: "member_status",
+          entityId: input.memberId,
+          entityName: `${current.firstName} ${current.lastName}`,
+          description: `Statut modifié : ${current.status} → ${input.status}`,
+          oldValue: JSON.stringify({ status: current.status }),
+          newValue: JSON.stringify({ status: input.status, reason: input.reason ?? null }),
+          status: "success",
+        });
+        return result;
+      }),
+
+    card: protectedProcedure
+      .input(z.object({ memberId: z.number().int().positive() }))
+      .query(async ({ input, ctx }) => {
+        await assertPermission(ctx.user, "members.view");
+        const member = await getMemberById(input.memberId);
+        if (!member) throw new TRPCError({ code: "NOT_FOUND", message: "Membre introuvable" });
+        return {
+          member,
+          payload: buildMemberCardPayload(member),
+          memberCode: member.memberId,
+        };
+      }),
+
+    portalProfile: protectedProcedure.query(async ({ ctx }) => {
+      const db = await getDb();
+      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Base de données indisponible" });
+      const rows = await db.select().from(members).where(eq(members.userId, ctx.user.id)).limit(1);
+      if (!rows[0]) throw new TRPCError({ code: "NOT_FOUND", message: "Aucun profil membre lié à ce compte" });
+      const [history, statusHistory] = await Promise.all([
+        getMemberHistory(rows[0].id),
+        getMemberStatusHistory(rows[0].id),
+      ]);
+      return { member: rows[0], history, statusHistory, cardPayload: buildMemberCardPayload(rows[0]) };
+    }),
+
+    updateSelf: protectedProcedure
+      .input(z.object({
+        firstName: z.string().trim().min(1).max(100).optional(),
+        lastName: z.string().trim().min(1).max(100).optional(),
+        email: z.string().email().optional(),
+        phone: z.string().trim().max(20).optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        const db = await getDb();
+        if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Base de données indisponible" });
+        const rows = await db.select().from(members).where(eq(members.userId, ctx.user.id)).limit(1);
+        const current = rows[0];
+        if (!current) throw new TRPCError({ code: "NOT_FOUND", message: "Aucun profil membre lié à ce compte" });
+        const result = await updateMember(current.id, input);
+        for (const [fieldName, newValue] of Object.entries(input)) {
+          const oldValue = (current as Record<string, unknown>)[fieldName];
+          if (String(oldValue ?? "") !== String(newValue ?? "")) {
+            await recordMemberHistory({ memberId: current.id, fieldName, oldValue, newValue, changedBy: ctx.user.id });
+          }
+        }
+        await logActivity({ userId: ctx.user.id, action: "update", entityType: "member", entityId: current.id, details: "Profil membre mis à jour par son titulaire" });
+        return result;
+      }),
+
     // Export members list
     exportList: protectedProcedure.query(async () => {
       const membersList = await getAllMembers();

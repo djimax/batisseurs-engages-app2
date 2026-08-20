@@ -1,0 +1,2 @@
+ALTER TABLE `member_statuses` MODIFY COLUMN `status` enum('active','inactive','pending','suspended','resigned','deceased','archived') NOT NULL;--> statement-breakpoint
+ALTER TABLE `members` MODIFY COLUMN `status` enum('active','inactive','pending','suspended','resigned','deceased','archived') NOT NULL DEFAULT 'active';

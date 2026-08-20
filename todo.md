@@ -1509,9 +1509,9 @@
 - [x] Valider TypeScript, build et serveur après cette tranche
 
 ## Prochain module — Cycle de vie des membres
-- [ ] Ajouter les statuts métier complets, l’historique et les changements contrôlés
-- [ ] Ajouter la carte membre numérique et le portail adhérent
-- [ ] Ajouter les tests et validations du cycle de vie membre
+- [x] Ajouter les statuts métier complets, l’historique et les changements contrôlés
+- [x] Ajouter la carte membre numérique et le portail adhérent
+- [x] Ajouter les tests et validations du cycle de vie membre
 
 ## Prochain module — Finances et paiements
 - [ ] Ajouter les statuts de paiement, reçus et rapprochement financier
