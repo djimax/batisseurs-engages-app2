@@ -1581,3 +1581,10 @@
 - [x] Réutiliser les primitives de graphiques partagées et les tokens de la nouvelle identité
 - [x] Ajouter les tests de calculs et de rendu des indicateurs projets
 - [x] Valider TypeScript, tests, build, aperçu et checkpoint
+
+## Prochaine tranche — Audit des colonnes booléennes MySQL/TiDB
+- [x] Recenser toutes les colonnes tinyint et int utilisées comme booléens dans drizzle/schema.ts
+- [x] Vérifier les usages frontend/backend et les types générés associés
+- [x] Normaliser les déclarations de colonnes booléennes sans migration destructive
+- [x] Ajouter un test de garde contre les déclarations tinyint mal formées
+- [x] Valider TypeScript, tests, build et synchronisation du schéma
