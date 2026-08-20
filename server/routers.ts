@@ -28,9 +28,11 @@ import {
   createProjectTaskComment, getProjectTaskComments, deleteProjectTaskComment, getProjectReport,
   getProjectBudgetItems, createProjectBudgetItem, updateProjectBudgetItem, deleteProjectBudgetItem,
   getDashboardStatistics, getGlobalDashboardSummary, getProjectsStatistics, getTasksStatistics, getFinanceStatistics, getMembersStatistics,
-  getAllUsers, getUserById, updateUserRole, getAdminCount, isUserAdmin
+  getAllUsers, getUserById, updateUserRole, getAdminCount, isUserAdmin,
+  getAnnouncements, createAnnouncement, updateAnnouncement, deleteAnnouncement,
+  getNewsList, createNews, updateNews, deleteNews, getNewsComments, addNewsComment, deleteNewsComment
 } from "./db";
-import { roles, permissions, rolePermissions, userRoles, userScopes, auditLogs, emailTemplates, emailHistory, emailRecipients, members, adhesions, notificationSchedules } from "../drizzle/schema";
+import { roles, permissions, rolePermissions, userRoles, userScopes, auditLogs, emailTemplates, emailHistory, emailRecipients, members, adhesions, notificationSchedules, announcements, news, newsComments } from "../drizzle/schema";
 import { buildMemberCardPayload, getMemberHistory, getMemberStatusHistory, memberStatusSchema, recordMemberHistory, recordMemberStatus } from "./member-lifecycle";
 import { createUserNotification, generateMembershipReminderNotifications, getOrCreateNotificationPreferences, listUserNotifications, markAllNotificationsRead, markNotificationRead, updateNotificationPreferences } from "./notification-center";
 import { and, eq, desc } from "drizzle-orm";
@@ -1078,6 +1080,176 @@ export const appRouter = router({
           return [];
         }
        }),
+  }),
+
+  // ============ COMMUNICATION ============
+  announcements: router({
+    getAll: protectedProcedure
+      .input(z.object({
+        status: z.enum(["draft", "published", "archived"]).optional(),
+        category: z.string().trim().min(1).optional(),
+      }).optional())
+      .query(async ({ input, ctx }) => {
+        await assertPermission(ctx.user, "communication.view");
+        const rows = await getAnnouncements();
+        return rows.filter((row) => {
+          if (input?.status && row.status !== input.status) return false;
+          if (input?.category && row.category !== input.category) return false;
+          return true;
+        });
+      }),
+
+    create: protectedProcedure
+      .input(z.object({
+        title: z.string().trim().min(2).max(255),
+        content: z.string().trim().min(1),
+        priority: z.enum(["low", "medium", "high", "urgent"]).default("medium"),
+        category: z.string().trim().min(1).max(100).default("general"),
+        status: z.enum(["draft", "published", "archived"]).default("published"),
+        expiresAt: z.string().trim().min(1).nullable().optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        await assertPermission(ctx.user, "communication.manage");
+        const id = await createAnnouncement({
+          title: input.title,
+          content: input.content,
+          priority: input.priority,
+          category: input.category,
+          authorId: ctx.user.id,
+          status: input.status,
+          publishedAt: input.status === "published" ? new Date().toISOString() : null,
+          expiresAt: input.expiresAt || null,
+        });
+        await logAudit({ userId: ctx.user.id, action: "CREATE", entityType: "announcement", entityId: id, entityName: input.title, description: `Announcement ${id} created`, status: "success" });
+        return { id } as const;
+      }),
+
+    update: protectedProcedure
+      .input(z.object({
+        id: z.number().int().positive(),
+        title: z.string().trim().min(2).max(255).optional(),
+        content: z.string().trim().min(1).optional(),
+        priority: z.enum(["low", "medium", "high", "urgent"]).optional(),
+        category: z.string().trim().min(1).max(100).optional(),
+        status: z.enum(["draft", "published", "archived"]).optional(),
+        expiresAt: z.string().trim().min(1).nullable().optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        await assertPermission(ctx.user, "communication.manage");
+        const { id, ...changes } = input;
+        await updateAnnouncement(id, {
+          ...changes,
+          publishedAt: input.status === "published" ? new Date().toISOString() : undefined,
+          expiresAt: input.expiresAt === undefined ? undefined : input.expiresAt || null,
+        });
+        await logAudit({ userId: ctx.user.id, action: "UPDATE", entityType: "announcement", entityId: id, description: `Announcement ${id} updated`, status: "success" });
+        return { success: true } as const;
+      }),
+
+    delete: protectedProcedure
+      .input(z.object({ id: z.number().int().positive() }))
+      .mutation(async ({ input, ctx }) => {
+        await assertPermission(ctx.user, "communication.manage");
+        await deleteAnnouncement(input.id);
+        await logAudit({ userId: ctx.user.id, action: "DELETE", entityType: "announcement", entityId: input.id, description: `Announcement ${input.id} deleted`, status: "success" });
+        return { success: true } as const;
+      }),
+  }),
+
+  news: router({
+    getAll: protectedProcedure
+      .input(z.object({
+        status: z.enum(["draft", "published", "archived"]).optional(),
+        category: z.string().trim().min(1).optional(),
+      }).optional())
+      .query(async ({ input, ctx }) => {
+        await assertPermission(ctx.user, "communication.view");
+        const rows = await getNewsList();
+        return rows.filter((row) => {
+          if (input?.status && row.status !== input.status) return false;
+          if (input?.category && row.category !== input.category) return false;
+          return true;
+        });
+      }),
+
+    create: protectedProcedure
+      .input(z.object({
+        title: z.string().trim().min(2).max(255),
+        content: z.string().trim().min(1),
+        excerpt: z.string().trim().max(500).optional(),
+        category: z.string().trim().min(1).max(100).default("general"),
+        status: z.enum(["draft", "published", "archived"]).default("draft"),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        await assertPermission(ctx.user, "communication.manage");
+        const id = await createNews({
+          title: input.title,
+          content: input.content,
+          excerpt: input.excerpt || null,
+          category: input.category,
+          status: input.status,
+          authorId: ctx.user.id,
+          publishedAt: input.status === "published" ? new Date().toISOString() : null,
+          viewCount: 0,
+        });
+        await logAudit({ userId: ctx.user.id, action: "CREATE", entityType: "news", entityId: id, entityName: input.title, description: `News ${id} created`, status: "success" });
+        return { id } as const;
+      }),
+
+    update: protectedProcedure
+      .input(z.object({
+        id: z.number().int().positive(),
+        title: z.string().trim().min(2).max(255).optional(),
+        content: z.string().trim().min(1).optional(),
+        excerpt: z.string().trim().max(500).nullable().optional(),
+        category: z.string().trim().min(1).max(100).optional(),
+        status: z.enum(["draft", "published", "archived"]).optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        await assertPermission(ctx.user, "communication.manage");
+        const { id, ...changes } = input;
+        await updateNews(id, {
+          ...changes,
+          publishedAt: input.status === "published" ? new Date().toISOString() : undefined,
+          excerpt: input.excerpt === undefined ? undefined : input.excerpt || null,
+        });
+        await logAudit({ userId: ctx.user.id, action: "UPDATE", entityType: "news", entityId: id, description: `News ${id} updated`, status: "success" });
+        return { success: true } as const;
+      }),
+
+    delete: protectedProcedure
+      .input(z.object({ id: z.number().int().positive() }))
+      .mutation(async ({ input, ctx }) => {
+        await assertPermission(ctx.user, "communication.manage");
+        await deleteNews(input.id);
+        await logAudit({ userId: ctx.user.id, action: "DELETE", entityType: "news", entityId: input.id, description: `News ${input.id} deleted`, status: "success" });
+        return { success: true } as const;
+      }),
+
+    getComments: protectedProcedure
+      .input(z.object({ newsId: z.number().int().positive() }))
+      .query(async ({ input, ctx }) => {
+        await assertPermission(ctx.user, "communication.view");
+        return getNewsComments(input.newsId);
+      }),
+
+    addComment: protectedProcedure
+      .input(z.object({ newsId: z.number().int().positive(), content: z.string().trim().min(1).max(5000) }))
+      .mutation(async ({ input, ctx }) => {
+        await assertPermission(ctx.user, "communication.view");
+        const id = await addNewsComment({ newsId: input.newsId, authorId: ctx.user.id, content: input.content });
+        await logAudit({ userId: ctx.user.id, action: "CREATE", entityType: "news_comment", entityId: id, description: `Comment ${id} added to news ${input.newsId}`, status: "success" });
+        return { id } as const;
+      }),
+
+    deleteComment: protectedProcedure
+      .input(z.object({ id: z.number().int().positive() }))
+      .mutation(async ({ input, ctx }) => {
+        await assertPermission(ctx.user, "communication.view");
+        await deleteNewsComment(input.id, ctx.user.role === "admin" ? undefined : ctx.user.id);
+        await logAudit({ userId: ctx.user.id, action: "DELETE", entityType: "news_comment", entityId: input.id, description: `Comment ${input.id} deleted`, status: "success" });
+        return { success: true } as const;
+      }),
   }),
 
   // ============ GLOBAL SETTINGS ============

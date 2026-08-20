@@ -728,34 +728,34 @@
 ## Phase 27 - Annonces et Actualités
 
 ### Schéma de Base de Données
-- [ ] Ajouter table announcements pour les annonces
-- [ ] Ajouter table news pour les actualités
-- [ ] Ajouter table newsComments pour les commentaires
+- [x] Ajouter table announcements pour les annonces
+- [x] Ajouter table news pour les actualités
+- [x] Ajouter table newsComments pour les commentaires
 - [x] Migrer la base de données
 
 ### Procédures tRPC
-- [ ] Créer procedure announcements.getAll
-- [ ] Créer procedure announcements.create
-- [ ] Créer procedure announcements.update
-- [ ] Créer procedure announcements.delete
-- [ ] Créer procedure news.getAll
-- [ ] Créer procedure news.create
-- [ ] Créer procedure news.update
-- [ ] Créer procedure news.delete
-- [ ] Créer procedure news.addComment
-- [ ] Créer procedure news.deleteComment
+- [x] Créer procedure announcements.getAll
+- [x] Créer procedure announcements.create
+- [x] Créer procedure announcements.update
+- [x] Créer procedure announcements.delete
+- [x] Créer procedure news.getAll
+- [x] Créer procedure news.create
+- [x] Créer procedure news.update
+- [x] Créer procedure news.delete
+- [x] Créer procedure news.addComment
+- [x] Créer procedure news.deleteComment
 
 ### Page d'Interface
 - [x] Créer page Announcements.tsx
-- [ ] Créer page News.tsx
+- [x] Créer page News.tsx
 - [x] Ajouter les routes dans App.tsx
 - [x] Ajouter les liens de navigation
 
 ### Tests
-- [ ] Tester la création d'annonces
-- [ ] Tester la création de news
-- [ ] Tester les commentaires
-- [ ] Vérifier l'affichage des annonces et news
+- [x] Tester la création d'annonces
+- [x] Tester la création de news
+- [x] Tester les commentaires
+- [x] Vérifier l'affichage des annonces et news
 
 
 ## Phase 28 - Système d'Envoi d'Emails en Masse

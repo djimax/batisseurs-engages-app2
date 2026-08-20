@@ -41,7 +41,10 @@ import {
   groupes,
   groupeMembers,
   campaigns,
-  events
+  events,
+  announcements,
+  news,
+  newsComments
 } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
@@ -1595,6 +1598,9 @@ export type InsertProjectUpdate = typeof projectUpdates.$inferInsert;
 export type InsertProjectTaskComment = typeof projectTaskComments.$inferInsert;
 export type InsertProjectBudgetItem = typeof projectBudgetItems.$inferInsert;
 export type InsertAuditLog = typeof auditLogs.$inferInsert;
+export type InsertAnnouncement = typeof announcements.$inferInsert;
+export type InsertNews = typeof news.$inferInsert;
+export type InsertNewsComment = typeof newsComments.$inferInsert;
 
 // Select types for queries
 export type CrmContact = typeof crmContacts.$inferSelect;
@@ -1618,3 +1624,97 @@ export type EmailHistory = typeof emailHistory.$inferSelect;
 export type EmailRecipient = typeof emailRecipients.$inferSelect;
 export type AppSetting = typeof appSettings.$inferSelect;
 export type AuditLog = typeof auditLogs.$inferSelect;
+export type Announcement = typeof announcements.$inferSelect;
+export type News = typeof news.$inferSelect;
+export type NewsComment = typeof newsComments.$inferSelect;
+
+
+// ==========================================
+// Announcements & News Helpers
+// ==========================================
+
+export async function getAnnouncements() {
+  const db = await getDb();
+  if (!db) return [];
+  try {
+    return await db.select().from(announcements).orderBy(desc(announcements.createdAt));
+  } catch (error) {
+    console.error("Failed to get announcements:", error);
+    return [];
+  }
+}
+
+export async function createAnnouncement(data: InsertAnnouncement) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const result = await db.insert(announcements).values(data);
+  return Number(result[0].insertId);
+}
+
+export async function updateAnnouncement(id: number, data: Partial<InsertAnnouncement>) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.update(announcements).set(data).where(eq(announcements.id, id));
+}
+
+export async function deleteAnnouncement(id: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.delete(announcements).where(eq(announcements.id, id));
+}
+
+export async function getNewsList() {
+  const db = await getDb();
+  if (!db) return [];
+  try {
+    return await db.select().from(news).orderBy(desc(news.createdAt));
+  } catch (error) {
+    console.error("Failed to get news list:", error);
+    return [];
+  }
+}
+
+export async function createNews(data: InsertNews) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const result = await db.insert(news).values(data);
+  return Number(result[0].insertId);
+}
+
+export async function updateNews(id: number, data: Partial<InsertNews>) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.update(news).set(data).where(eq(news.id, id));
+}
+
+export async function deleteNews(id: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.delete(newsComments).where(eq(newsComments.newsId, id));
+  await db.delete(news).where(eq(news.id, id));
+}
+
+export async function getNewsComments(newsId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  try {
+    return await db.select().from(newsComments).where(eq(newsComments.newsId, newsId)).orderBy(desc(newsComments.createdAt));
+  } catch (error) {
+    console.error("Failed to get news comments:", error);
+    return [];
+  }
+}
+
+export async function addNewsComment(data: InsertNewsComment) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const result = await db.insert(newsComments).values(data);
+  return Number(result[0].insertId);
+}
+
+export async function deleteNewsComment(id: number, authorId?: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const conditions = authorId ? and(eq(newsComments.id, id), eq(newsComments.authorId, authorId)) : eq(newsComments.id, id);
+  await db.delete(newsComments).where(conditions);
+}

@@ -29,6 +29,7 @@ import MemberPortal from "./pages/MemberPortal";
 import Notifications from "./pages/Notifications";
 import Governance from "./pages/Governance";
 import AdminAuditLogs from "./pages/AdminAuditLogs";
+import News from "./pages/News";
 import Announcements from "./pages/Announcements";
 import EmailComposer from "./pages/EmailComposer";
 import AdminSettings from "./pages/AdminSettings";
@@ -77,6 +78,7 @@ function OnlineRouter({ isAuthenticated, error, onLogin, onLogout, onForgotPassw
         <Route path="/users" component={ProtectedUserManagement} />
         <Route path="/admin-portal" component={AdminPortal} />
         <Route path="/announcements" component={Announcements} />
+        <Route path="/news" component={News} />
         <Route path="/email-composer" component={EmailComposer} />
         <Route path="/audit-history" component={AuditHistory} />
         <Route path="/admin/roles" component={AdminRoles} />

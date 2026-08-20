@@ -1,276 +1,83 @@
 import { useState } from "react";
+import { trpc } from "@/lib/trpc";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { Plus, AlertCircle, Trash2, Edit } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { AlertCircle, Bell, Edit, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
-interface Announcement {
-  id: number;
-  title: string;
-  content: string;
-  priority: "low" | "medium" | "high" | "urgent";
-  publishedAt: Date;
-  expiresAt?: Date;
-}
+type AnnouncementPriority = "low" | "medium" | "high" | "urgent";
+type AnnouncementStatus = "draft" | "published" | "archived";
+type FormState = { title: string; content: string; priority: AnnouncementPriority; category: string; status: AnnouncementStatus; expiresAt: string };
+const EMPTY_FORM: FormState = { title: "", content: "", priority: "medium", category: "general", status: "published", expiresAt: "" };
+const priorityLabels = { low: "Basse", medium: "Normale", high: "Élevée", urgent: "Urgente" } as const;
+const priorityVariants = { low: "outline", medium: "secondary", high: "default", urgent: "destructive" } as const;
 
 export default function Announcements() {
-  const [announcements, setAnnouncements] = useState<Announcement[]>([
-    {
-      id: 1,
-      title: "Réunion générale prévue",
-      content: "La réunion générale annuelle est prévue pour le 15 mars 2026 à 18h00.",
-      priority: "high",
-      publishedAt: new Date("2026-02-04"),
-      expiresAt: new Date("2026-03-15"),
-    },
-    {
-      id: 2,
-      title: "Mise à jour du système",
-      content: "Une maintenance est prévue dimanche de 22h à 23h. L'application sera indisponible pendant cette période.",
-      priority: "medium",
-      publishedAt: new Date("2026-02-03"),
-    },
-  ]);
+  const { data: user } = trpc.auth.me.useQuery();
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [editingId, setEditingId] = useState<number | null>(null);
+  const [statusFilter, setStatusFilter] = useState<"all" | "draft" | "published" | "archived">("all");
+  const [form, setForm] = useState<FormState>(EMPTY_FORM);
+  const utils = trpc.useUtils();
+  const { data: announcements = [], isLoading } = trpc.announcements.getAll.useQuery(statusFilter === "all" ? undefined : { status: statusFilter });
+  const canManage = user?.role === "admin";
 
-  const [newAnnouncement, setNewAnnouncement] = useState({
-    title: "",
-    content: "",
-    priority: "medium" as const,
-    expiresAt: "",
+  const createMutation = trpc.announcements.create.useMutation({
+    onSuccess: () => { toast.success("Annonce publiée"); setDialogOpen(false); setForm(EMPTY_FORM); void utils.announcements.getAll.invalidate(); },
+    onError: (error) => toast.error(error.message),
+  });
+  const updateMutation = trpc.announcements.update.useMutation({
+    onSuccess: () => { toast.success("Annonce mise à jour"); setDialogOpen(false); setEditingId(null); setForm(EMPTY_FORM); void utils.announcements.getAll.invalidate(); },
+    onError: (error) => toast.error(error.message),
+  });
+  const deleteMutation = trpc.announcements.delete.useMutation({
+    onSuccess: () => { toast.success("Annonce supprimée"); void utils.announcements.getAll.invalidate(); },
+    onError: (error) => toast.error(error.message),
   });
 
-  const [editingId, setEditingId] = useState<number | null>(null);
-
-  const handleAddAnnouncement = () => {
-    if (!newAnnouncement.title || !newAnnouncement.content) {
-      toast.error("Veuillez remplir tous les champs obligatoires");
-      return;
-    }
-
-    const announcement: Announcement = {
-      id: Date.now(),
-      title: newAnnouncement.title,
-      content: newAnnouncement.content,
-      priority: newAnnouncement.priority,
-      publishedAt: new Date(),
-      expiresAt: newAnnouncement.expiresAt ? new Date(newAnnouncement.expiresAt) : undefined,
-    };
-
-    setAnnouncements([announcement, ...announcements]);
-    setNewAnnouncement({ title: "", content: "", priority: "medium", expiresAt: "" });
-    toast.success("Annonce créée avec succès");
+  const openCreate = () => { setEditingId(null); setForm(EMPTY_FORM); setDialogOpen(true); };
+  const openEdit = (announcement: (typeof announcements)[number]) => {
+    setEditingId(announcement.id);
+    setForm({ title: announcement.title, content: announcement.content, priority: announcement.priority, category: announcement.category, status: announcement.status, expiresAt: announcement.expiresAt ? new Date(announcement.expiresAt).toISOString().slice(0, 10) : "" });
+    setDialogOpen(true);
   };
-
-  const handleDeleteAnnouncement = (id: number) => {
-    setAnnouncements(announcements.filter((a) => a.id !== id));
-    toast.success("Annonce supprimée");
+  const submit = (event: React.FormEvent) => {
+    event.preventDefault();
+    const payload = { ...form, expiresAt: form.expiresAt ? new Date(`${form.expiresAt}T23:59:59`).toISOString() : null };
+    if (editingId) updateMutation.mutate({ id: editingId, ...payload });
+    else createMutation.mutate(payload);
   };
-
-  const getPriorityColor = (priority: string) => {
-    switch (priority) {
-      case "urgent":
-        return "bg-red-100 text-red-800 border-red-300";
-      case "high":
-        return "bg-orange-100 text-orange-800 border-orange-300";
-      case "medium":
-        return "bg-yellow-100 text-yellow-800 border-yellow-300";
-      case "low":
-        return "bg-green-100 text-green-800 border-green-300";
-      default:
-        return "bg-gray-100 text-gray-800 border-gray-300";
-    }
-  };
-
-  const getPriorityLabel = (priority: string) => {
-    switch (priority) {
-      case "urgent":
-        return "Urgent";
-      case "high":
-        return "Élevée";
-      case "medium":
-        return "Normale";
-      case "low":
-        return "Basse";
-      default:
-        return priority;
-    }
-  };
-
-  const isExpired = (expiresAt?: Date) => {
-    if (!expiresAt) return false;
-    return new Date() > expiresAt;
-  };
+  const remove = (id: number) => { if (window.confirm("Supprimer définitivement cette annonce ?")) deleteMutation.mutate({ id }); };
+  const urgentCount = announcements.filter((item) => item.priority === "urgent" && item.status === "published").length;
+  const expiredCount = announcements.filter((item) => item.expiresAt && new Date(item.expiresAt) < new Date()).length;
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight">Annonces</h1>
-        <p className="text-muted-foreground mt-2">
-          Gérez les annonces importantes pour l'association
-        </p>
+    <div className="space-y-6 animate-fade-in-up">
+      <div className="flex flex-col justify-between gap-4 md:flex-row md:items-center">
+        <div><div className="flex items-center gap-3"><Bell className="h-7 w-7 text-primary" /><h1 className="text-3xl font-bold tracking-tight">Annonces</h1></div><p className="mt-2 text-muted-foreground">Informez les membres avec des messages suivis et historisés.</p></div>
+        {canManage && <Button onClick={openCreate} className="button-interactive gap-2"><Plus className="h-4 w-4" />Nouvelle annonce</Button>}
       </div>
 
-      {/* Statistiques */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Annonces</CardTitle>
-            <AlertCircle className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{announcements.length}</div>
-            <p className="text-xs text-muted-foreground">Annonces actives</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Urgentes</CardTitle>
-            <AlertCircle className="h-4 w-4 text-red-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {announcements.filter((a) => a.priority === "urgent").length}
-            </div>
-            <p className="text-xs text-muted-foreground">À traiter en priorité</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Expirées</CardTitle>
-            <AlertCircle className="h-4 w-4 text-gray-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {announcements.filter((a) => isExpired(a.expiresAt)).length}
-            </div>
-            <p className="text-xs text-muted-foreground">À archiver</p>
-          </CardContent>
-        </Card>
+      <div className="grid gap-4 md:grid-cols-3">
+        <Card><CardHeader className="pb-2"><CardDescription>Annonces visibles</CardDescription><CardTitle className="text-3xl">{announcements.filter((item) => item.status === "published").length}</CardTitle></CardHeader><CardContent><p className="text-xs text-muted-foreground">Données persistées de l’association</p></CardContent></Card>
+        <Card><CardHeader className="pb-2"><CardDescription>Priorité urgente</CardDescription><CardTitle className="text-3xl text-destructive">{urgentCount}</CardTitle></CardHeader><CardContent><p className="text-xs text-muted-foreground">À traiter rapidement</p></CardContent></Card>
+        <Card><CardHeader className="pb-2"><CardDescription>À archiver</CardDescription><CardTitle className="text-3xl">{expiredCount}</CardTitle></CardHeader><CardContent><p className="text-xs text-muted-foreground">Annonces arrivées à échéance</p></CardContent></Card>
       </div>
 
-      {/* Bouton Ajouter */}
-      <Dialog>
-        <DialogTrigger asChild>
-          <Button className="gap-2">
-            <Plus className="h-4 w-4" />
-            Nouvelle Annonce
-          </Button>
-        </DialogTrigger>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Créer une Annonce</DialogTitle>
-            <DialogDescription>
-              Créez une nouvelle annonce pour informer les membres
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div>
-              <Label htmlFor="title">Titre</Label>
-              <Input
-                id="title"
-                value={newAnnouncement.title}
-                onChange={(e) => setNewAnnouncement({ ...newAnnouncement, title: e.target.value })}
-                placeholder="Titre de l'annonce"
-              />
-            </div>
-            <div>
-              <Label htmlFor="content">Contenu</Label>
-              <Textarea
-                id="content"
-                value={newAnnouncement.content}
-                onChange={(e) => setNewAnnouncement({ ...newAnnouncement, content: e.target.value })}
-                placeholder="Contenu de l'annonce"
-                rows={4}
-              />
-            </div>
-            <div>
-              <Label htmlFor="priority">Priorité</Label>
-              <Select value={newAnnouncement.priority} onValueChange={(value: any) => setNewAnnouncement({ ...newAnnouncement, priority: value })}>
-                <SelectTrigger id="priority">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="low">Basse</SelectItem>
-                  <SelectItem value="medium">Normale</SelectItem>
-                  <SelectItem value="high">Élevée</SelectItem>
-                  <SelectItem value="urgent">Urgent</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <Label htmlFor="expiresAt">Date d'expiration (optionnel)</Label>
-              <Input
-                id="expiresAt"
-                type="date"
-                value={newAnnouncement.expiresAt}
-                onChange={(e) => setNewAnnouncement({ ...newAnnouncement, expiresAt: e.target.value })}
-              />
-            </div>
-            <Button onClick={handleAddAnnouncement} className="w-full">
-              Créer l'annonce
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
+      <Card><CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"><div><CardTitle>Fil d’information</CardTitle><CardDescription>Les annonces sont conservées dans l’historique de communication.</CardDescription></div><Select value={statusFilter} onValueChange={(value) => setStatusFilter(value as typeof statusFilter)}><SelectTrigger className="w-full sm:w-44"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="all">Tous les statuts</SelectItem><SelectItem value="published">Publiées</SelectItem><SelectItem value="draft">Brouillons</SelectItem><SelectItem value="archived">Archivées</SelectItem></SelectContent></Select></CardHeader><CardContent className="space-y-4">
+        {isLoading ? <p className="py-8 text-center text-sm text-muted-foreground">Chargement des annonces…</p> : announcements.length === 0 ? <div className="rounded-xl border border-dashed p-10 text-center"><AlertCircle className="mx-auto mb-3 h-8 w-8 text-muted-foreground" /><p className="font-medium">Aucune annonce enregistrée</p><p className="mt-1 text-sm text-muted-foreground">Créez une annonce lorsque votre association aura une information à partager.</p></div> : announcements.map((announcement) => {
+          const expired = announcement.expiresAt ? new Date(announcement.expiresAt) < new Date() : false;
+          return <article key={announcement.id} className={`rounded-xl border bg-card p-5 transition-all hover:-translate-y-0.5 hover:shadow-sm ${expired ? "opacity-65" : ""}`}><div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between"><div className="space-y-2"><div className="flex flex-wrap items-center gap-2"><h2 className="text-lg font-semibold">{announcement.title}</h2><Badge variant={priorityVariants[announcement.priority]}>{priorityLabels[announcement.priority]}</Badge><Badge variant="outline">{announcement.category}</Badge><Badge variant="secondary">{announcement.status === "published" ? "Publiée" : announcement.status === "draft" ? "Brouillon" : "Archivée"}</Badge></div><p className="whitespace-pre-wrap text-sm leading-6 text-muted-foreground">{announcement.content}</p></div>{canManage && <div className="flex shrink-0 gap-1"><Button variant="ghost" size="sm" onClick={() => openEdit(announcement)} aria-label="Modifier"><Edit className="h-4 w-4" /></Button><Button variant="ghost" size="sm" onClick={() => remove(announcement.id)} aria-label="Supprimer"><Trash2 className="h-4 w-4 text-destructive" /></Button></div>}</div><div className="mt-4 flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground"><span>Créée le {new Date(announcement.createdAt).toLocaleDateString("fr-FR")}</span>{announcement.publishedAt && <span>Publiée le {new Date(announcement.publishedAt).toLocaleDateString("fr-FR")}</span>}{announcement.expiresAt && <span>{expired ? "Expirée le" : "Expire le"} {new Date(announcement.expiresAt).toLocaleDateString("fr-FR")}</span>}</div></article>;
+        })}
+      </CardContent></Card>
 
-      {/* Liste des Annonces */}
-      <div className="space-y-4">
-        {announcements.length === 0 ? (
-          <Card>
-            <CardContent className="pt-6">
-              <p className="text-center text-muted-foreground">Aucune annonce pour le moment</p>
-            </CardContent>
-          </Card>
-        ) : (
-          announcements.map((announcement) => (
-            <Card key={announcement.id} className={isExpired(announcement.expiresAt) ? "opacity-50" : ""}>
-              <CardHeader>
-                <div className="flex items-start justify-between">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2">
-                      <CardTitle>{announcement.title}</CardTitle>
-                      <span className={`px-2 py-1 rounded-full text-xs font-semibold border ${getPriorityColor(announcement.priority)}`}>
-                        {getPriorityLabel(announcement.priority)}
-                      </span>
-                      {isExpired(announcement.expiresAt) && (
-                        <span className="px-2 py-1 rounded-full text-xs font-semibold bg-gray-100 text-gray-800 border border-gray-300">
-                          Expirée
-                        </span>
-                      )}
-                    </div>
-                    <CardDescription className="mt-2">
-                      Publiée le {announcement.publishedAt.toLocaleDateString("fr-FR")}
-                      {announcement.expiresAt && ` • Expire le ${announcement.expiresAt.toLocaleDateString("fr-FR")}`}
-                    </CardDescription>
-                  </div>
-                  <div className="flex gap-2">
-                    <Button variant="ghost" size="sm">
-                      <Edit className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleDeleteAnnouncement(announcement.id)}
-                    >
-                      <Trash2 className="h-4 w-4 text-red-600" />
-                    </Button>
-                  </div>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <p className="text-sm text-muted-foreground whitespace-pre-wrap">{announcement.content}</p>
-              </CardContent>
-            </Card>
-          ))
-        )}
-      </div>
+      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}><DialogContent><DialogHeader><DialogTitle>{editingId ? "Modifier l’annonce" : "Créer une annonce"}</DialogTitle><DialogDescription>Rédigez un message clair, daté et utile aux membres.</DialogDescription></DialogHeader><form onSubmit={submit} className="space-y-4"><div className="space-y-2"><Label htmlFor="announcement-title">Titre</Label><Input id="announcement-title" value={form.title} onChange={(event) => setForm({ ...form, title: event.target.value })} maxLength={255} required /></div><div className="space-y-2"><Label htmlFor="announcement-content">Contenu</Label><Textarea id="announcement-content" value={form.content} onChange={(event) => setForm({ ...form, content: event.target.value })} rows={5} required /></div><div className="grid gap-4 sm:grid-cols-2"><div className="space-y-2"><Label>Priorité</Label><Select value={form.priority} onValueChange={(value) => setForm({ ...form, priority: value as FormState["priority"] })}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="low">Basse</SelectItem><SelectItem value="medium">Normale</SelectItem><SelectItem value="high">Élevée</SelectItem><SelectItem value="urgent">Urgente</SelectItem></SelectContent></Select></div><div className="space-y-2"><Label>Statut</Label><Select value={form.status} onValueChange={(value) => setForm({ ...form, status: value as FormState["status"] })}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="published">Publiée</SelectItem><SelectItem value="draft">Brouillon</SelectItem><SelectItem value="archived">Archivée</SelectItem></SelectContent></Select></div></div><div className="grid gap-4 sm:grid-cols-2"><div className="space-y-2"><Label htmlFor="announcement-category">Catégorie</Label><Input id="announcement-category" value={form.category} onChange={(event) => setForm({ ...form, category: event.target.value })} maxLength={100} required /></div><div className="space-y-2"><Label htmlFor="announcement-expires">Date d’expiration</Label><Input id="announcement-expires" type="date" value={form.expiresAt} onChange={(event) => setForm({ ...form, expiresAt: event.target.value })} /></div></div><div className="flex justify-end gap-2"><Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>Annuler</Button><Button type="submit" disabled={createMutation.isPending || updateMutation.isPending}>{editingId ? "Enregistrer" : "Publier"}</Button></div></form></DialogContent></Dialog>
     </div>
   );
 }

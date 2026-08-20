@@ -40,6 +40,7 @@ import {
   Shield,
   Eye,
   Mail,
+  Newspaper,
   BarChart3,
   PhoneCall,
   Globe,
@@ -117,6 +118,7 @@ const menuItems: MenuItem[] = [
   // Communication
   { icon: Megaphone, label: "Communication", isGroup: true, items: [
     { icon: Megaphone, label: "Annonces", path: "/announcements" },
+    { icon: Newspaper, label: "Actualités", path: "/news" },
     { icon: Mail, label: "Emails", path: "/email-composer" },
   ]},
   

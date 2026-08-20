@@ -1,0 +1,1 @@
+ALTER TABLE `announcements` ADD `category` varchar(100) DEFAULT 'general' NOT NULL;

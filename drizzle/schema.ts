@@ -118,6 +118,7 @@ export const announcements = mysqlTable("announcements", {
 	id: int().autoincrement().notNull(),
 	title: varchar({ length: 255 }).notNull(),
 	content: text().notNull(),
+	category: varchar({ length: 100 }).default('general').notNull(),
 	authorId: int().notNull(),
 	priority: mysqlEnum(['low','medium','high','urgent']).default('medium').notNull(),
 	status: mysqlEnum(['draft','published','archived']).default('draft').notNull(),
