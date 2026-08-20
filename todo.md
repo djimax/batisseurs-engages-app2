@@ -1437,3 +1437,63 @@
 - [x] Ajouter l’export CSV des listes d’antennes et de projets
 - [x] Ajouter l’export PDF des listes d’antennes et de projets
 - [x] Ajouter les états de génération, notifications et tests des exports
+
+## Audit d’Expert et Évolution Stratégique de la Plateforme
+- [x] Réaliser un diagnostic fonctionnel et technique complet de l’application actuelle
+- [ ] Mettre en place la gouvernance des assemblées générales et du quorum (vote électronique)
+- [ ] Intégrer la gestion des reçus fiscaux et des justificatifs de dons (conformité réglementaire)
+- [ ] Connecter une passerelle de paiement en ligne (Stripe / HelloAsso) pour les cotisations autonomes
+- [ ] Implémenter le portail adhérent en self-service (mise à jour du profil, téléchargement de carte d’adhérent)
+- [ ] Développer l’application mobile compagnon ou l’optimisation PWA pour les terrains et antennes locales
+
+## Phase d’Implémentation Étape par Étape — Étape 1 : Permissions Granulaires et Périmètres
+- [x] Auditer les tables existantes (`roles`, `permissions`, `rolePermissions`, `userRoles`) dans `drizzle/schema.ts`
+- [x] Créer la table `userScopes` pour lier un utilisateur à une antenne, un groupe ou un projet (intégré via le modèle relationnel existant)
+- [x] Ajouter les fonctions helpers dans `server/db.ts` pour vérifier les permissions et les périmètres
+- [x] Implémenter le middleware tRPC `requirePermission` et `requireScope` dans `server/routers.ts`
+- [x] Mettre à jour les routes sensibles (membres, finances, documents, projets) pour exiger les permissions granulaires
+- [x] Créer une page d’administration des rôles et périmètres (`client/src/pages/AdminPermissions.tsx`)
+- [x] Écrire les tests Vitest pour valider les règles de contrôle d’accès
+- [x] Valider le typage TypeScript et exécuter tous les tests
+
+## Phase d’Implémentation Étape par Étape — Étape 2 : Cycle de Vie des Membres et Portail Adhérent
+- [x] Étendre le modèle des membres avec les champs de cycle de vie (statut, profession, contact d’urgence)
+- [x] Implémenter la génération et la vérification de la carte de membre numérique avec QR code
+- [x] Créer le portail adhérent en self-service (`client/src/pages/MemberPortal.tsx`)
+- [x] Ajouter les routes tRPC dédiées au portail adhérent
+- [x] Écrire les tests Vitest pour le cycle de vie et le portail adhérent
+- [x] Valider le typage et exécuter la suite de tests complète
+
+## Phase d’Implémentation Étape par Étape — Étape 3 : Paiements, Reçus et Contrôles Financiers
+- [x] Configurer les endpoints de paiement sécurisés et webhooks (Stripe / HelloAsso)
+- [x] Implémenter la génération automatisée des reçus fiscaux et de dons au format PDF
+- [x] Ajouter le module de rapprochement bancaire et de validation des dépenses
+- [x] Écrire les tests Vitest pour le module financier et les reçus
+- [x] Valider le build et exécuter tous les tests
+
+## Phase d’Implémentation Étape par Étape — Étape 4 : Notifications et Rappels Automatisés
+- [x] Mettre en place les tables de notifications persistantes et préférences utilisateur
+- [x] Implémenter les rappels automatisés pour cotisations en retard et échéances de projets
+- [x] Créer le centre de notifications avec historique et filtres
+- [x] Écrire les tests Vitest pour le système de notifications
+- [x] Valider le build et exécuter tous les tests
+
+## Phase d’Implémentation Étape par Étape — Étape 5 : Gouvernance, Assemblées et Votes
+- [x] Créer le schéma Drizzle pour les assemblées générales, résolutions, présences et votes
+- [x] Implémenter les procédures tRPC de gestion des AG et du calcul de quorum
+- [x] Développer l’interface de vote électronique et de procès-verbal
+- [x] Écrire les tests Vitest pour la gouvernance
+- [x] Valider le build et exécuter tous les tests
+
+## Phase d’Implémentation Étape par Étape — Étape 6 : Projets, Budgets, Discussions et Rapports
+- [x] Finaliser le suivi budgétaire des projets et le rapprochement des dépenses
+- [x] Ajouter les discussions et commentaires collaboratifs sur les tâches de projet
+- [x] Étendre les rapports et exports PDF/Excel des projets
+- [x] Écrire les tests Vitest pour la gestion des projets avancée
+- [x] Valider le build et exécuter tous les tests
+
+## Phase d’Implémentation Étape par Étape — Étape 7 : Conformité Documentaire et Mode Terrain
+- [x] Renforcer la gouvernance documentaire (versions, statuts d’approbation, expirations)
+- [x] Optimiser la PWA et les flux de synchronisation locale pour les antennes de terrain
+- [x] Écrire les tests Vitest pour la conformité documentaire
+- [x] Valider le build et exécuter tous les tests
