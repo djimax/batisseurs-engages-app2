@@ -15,6 +15,7 @@ export default function AdminAuditLogs() {
   const [filters, setFilters] = useState({
     entityType: "",
     userId: "",
+    action: "",
   });
 
   const limit = 20;
@@ -26,6 +27,7 @@ export default function AdminAuditLogs() {
     offset,
     entityType: filters.entityType && filters.entityType !== "all" ? filters.entityType : undefined,
     userId: filters.userId ? parseInt(filters.userId) : undefined,
+    action: filters.action && filters.action !== "all" ? filters.action : undefined,
   });
 
   // Check if user is admin
@@ -73,8 +75,8 @@ export default function AdminAuditLogs() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight">Journaux d'Audit</h1>
+      <div className="animate-fade-in-up">
+        <h1 className="text-3xl font-bold tracking-tight">Journaux d’audit</h1>
         <p className="text-muted-foreground mt-2">
           Consultez l'historique de toutes les activités de votre association
         </p>
@@ -88,7 +90,7 @@ export default function AdminAuditLogs() {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
             <div className="space-y-2">
               <Label htmlFor="entityType">Type d'Entité</Label>
               <Select value={filters.entityType || "all"} onValueChange={(value) => {
@@ -107,6 +109,25 @@ export default function AdminAuditLogs() {
                   <SelectItem value="roles">Rôles</SelectItem>
                   <SelectItem value="campaigns">Campagnes</SelectItem>
                   <SelectItem value="adhesions">Adhésions</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="action">Action</Label>
+              <Select value={filters.action || "all"} onValueChange={(value) => {
+                setFilters({ ...filters, action: value === "all" ? "" : value });
+                setPage(0);
+              }}>
+                <SelectTrigger id="action"><SelectValue placeholder="Toutes les actions" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Toutes les actions</SelectItem>
+                  <SelectItem value="CREATE">Création</SelectItem>
+                  <SelectItem value="UPDATE">Modification</SelectItem>
+                  <SelectItem value="DELETE">Suppression</SelectItem>
+                  <SelectItem value="ASSIGN">Attribution</SelectItem>
+                  <SelectItem value="REMOVE">Retrait</SelectItem>
+                  <SelectItem value="LOGIN">Connexion</SelectItem>
+                  <SelectItem value="EXPORT">Export</SelectItem>
                 </SelectContent>
               </Select>
             </div>

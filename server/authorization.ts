@@ -19,6 +19,7 @@ export const DEFAULT_PERMISSIONS = [
   { name: "admin.users.manage", category: "administration", description: "Attribuer les rôles aux utilisateurs" },
   { name: "admin.scopes.view", category: "administration", description: "Consulter les périmètres utilisateurs" },
   { name: "admin.scopes.manage", category: "administration", description: "Attribuer les périmètres utilisateurs" },
+  { name: "admin.audit.view", category: "administration", description: "Consulter les journaux d’audit" },
   { name: "members.view", category: "members", description: "Consulter les membres" },
   { name: "members.manage", category: "members", description: "Créer et modifier les membres" },
   { name: "documents.view", category: "documents", description: "Consulter les documents" },

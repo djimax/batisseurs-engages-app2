@@ -1,7 +1,9 @@
 import { useState, useEffect } from "react";
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
+import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from "recharts";
 import {
   StatisticWidget,
   ListWidget,
@@ -18,6 +20,11 @@ import {
   Settings,
   Plus,
   RotateCcw,
+  CheckCircle2,
+  CircleDashed,
+  Megaphone,
+  WalletCards,
+  ArrowUpRight,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -68,6 +75,16 @@ export default function Dashboard() {
   const { data: tasksStats } = trpc.dashboard.tasks.useQuery();
   const { data: financeStats } = trpc.dashboard.finance.useQuery();
   const { data: membersStats } = trpc.dashboard.members.useQuery();
+  const { data: globalSummary, isLoading: globalSummaryLoading } = trpc.dashboard.summary.useQuery();
+  const globalFinanceChartConfig = {
+    collected: { label: "Cotisations", color: "var(--chart-1)" },
+    expenses: { label: "Dépenses", color: "var(--chart-2)" },
+  };
+  const globalFinanceChartData = globalSummary ? [
+    { label: "Cotisations", collected: Number(globalSummary.finance.paidCotisations ?? 0), expenses: 0 },
+    { label: "Dons", collected: Number(globalSummary.finance.totalDons ?? 0), expenses: 0 },
+    { label: "Dépenses", collected: 0, expenses: Number(globalSummary.finance.totalDepenses ?? 0) },
+  ] : [];
 
   const handleRemoveWidget = (widgetId: string) => {
     const updated = widgets.map((w) =>
@@ -174,6 +191,78 @@ export default function Dashboard() {
           )}
         </div>
       </div>
+
+      {globalSummaryLoading ? (
+        <div className="grid gap-4 xl:grid-cols-[1.1fr_1fr]">
+          <Card className="h-56 animate-pulse bg-muted/50" />
+          <Card className="h-56 animate-pulse bg-muted/50" />
+        </div>
+      ) : globalSummary ? (
+        <div className="grid gap-4 xl:grid-cols-[1.1fr_1fr] animate-fade-in-up">
+          <Card className="overflow-hidden border-primary/15 bg-gradient-to-br from-card via-card to-primary/5">
+            <CardHeader className="pb-3">
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <CardTitle className="flex items-center gap-2"><CheckCircle2 className="h-5 w-5 text-primary" />Mise en route de l’association</CardTitle>
+                  <CardDescription>Une progression calculée à partir des données réellement configurées.</CardDescription>
+                </div>
+                <span className="rounded-full bg-primary/10 px-3 py-1 text-sm font-semibold text-primary">{globalSummary.onboarding.percentage}%</span>
+              </div>
+              <div className="mt-2 h-2 overflow-hidden rounded-full bg-muted" aria-label={`Onboarding complété à ${globalSummary.onboarding.percentage}%`}>
+                <div className="h-full rounded-full bg-primary transition-all duration-500" style={{ width: `${globalSummary.onboarding.percentage}%` }} />
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {globalSummary.onboarding.steps.map((step) => (
+                <div key={step.id} className="flex items-start gap-3 rounded-xl border border-border/60 bg-background/60 p-3 transition-colors hover:border-primary/25">
+                  {step.complete ? <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-primary" /> : <CircleDashed className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />}
+                  <div className="min-w-0">
+                    <p className={`text-sm font-medium ${step.complete ? "text-foreground" : "text-muted-foreground"}`}>{step.label}</p>
+                    <p className="text-xs text-muted-foreground">{step.description}</p>
+                  </div>
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+
+          <Card className="border-accent/20 bg-gradient-to-br from-card via-card to-accent/5">
+            <CardHeader className="pb-3">
+              <div className="flex items-center justify-between gap-4">
+                <div>
+                  <CardTitle className="flex items-center gap-2"><WalletCards className="h-5 w-5 text-accent-foreground" />Vue d’ensemble financière</CardTitle>
+                  <CardDescription>Flux enregistrés dans la plateforme.</CardDescription>
+                </div>
+                <Button variant="ghost" size="icon" onClick={() => window.location.assign("/finance")} aria-label="Ouvrir les finances"><ArrowUpRight className="h-4 w-4" /></Button>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <ChartContainer config={globalFinanceChartConfig} className="h-52 w-full aspect-auto">
+                <BarChart data={globalFinanceChartData} margin={{ left: -14, right: 8, top: 8, bottom: 0 }}>
+                  <CartesianGrid vertical={false} strokeDasharray="3 3" />
+                  <XAxis dataKey="label" tickLine={false} axisLine={false} tick={{ fontSize: 11 }} />
+                  <YAxis tickLine={false} axisLine={false} tickFormatter={(value) => `${Number(value).toLocaleString("fr-FR")} F`} width={68} />
+                  <ChartTooltip content={<ChartTooltipContent />} />
+                  <Bar dataKey="collected" fill="var(--color-collected)" radius={[6, 6, 0, 0]} />
+                  <Bar dataKey="expenses" fill="var(--color-expenses)" radius={[6, 6, 0, 0]} />
+                </BarChart>
+              </ChartContainer>
+              <div className="mt-2 grid grid-cols-2 gap-3 text-sm">
+                <div className="rounded-xl bg-primary/8 p-3"><p className="text-xs text-muted-foreground">Solde disponible</p><p className="mt-1 font-semibold text-primary">{Number(globalSummary.finance.balance ?? 0).toLocaleString("fr-FR")} F</p></div>
+                <div className="rounded-xl bg-accent/10 p-3"><p className="text-xs text-muted-foreground">Campagnes actives</p><p className="mt-1 font-semibold text-accent-foreground">{globalSummary.campaigns.active}</p></div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      ) : null}
+
+      {globalSummary && (
+        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4 animate-fade-in-up" style={{ animationDelay: "70ms" }}>
+          <Card className="border-primary/10"><CardContent className="flex items-center gap-3 p-4"><Users className="h-5 w-5 text-primary" /><div><p className="text-xs text-muted-foreground">Adhésions actives</p><p className="text-xl font-semibold">{globalSummary.adhesions.active}</p></div></CardContent></Card>
+          <Card className="border-accent/15"><CardContent className="flex items-center gap-3 p-4"><Briefcase className="h-5 w-5 text-accent-foreground" /><div><p className="text-xs text-muted-foreground">Projets en cours</p><p className="text-xl font-semibold">{globalSummary.projects.inProgress}</p></div></CardContent></Card>
+          <Card className="border-destructive/10"><CardContent className="flex items-center gap-3 p-4"><Megaphone className="h-5 w-5 text-destructive" /><div><p className="text-xs text-muted-foreground">Tâches en retard</p><p className="text-xl font-semibold">{globalSummary.tasks.overdue}</p></div></CardContent></Card>
+          <Card className="border-border/70"><CardContent className="flex items-center gap-3 p-4"><DollarSign className="h-5 w-5 text-muted-foreground" /><div><p className="text-xs text-muted-foreground">Paiements récents</p><p className="text-xl font-semibold">{globalSummary.recentPayments.length}</p></div></CardContent></Card>
+        </div>
+      )}
 
       {isEditMode && hiddenWidgets.length > 0 && (
         <Card className="p-4 bg-muted/50">

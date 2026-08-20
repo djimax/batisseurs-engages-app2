@@ -1,4 +1,4 @@
-import { eq, and, like, desc, asc, sql, or, inArray, lt, ne, count } from "drizzle-orm";
+import { eq, and, like, desc, asc, sql, or, inArray, lt, lte, gte, ne, count } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
 import { 
   users,
@@ -6,6 +6,7 @@ import {
   documents,
   documentNotes,
   members,
+  adhesions,
   documentPermissions,
   activityLogs,
   cotisations,
@@ -52,6 +53,7 @@ const schema = {
   documents,
   documentNotes,
   members,
+  adhesions,
   documentPermissions,
   activityLogs,
   cotisations,
@@ -1356,6 +1358,140 @@ export async function getMembersStatistics() {
   };
 }
 
+
+// ============ GLOBAL DASHBOARD SUMMARY ============
+
+export async function getGlobalDashboardSummary() {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  const now = new Date();
+  const nowIso = now.toISOString();
+  const sevenDaysAgoIso = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString();
+
+  const [baseStats, documentStats, projectsStats, tasksStats, financeStats, membersStats, activeCampaignRows, campaignTotals, activeAdhesionRows, expiredAdhesionRows, pendingAdhesionRows, recentPayments, settingsRows] = await Promise.all([
+    getDashboardStatistics(),
+    getDocumentStats(),
+    getProjectsStatistics(),
+    getTasksStatistics(),
+    getFinanceStatistics(),
+    getMembersStatistics(),
+    db.select({
+      count: sql<number>`count(*)`,
+      objective: sql<number>`COALESCE(SUM(CAST(objectif AS DECIMAL(15,2))), 0)`,
+      collected: sql<number>`COALESCE(SUM(CAST(montantCollecte AS DECIMAL(15,2))), 0)`,
+    }).from(campaigns).where(eq(campaigns.status, "active")),
+    db.select({
+      count: sql<number>`count(*)`,
+      objective: sql<number>`COALESCE(SUM(CAST(objectif AS DECIMAL(15,2))), 0)`,
+      collected: sql<number>`COALESCE(SUM(CAST(montantCollecte AS DECIMAL(15,2))), 0)`,
+    }).from(campaigns),
+    db.select({ count: sql<number>`count(*)` }).from(adhesions).where(and(
+      eq(adhesions.status, "active"),
+      gte(adhesions.dateExpiration, nowIso),
+    )),
+    db.select({ count: sql<number>`count(*)` }).from(adhesions).where(and(
+      eq(adhesions.status, "active"),
+      lte(adhesions.dateExpiration, nowIso),
+    )),
+    db.select({ count: sql<number>`count(*)` }).from(adhesions).where(eq(adhesions.status, "pending")),
+    db.select({
+      id: cotisations.id,
+      memberId: cotisations.memberId,
+      amount: cotisations.montant,
+      status: cotisations.statut,
+      createdAt: cotisations.createdAt,
+    }).from(cotisations).where(and(
+      eq(cotisations.statut, "payée"),
+      gte(cotisations.createdAt, sevenDaysAgoIso),
+    )).orderBy(desc(cotisations.createdAt)).limit(7),
+    db.select().from(globalSettings).orderBy(desc(globalSettings.updatedAt)).limit(1),
+  ]);
+
+  const activeCampaign = activeCampaignRows[0] ?? { count: 0, objective: 0, collected: 0 };
+  const allCampaigns = campaignTotals[0] ?? { count: 0, objective: 0, collected: 0 };
+  const campaignObjective = Number(activeCampaign.objective ?? 0);
+  const campaignCollected = Number(activeCampaign.collected ?? 0);
+  const associationSettings = settingsRows[0] ?? null;
+  const onboardingSteps = [
+    {
+      id: "association-profile",
+      label: "Compléter les informations de l’association",
+      description: "Nom, siège et adresse de contact",
+      complete: Boolean(associationSettings?.associationName && associationSettings?.seatCity && associationSettings?.email),
+    },
+    {
+      id: "first-member",
+      label: "Ajouter le premier membre",
+      description: "Commencer le registre des adhérents",
+      complete: membersStats.total > 0,
+    },
+    {
+      id: "first-document",
+      label: "Déposer le premier document",
+      description: "Centraliser un document utile à l’équipe",
+      complete: Number(documentStats.total) > 0,
+    },
+    {
+      id: "first-project",
+      label: "Créer le premier projet",
+      description: "Suivre une action avec une équipe",
+      complete: projectsStats.total > 0,
+    },
+    {
+      id: "first-campaign",
+      label: "Lancer une campagne de collecte",
+      description: "Suivre un objectif de financement réel",
+      complete: Number(allCampaigns.count) > 0,
+    },
+  ];
+  const completedOnboardingSteps = onboardingSteps.filter((step) => step.complete).length;
+
+  return {
+    documents: {
+      total: Number(documentStats.total ?? 0),
+      completed: Number(documentStats.completed ?? 0),
+      recent: baseStats.recentDocuments ?? [],
+    },
+    members: membersStats,
+    projects: projectsStats,
+    tasks: tasksStats,
+    finance: financeStats,
+    campaigns: {
+      active: Number(activeCampaign.count ?? 0),
+      total: Number(allCampaigns.count ?? 0),
+      objective: Number(allCampaigns.objective ?? 0),
+      collected: Number(allCampaigns.collected ?? 0),
+      activeObjective: campaignObjective,
+      activeCollected: campaignCollected,
+      activeProgress: campaignObjective > 0 ? Math.min(100, Math.round((campaignCollected / campaignObjective) * 100)) : 0,
+    },
+    adhesions: {
+      active: Number(activeAdhesionRows[0]?.count ?? 0),
+      expired: Number(expiredAdhesionRows[0]?.count ?? 0),
+      pending: Number(pendingAdhesionRows[0]?.count ?? 0),
+      totalRevenue: Number(financeStats.paidCotisations ?? 0),
+    },
+    recentPayments: recentPayments.map((payment) => ({
+      id: payment.id,
+      memberId: payment.memberId,
+      amount: Number(payment.amount ?? 0),
+      status: payment.status,
+      createdAt: payment.createdAt,
+    })),
+    activity: {
+      urgentTasks: baseStats.urgentTasks ?? [],
+      activeProjects: baseStats.activeProjects ?? [],
+    },
+    onboarding: {
+      steps: onboardingSteps,
+      completed: completedOnboardingSteps,
+      total: onboardingSteps.length,
+      percentage: Math.round((completedOnboardingSteps / onboardingSteps.length) * 100),
+    },
+    generatedAt: nowIso,
+  };
+}
 
 // ============ USER ROLE MANAGEMENT FUNCTIONS ============
 

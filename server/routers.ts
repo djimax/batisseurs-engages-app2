@@ -27,7 +27,7 @@ import {
   createProjectUpdate, getProjectUpdates,
   createProjectTaskComment, getProjectTaskComments, deleteProjectTaskComment, getProjectReport,
   getProjectBudgetItems, createProjectBudgetItem, updateProjectBudgetItem, deleteProjectBudgetItem,
-  getDashboardStatistics, getProjectsStatistics, getTasksStatistics, getFinanceStatistics, getMembersStatistics,
+  getDashboardStatistics, getGlobalDashboardSummary, getProjectsStatistics, getTasksStatistics, getFinanceStatistics, getMembersStatistics,
   getAllUsers, getUserById, updateUserRole, getAdminCount, isUserAdmin
 } from "./db";
 import { roles, permissions, rolePermissions, userRoles, userScopes, auditLogs, emailTemplates, emailHistory, emailRecipients, members, adhesions, notificationSchedules } from "../drizzle/schema";
@@ -854,6 +854,25 @@ export const appRouter = router({
         return { success: true } as const;
       }),
 
+    listUserRoles: protectedProcedure
+      .input(z.object({ userId: z.number().int().positive().optional() }).optional())
+      .query(async ({ input, ctx }) => {
+        await assertPermission(ctx.user, "admin.roles.view");
+        const db = await getDb();
+        if (!db) return [];
+        const query = db.select({
+          id: userRoles.id,
+          userId: userRoles.userId,
+          roleId: userRoles.roleId,
+          roleName: roles.name,
+          roleDescription: roles.description,
+          assignedBy: userRoles.assignedBy,
+          assignedAt: userRoles.assignedAt,
+        }).from(userRoles).innerJoin(roles, eq(userRoles.roleId, roles.id));
+        if (input?.userId) return query.where(eq(userRoles.userId, input.userId));
+        return query;
+      }),
+
     assignRoleToUser: protectedProcedure
       .input(z.object({ userId: z.number().int().positive(), roleId: z.number().int().positive() }))
       .mutation(async ({ input, ctx }) => {
@@ -963,14 +982,77 @@ export const appRouter = router({
         }
       }),
 
+    updateRole: protectedProcedure
+      .input(z.object({
+        roleId: z.number().int().positive(),
+        name: z.string().trim().min(1).max(100),
+        description: z.string().trim().max(500).optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        await assertPermission(ctx.user, "admin.roles.manage");
+        const db = await getDb();
+        if (!db) throw new Error("Database not available");
+        const existing = await db.select().from(roles).where(eq(roles.id, input.roleId)).limit(1);
+        const role = existing[0];
+        if (!role) throw new Error("Rôle introuvable");
+        if (role.isSystem) throw new Error("Les rôles système ne peuvent pas être modifiés");
+
+        await db.update(roles).set({
+          name: input.name,
+          description: input.description?.trim() || null,
+        }).where(eq(roles.id, input.roleId));
+        await logAudit({
+          userId: ctx.user.id,
+          action: "UPDATE",
+          entityType: "roles",
+          entityId: input.roleId,
+          entityName: input.name,
+          description: `Role ${input.roleId} updated`,
+          status: "success",
+        });
+        const updated = await db.select().from(roles).where(eq(roles.id, input.roleId)).limit(1);
+        return updated[0];
+      }),
+
+    deleteRole: protectedProcedure
+      .input(z.object({ roleId: z.number().int().positive() }))
+      .mutation(async ({ input, ctx }) => {
+        await assertPermission(ctx.user, "admin.roles.manage");
+        const db = await getDb();
+        if (!db) throw new Error("Database not available");
+        const existing = await db.select().from(roles).where(eq(roles.id, input.roleId)).limit(1);
+        const role = existing[0];
+        if (!role) throw new Error("Rôle introuvable");
+        if (role.isSystem) throw new Error("Les rôles système ne peuvent pas être supprimés");
+
+        const assignments = await db.select({ id: userRoles.id }).from(userRoles).where(eq(userRoles.roleId, input.roleId)).limit(1);
+        if (assignments.length > 0) {
+          throw new Error("Impossible de supprimer un rôle encore attribué à un utilisateur");
+        }
+        await db.delete(rolePermissions).where(eq(rolePermissions.roleId, input.roleId));
+        await db.delete(roles).where(eq(roles.id, input.roleId));
+        await logAudit({
+          userId: ctx.user.id,
+          action: "DELETE",
+          entityType: "roles",
+          entityId: input.roleId,
+          entityName: role.name,
+          description: `Role ${input.roleId} deleted`,
+          status: "success",
+        });
+        return { success: true } as const;
+      }),
+
     getAuditLogs: protectedProcedure
       .input(z.object({
-        limit: z.number().default(100),
-        offset: z.number().default(0),
-        entityType: z.string().optional(),
-        userId: z.number().optional(),
+        limit: z.number().int().min(1).max(500).default(100),
+        offset: z.number().int().min(0).default(0),
+        entityType: z.string().trim().min(1).optional(),
+        userId: z.number().int().positive().optional(),
+        action: z.string().trim().min(1).optional(),
       }))
-      .query(async ({ input }) => {
+      .query(async ({ input, ctx }) => {
+        await assertPermission(ctx.user, "admin.audit.view");
         const db = await getDb();
         if (!db) return [];
         
@@ -983,6 +1065,9 @@ export const appRouter = router({
           }
           if (input.userId) {
             filtered = filtered.filter(log => log.userId === input.userId);
+          }
+          if (input.action) {
+            filtered = filtered.filter(log => log.action === input.action);
           }
           
           return filtered
@@ -1333,6 +1418,10 @@ export const appRouter = router({
   dashboard: router({
     statistics: protectedProcedure.query(async () => {
       return await getDashboardStatistics();
+    }),
+
+    summary: protectedProcedure.query(async () => {
+      return await getGlobalDashboardSummary();
     }),
 
     projects: protectedProcedure.query(async () => {

@@ -699,17 +699,17 @@
 - [x] Créer procedure admin.getRoles
 - [x] Créer procedure admin.getPermissions
 - [x] Créer procedure admin.createRole
-- [ ] Créer procedure admin.updateRole
-- [ ] Créer procedure admin.deleteRole
-- [ ] Créer procedure admin.assignRoleToUser
-- [ ] Créer procedure admin.removeRoleFromUser
-- [ ] Créer procedure admin.getRolePermissions
+- [x] Créer procedure admin.updateRole
+- [x] Créer procedure admin.deleteRole
+- [x] Créer procedure admin.assignRoleToUser
+- [x] Créer procedure admin.removeRoleFromUser
+- [x] Créer procedure admin.getRolePermissions
 
 ### Procédures tRPC - Audit
 - [x] Créer procedure admin.getAuditLogs
-- [ ] Créer procedure admin.getAuditLogsByUser
-- [ ] Créer procedure admin.getAuditLogsByEntity
-- [ ] Créer procedure admin.getAuditLogsByAction
+- [x] Créer procedure admin.getAuditLogsByUser
+- [x] Créer procedure admin.getAuditLogsByEntity
+- [x] Créer procedure admin.getAuditLogsByAction
 
 ### Pages d'Interface
 - [x] Créer page AdminRoles.tsx pour gérer les rôles
@@ -720,7 +720,7 @@
 
 ### Tests
 - [x] Tester la création de rôles
-- [ ] Tester l'assignation de rôles aux utilisateurs
+- [x] Tester l'assignation de rôles aux utilisateurs
 - [x] Tester l'enregistrement des logs d'audit
 - [x] Vérifier que les logs contiennent les bonnes informations
 
@@ -1588,3 +1588,11 @@
 - [x] Normaliser les déclarations de colonnes booléennes sans migration destructive
 - [x] Ajouter un test de garde contre les déclarations tinyint mal formées
 - [x] Valider TypeScript, tests, build et synchronisation du schéma
+
+## Prochaine tranche — Tableau de bord global associatif
+- [x] Auditer les données financières, membres, projets et campagnes déjà exposées
+- [x] Ajouter un service de synthèse globale avec des indicateurs réels
+- [x] Créer une section onboarding persistante et non fictive
+- [x] Ajouter des graphiques globaux accessibles et cohérents avec la nouvelle identité
+- [x] Ajouter les tests de calculs du dashboard
+- [x] Valider TypeScript, tests, build, aperçu et checkpoint
