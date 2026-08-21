@@ -524,9 +524,36 @@ export const members = mysqlTable("members", {
 	updatedAt: timestamp({ mode: 'string' }).defaultNow().onUpdateNow().notNull(),
 	memberRole: mysqlEnum(['admin','secretary','member']).default('member').notNull(),
 	gender: mysqlEnum(['1','2','3']),
-	memberId: varchar({ length: 20 }),
-	photo: text(),
-});
+		memberId: varchar({ length: 20 }),
+		photo: text(),
+		membershipCategory: mysqlEnum(['standard','etudiant','bienfaiteur','fondateur','actif','honoraire']).default('standard').notNull(),
+		skills: text(),
+		availability: varchar({ length: 100 }),
+	});
+
+	export const memberStatusHistory = mysqlTable("member_status_history", {
+		id: int().autoincrement().notNull(),
+		memberId: int().notNull(),
+		previousStatus: varchar({ length: 50 }),
+		newStatus: varchar({ length: 50 }).notNull(),
+		reason: text().notNull(),
+		changedBy: int(),
+		createdAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
+	}, (table) => [
+		index("member_status_history_member_idx").on(table.memberId),
+	]);
+
+	export const memberCertificates = mysqlTable("member_certificates", {
+		id: int().autoincrement().notNull(),
+		memberId: int().notNull(),
+		certificateType: mysqlEnum(['membership_card','tax_receipt','attestation']).notNull(),
+		referenceNumber: varchar({ length: 100 }).notNull(),
+		issuedAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
+		pdfUrl: text(),
+		createdAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
+	}, (table) => [
+		index("member_certificates_member_idx").on(table.memberId),
+	]);
 
 export const news = mysqlTable("news", {
 	id: int().autoincrement().notNull(),

@@ -28,6 +28,7 @@ import {
   createProjectTaskComment, getProjectTaskComments, deleteProjectTaskComment, getProjectReport,
   getProjectBudgetItems, createProjectBudgetItem, updateProjectBudgetItem, deleteProjectBudgetItem,
   getDashboardStatistics, getGlobalDashboardSummary, getProjectsStatistics, getTasksStatistics, getFinanceStatistics, getMembersStatistics,
+  createMemberCertificate, getMemberCertificates,
   getAllUsers, getUserById, updateUserRole, getAdminCount, isUserAdmin,
   getAnnouncements, createAnnouncement, updateAnnouncement, deleteAnnouncement,
   getNewsList, createNews, updateNews, deleteNews, getNewsComments, addNewsComment, deleteNewsComment
@@ -656,6 +657,60 @@ export const appRouter = router({
       ]);
       return { member: rows[0], history, statusHistory, cardPayload: buildMemberCardPayload(rows[0]) };
     }),
+
+    updateAdvancedProfile: protectedProcedure
+      .input(z.object({
+        id: z.number(),
+        membershipCategory: z.enum(['standard','etudiant','bienfaiteur','fondateur','actif','honoraire']).optional(),
+        skills: z.string().optional(),
+        availability: z.string().optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        await assertPermission(ctx.user, "members.manage");
+        const { id, ...data } = input;
+        const result = await updateMember(id, data);
+        await logActivity({
+          userId: ctx.user.id,
+          action: "update",
+          entityType: "member_advanced",
+          entityId: id,
+          details: `Profil avancé du membre mis à jour (catégorie, compétences, disponibilités)`,
+        });
+        return result;
+      }),
+
+    issueCertificate: protectedProcedure
+      .input(z.object({
+        memberId: z.number(),
+        certificateType: z.enum(['membership_card','tax_receipt','attestation']),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        await assertPermission(ctx.user, "members.manage");
+        const member = await getMemberById(input.memberId);
+        if (!member) throw new TRPCError({ code: "NOT_FOUND", message: "Membre introuvable" });
+        const refNumber = `CERT-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`;
+        const cert = await createMemberCertificate({
+          memberId: input.memberId,
+          certificateType: input.certificateType,
+          referenceNumber: refNumber,
+          pdfUrl: `/api/certificates/${input.memberId}/${refNumber}.pdf`,
+        });
+        await logActivity({
+          userId: ctx.user.id,
+          action: "create",
+          entityType: "member_certificate",
+          entityId: cert.id as number,
+          details: `Attestation/Carte ${input.certificateType} émise (${refNumber}) pour ${member.firstName} ${member.lastName}`,
+        });
+        return cert;
+      }),
+
+    listCertificates: protectedProcedure
+      .input(z.object({ memberId: z.number() }))
+      .query(async ({ input, ctx }) => {
+        await assertPermission(ctx.user, "members.view");
+        return getMemberCertificates(input.memberId);
+      }),
 
     updateSelf: protectedProcedure
       .input(z.object({

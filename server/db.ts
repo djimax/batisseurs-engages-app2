@@ -6,6 +6,7 @@ import {
   documents,
   documentNotes,
   members,
+  memberCertificates,
   adhesions,
   documentPermissions,
   activityLogs,
@@ -439,10 +440,23 @@ export async function updateMember(id: number, data: Partial<InsertMember>) {
 }
 
 export async function deleteMember(id: number) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  await db.delete(members).where(eq(members.id, id));
-}
+	  const db = await getDb();
+	  if (!db) throw new Error("Database not available");
+	  await db.delete(members).where(eq(members.id, id));
+	}
+
+	export async function createMemberCertificate(data: { memberId: number; certificateType: 'membership_card' | 'tax_receipt' | 'attestation'; referenceNumber: string; pdfUrl?: string }) {
+	  const db = await getDb();
+	  if (!db) throw new Error("Database not available");
+	  const result = await db.insert(memberCertificates).values(data);
+	  return { id: result[0].insertId, ...data };
+	}
+
+	export async function getMemberCertificates(memberId: number) {
+	  const db = await getDb();
+	  if (!db) return [];
+	  return db.select().from(memberCertificates).where(eq(memberCertificates.memberId, memberId)).orderBy(desc(memberCertificates.createdAt));
+	}
 
 // ============ ACTIVITY LOG FUNCTIONS ============
 export async function logActivity(data: InsertActivityLog) {

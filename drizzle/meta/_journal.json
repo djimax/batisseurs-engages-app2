@@ -211,6 +211,13 @@
       "when": 1787260603242,
       "tag": "0029_young_rogue",
       "breakpoints": true
+    },
+    {
+      "idx": 30,
+      "version": "5",
+      "when": 1787303084785,
+      "tag": "0030_greedy_lockjaw",
+      "breakpoints": true
     }
   ]
 }
