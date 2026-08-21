@@ -81,6 +81,7 @@ const menuItems: MenuItem[] = [
   { icon: Bell, label: "Notifications", path: "/notifications" },
   { icon: Users, label: "Gestion des membres", isGroup: true, items: [
     { icon: Users, label: "Membres", path: "/members" },
+    { icon: Users, label: "Annuaire interne", path: "/member-directory" },
     { icon: UserCheck, label: "Adhésions", path: "/members/adhesions" },
     { icon: UserCheck, label: "Liste des Adhérents", path: "/adhesions-list" },
     { icon: UserCheck, label: "Mon espace adhérent", path: "/member-portal" },

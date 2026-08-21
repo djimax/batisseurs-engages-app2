@@ -9,6 +9,7 @@ import Home from "./pages/Home";
 import Documents from "./pages/Documents";
 import Categories from "./pages/Categories";
 import Members from "./pages/Members";
+import MemberDirectory from "./pages/MemberDirectory";
 import Activity from "./pages/Activity";
 import Archives from "./pages/Archives";
 import Finance from "./pages/Finance";
@@ -69,6 +70,7 @@ function OnlineRouter({ isAuthenticated, error, onLogin, onLogout, onForgotPassw
         <Route path="/documents" component={Documents} />
         <Route path="/categories" component={Categories} />
         <Route path="/members" component={Members} />
+        <Route path="/member-directory" component={MemberDirectory} />
         <Route path="/members/adhesions" component={Adhesions} />
         <Route path="/adhesions-list" component={AdhesionsList} />
         <Route path="/activity" component={Activity} />

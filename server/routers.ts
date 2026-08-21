@@ -402,6 +402,88 @@ export const appRouter = router({
   // ============ MEMBERS ============
   members: router({
     list: protectedProcedure.query(async () => getAllMembers()),
+
+    directory: protectedProcedure
+      .input(z.object({
+        search: z.string().optional(),
+        category: z.string().optional(),
+        status: z.string().optional(),
+        sortBy: z.enum(['name_asc', 'name_desc', 'recent']).default('name_asc'),
+      }).optional())
+      .query(async ({ input, ctx }) => {
+        await assertPermission(ctx.user, "members.view");
+        const db = await getDb();
+        if (!db) return [];
+
+        const allMembers = await getAllMembers();
+        const statusFilter = input?.status ?? 'active';
+        const filtered = allMembers.filter((m) => {
+          if (statusFilter !== 'all' && m.status !== statusFilter) return false;
+          if (input?.category && input.category !== 'all' && (m as any).membershipCategory !== input.category) return false;
+          if (input?.search) {
+            const query = input.search.toLowerCase();
+            const fullName = `${m.firstName} ${m.lastName}`.toLowerCase();
+            const email = (m.email || '').toLowerCase();
+            const memberId = (m.memberId || '').toLowerCase();
+            const skills = ((m as any).skills || '').toLowerCase();
+            if (!fullName.includes(query) && !email.includes(query) && !memberId.includes(query) && !skills.includes(query)) {
+              return false;
+            }
+          }
+          return true;
+        });
+
+        // Sort
+        filtered.sort((a, b) => {
+          if (input?.sortBy === 'name_desc') {
+            return `${b.lastName} ${b.firstName}`.localeCompare(`${a.lastName} ${a.firstName}`);
+          }
+          if (input?.sortBy === 'recent') {
+            return new Date(b.joinedAt || 0).getTime() - new Date(a.joinedAt || 0).getTime();
+          }
+          return `${a.lastName} ${a.firstName}`.localeCompare(`${b.lastName} ${b.firstName}`);
+        });
+
+        // Attach recent contributions (e.g. cotisations, project tasks or activity logs)
+        const enriched = await Promise.all(filtered.map(async (m) => {
+          const [cotis, history, certs] = await Promise.all([
+            getCotisationsByMember(m.id),
+            getMemberHistory(m.id),
+            getMemberCertificates(m.id),
+          ]);
+          const recentContributions = [
+            ...cotis.map((cotisation) => ({
+              type: 'cotisation' as const,
+              label: `Cotisation ${cotisation.statut}`,
+              date: cotisation.datePayment ?? cotisation.createdAt ?? cotisation.dateDebut,
+              status: cotisation.statut,
+              amount: cotisation.montant,
+            })),
+            ...certs.map((certificate) => ({
+              type: 'document' as const,
+              label: certificate.certificateType === 'membership_card' ? 'Carte de membre' : 'Attestation associative',
+              date: certificate.issuedAt,
+              status: 'émis',
+              amount: null,
+            })),
+          ]
+            .sort((a, b) => new Date(b.date ?? 0).getTime() - new Date(a.date ?? 0).getTime())
+            .slice(0, 5);
+
+          return {
+            ...m,
+            contributions: {
+              cotisationsCount: cotis.length,
+              lastContribution: recentContributions[0]?.date ?? null,
+              historyCount: history.length,
+              certificatesCount: certs.length,
+              recent: recentContributions,
+            }
+          };
+        }));
+
+        return enriched;
+      }),
     
     getById: protectedProcedure
       .input(z.object({ id: z.number() }))

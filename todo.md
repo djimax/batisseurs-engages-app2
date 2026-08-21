@@ -1635,3 +1635,21 @@
 - [ ] Rapports d'activité annuels exportables en PDF institutionnel
 - [ ] Indicateurs d'impact social et associatif par projet
 - [ ] Vues par périmètre (administrateur national vs responsable d'antenne)
+
+## Phase 36 - Annuaire Interne des Membres Actifs
+
+### Procédure tRPC
+- [x] Créer la procédure `members.directory` avec recherche, filtres par catégorie/compétences/statut et pagination
+- [x] Enrichir chaque profil avec les contributions récentes (tâches accomplies, cotisations payées, notes ou documents créés)
+- [x] Valider l'accès protégé par permission `members.view`
+
+### Interface Utilisateur (Annuaire)
+- [x] Créer la page `client/src/pages/MemberDirectory.tsx`
+- [x] Intégrer les filtres de recherche (nom, rôle, catégorie d'adhésion, compétences)
+- [x] Afficher une grille ou une liste élégante avec cartes de profil, avatar, ID membre, statut et disponibilités
+- [x] Implémenter une modale de détail de profil avec l'historique des contributions récentes
+- [x] Ajouter le lien "Annuaire" dans le menu de navigation (DashboardLayout) et la route dans App.tsx
+
+### Tests et Validation
+- [x] Écrire un test unitaire `server/member-directory.test.ts`
+- [x] Vérifier les 268+ tests Vitest et la build de production
