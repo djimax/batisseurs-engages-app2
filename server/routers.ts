@@ -14,6 +14,7 @@ import {
   getAllMembers, getMemberById, createMember, updateMember, deleteMember,
   logActivity, getRecentActivity,
   createCotisation, getCotisations, getCotisationsByMember, updateCotisation,
+  getMembershipFeeRules, getActiveMembershipFeeRule, createMembershipFeeRule,
   createDon, getDons,
   createDepense, getDepenses,
   createTransaction, getTransactions,
@@ -641,6 +642,9 @@ export const appRouter = router({
         gender: z.enum(["1", "2", "3"]).optional().default("3"),
         memberID: z.string().optional(),
         photo: z.string().optional(),
+        membershipCategory: z.enum(["standard", "etudiant", "bienfaiteur", "fondateur", "actif", "honoraire"]).optional().default("standard"),
+        skills: z.string().optional(),
+        availability: z.string().optional(),
       }))
       .mutation(async ({ input, ctx }) => {
         const result = await createMember(input as any);
@@ -676,6 +680,9 @@ export const appRouter = router({
         status: memberStatusSchema.optional(),
         photo: z.string().optional(),
         statusReason: z.string().trim().max(500).optional(),
+        membershipCategory: z.enum(["standard", "etudiant", "bienfaiteur", "fondateur", "actif", "honoraire"]).optional(),
+        skills: z.string().optional(),
+        availability: z.string().optional(),
       }))
       .mutation(async ({ input, ctx }) => {
         const { id, statusReason, ...data } = input;
@@ -1048,10 +1055,51 @@ export const appRouter = router({
       return getDepenses();
     }),
 
+    feeRules: protectedProcedure.query(async ({ ctx }) => {
+      await assertPermission(ctx.user, "finances.view");
+      return getMembershipFeeRules();
+    }),
+
+    suggestedFee: protectedProcedure
+      .input(z.object({ memberId: z.number().int().positive(), currency: z.enum(["EUR", "XOF"]) }))
+      .query(async ({ input, ctx }) => {
+        await assertPermission(ctx.user, "finances.view");
+        const member = await getMemberById(input.memberId);
+        if (!member) throw new TRPCError({ code: "NOT_FOUND", message: "Membre non trouvé" });
+        const category = member.membershipCategory ?? "standard";
+        const rule = await getActiveMembershipFeeRule(category, input.currency);
+        return {
+          category,
+          currency: input.currency,
+          amount: rule ? Number.parseFloat(rule.amount) : null,
+          rule,
+        };
+      }),
+
+    createFeeRule: protectedProcedure
+      .input(z.object({
+        category: z.enum(["standard", "etudiant", "bienfaiteur", "fondateur", "actif", "honoraire"]),
+        currency: z.enum(["EUR", "XOF"]),
+        amount: z.union([z.string(), z.number()]),
+        validFrom: z.string().date().optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        await assertPermission(ctx.user, "finances.manage");
+        const amount = parseFinancialAmount(input.amount);
+        return createMembershipFeeRule({
+          category: input.category,
+          currency: input.currency,
+          amount: amount.toFixed(2),
+          isActive: 1,
+          validFrom: input.validFrom ?? new Date().toISOString().slice(0, 10),
+          createdBy: ctx.user.id,
+        });
+      }),
+
     createCotisation: protectedProcedure
       .input(z.object({
         memberId: z.number().int().positive(),
-        montant: z.union([z.string(), z.number()]),
+        montant: z.union([z.string(), z.number()]).optional(),
         currency: z.enum(["EUR", "XOF"]),
         dateDebut: z.string().datetime(),
         dateFin: z.string().datetime(),
@@ -1059,9 +1107,17 @@ export const appRouter = router({
       }))
       .mutation(async ({ input, ctx }) => {
         await assertPermission(ctx.user, "finances.manage");
-        const amount = parseFinancialAmount(input.montant);
-        await createCotisation({ ...input, montant: amount.toFixed(2) });
-        return { success: true as const, amount, currency: input.currency };
+        const member = await getMemberById(input.memberId);
+        if (!member) throw new TRPCError({ code: "NOT_FOUND", message: "Membre non trouvé" });
+        const category = member.membershipCategory ?? "standard";
+        const rule = input.montant === undefined ? await getActiveMembershipFeeRule(category, input.currency) : undefined;
+        if (input.montant === undefined && !rule) {
+          throw new TRPCError({ code: "BAD_REQUEST", message: `Aucun tarif actif n’est configuré pour la catégorie ${category} en ${input.currency}.` });
+        }
+        const amount = parseFinancialAmount(input.montant ?? rule!.amount);
+        const { montant: _montant, ...cotisationData } = input;
+        await createCotisation({ ...cotisationData, montant: amount.toFixed(2) });
+        return { success: true as const, amount, currency: input.currency, category, appliedFeeRuleId: rule?.id ?? null };
       }),
 
     createDon: protectedProcedure

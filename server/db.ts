@@ -45,7 +45,8 @@ import {
   events,
   announcements,
   news,
-  newsComments
+  newsComments,
+  membershipFeeRules
 } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
@@ -89,7 +90,8 @@ const schema = {
   projectMilestones,
   projectUpdates,
   projectTaskComments,
-  projectBudgetItems
+  projectBudgetItems,
+  membershipFeeRules
 };
 
 export async function getDb() {
@@ -501,6 +503,30 @@ export async function updateCotisation(id: number, data: Partial<InsertCotisatio
   if (!db) throw new Error("Database not available");
   
   return await db.update(cotisations).set(data).where(eq(cotisations.id, id));
+}
+
+export async function getMembershipFeeRules() {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(membershipFeeRules).orderBy(asc(membershipFeeRules.category), asc(membershipFeeRules.currency), desc(membershipFeeRules.validFrom));
+}
+
+export async function getActiveMembershipFeeRule(category: string, currency: "EUR" | "XOF") {
+  const db = await getDb();
+  if (!db) return undefined;
+  const today = new Date().toISOString().slice(0, 10);
+  const rows = await db.select().from(membershipFeeRules)
+    .where(and(eq(membershipFeeRules.category, category as typeof membershipFeeRules.category.enumValues[number]), eq(membershipFeeRules.currency, currency), eq(membershipFeeRules.isActive, 1), lte(membershipFeeRules.validFrom, today)))
+    .orderBy(desc(membershipFeeRules.validFrom))
+    .limit(1);
+  return rows[0];
+}
+
+export async function createMembershipFeeRule(data: InsertMembershipFeeRule) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const result = await db.insert(membershipFeeRules).values(data);
+  return { id: Number(result[0].insertId), ...data };
 }
 
 // ============ DONS ============
@@ -1306,11 +1332,16 @@ export async function getProjectsStatistics() {
     db.select({ count: sql<number>`count(*)` }).from(projects).where(eq(projects.status, "planning")),
   ]);
 
+  const completed = completedProjects[0]?.count || 0;
+  const inProgress = inProgressProjects[0]?.count || 0;
+  const planned = plannedProjects[0]?.count || 0;
+  const total = Math.max(totalProjects[0]?.count || 0, completed + inProgress + planned);
+
   return {
-    total: totalProjects[0]?.count || 0,
-    completed: completedProjects[0]?.count || 0,
-    inProgress: inProgressProjects[0]?.count || 0,
-    planned: plannedProjects[0]?.count || 0,
+    total,
+    completed,
+    inProgress,
+    planned,
   };
 }
 
@@ -1608,6 +1639,7 @@ export type InsertMember = typeof members.$inferInsert;
 export type InsertDocumentPermission = typeof documentPermissions.$inferInsert;
 export type InsertActivityLog = typeof activityLogs.$inferInsert;
 export type InsertCotisation = typeof cotisations.$inferInsert;
+export type InsertMembershipFeeRule = typeof membershipFeeRules.$inferInsert;
 export type InsertDon = typeof dons.$inferInsert;
 export type InsertDepense = typeof depenses.$inferInsert;
 export type InsertTransaction = typeof transactions.$inferInsert;

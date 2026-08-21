@@ -77,6 +77,17 @@ const SORT_OPTIONS = [
   { value: "status-active", label: "Statut (Actifs d'abord)" },
 ];
 
+const MEMBERSHIP_CATEGORIES = [
+  { value: "standard", label: "Standard", description: "Adhésion annuelle de référence" },
+  { value: "etudiant", label: "Étudiant", description: "Tarif adapté sur justificatif" },
+  { value: "bienfaiteur", label: "Bienfaiteur", description: "Soutien renforcé aux actions de l’association" },
+  { value: "fondateur", label: "Fondateur", description: "Membre fondateur inscrit au registre historique" },
+  { value: "actif", label: "Actif", description: "Membre impliqué dans les activités et projets" },
+  { value: "honoraire", label: "Honoraire", description: "Distinction accordée par l’association" },
+] as const;
+
+const getMembershipCategory = (value?: string | null) => MEMBERSHIP_CATEGORIES.find((category) => category.value === value) ?? MEMBERSHIP_CATEGORIES[0];
+
 export default function Members() {
   const utils = trpc.useUtils();
   const [searchTerm, setSearchTerm] = useState("");
@@ -99,7 +110,9 @@ export default function Members() {
     gender: "3" as "1" | "2" | "3",
     memberID: "",
     photo: "",
-    adhesionType: "standard" as "standard" | "premium" | "beneficiary",
+    membershipCategory: "standard" as typeof MEMBERSHIP_CATEGORIES[number]["value"],
+    skills: "",
+    availability: "",
   });
   const [photoPreview, setPhotoPreview] = useState<string>("");
 
@@ -169,7 +182,9 @@ export default function Members() {
       gender: "3",
       memberID: "",
       photo: "",
-      adhesionType: "standard",
+      membershipCategory: "standard",
+      skills: "",
+      availability: "",
     });
     setPhotoPreview("");
   };
@@ -210,7 +225,9 @@ export default function Members() {
       memberRole: member.memberRole || "member",
       memberID: member.memberID || generateAutoMemberId(),
       photo: member.photo || "",
-      adhesionType: "standard",
+      membershipCategory: member.membershipCategory || "standard",
+      skills: member.skills || "",
+      availability: member.availability || "",
     });
     setPhotoPreview(member.photo || "");
     setIsEditDialogOpen(true);
@@ -654,20 +671,16 @@ export default function Members() {
               </div>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="adhesionType">Type d'adhésion *</Label>
-              <Select 
-                value={formData.adhesionType} 
-                onValueChange={(v: any) => setFormData({ ...formData, adhesionType: v })}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="standard">Standard</SelectItem>
-                  <SelectItem value="premium">Premium</SelectItem>
-                  <SelectItem value="beneficiary">Bénéficiaire</SelectItem>
-                </SelectContent>
+              <Label htmlFor="membershipCategory">Catégorie d’adhésion *</Label>
+              <Select value={formData.membershipCategory} onValueChange={(value) => setFormData({ ...formData, membershipCategory: value as typeof MEMBERSHIP_CATEGORIES[number]["value"] })}>
+                <SelectTrigger id="membershipCategory"><SelectValue /></SelectTrigger>
+                <SelectContent>{MEMBERSHIP_CATEGORIES.map((category) => <SelectItem key={category.value} value={category.value}>{category.label}</SelectItem>)}</SelectContent>
               </Select>
+              <p className="text-xs text-muted-foreground">{getMembershipCategory(formData.membershipCategory).description}. Le montant est enregistré dans Finance selon la devise choisie.</p>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2"><Label htmlFor="skills">Compétences bénévoles</Label><Input id="skills" value={formData.skills} onChange={(e) => setFormData({ ...formData, skills: e.target.value })} placeholder="Communication, terrain, logistique" /></div>
+              <div className="space-y-2"><Label htmlFor="availability">Disponibilités</Label><Input id="availability" value={formData.availability} onChange={(e) => setFormData({ ...formData, availability: e.target.value })} placeholder="Week-end, soir, ponctuel" /></div>
             </div>
             <div className="space-y-2">
               <Label htmlFor="photo">Photo du membre *</Label>
@@ -812,6 +825,11 @@ export default function Members() {
                 className="bg-muted"
               />
             </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2"><Label htmlFor="editMembershipCategory">Catégorie d’adhésion *</Label><Select value={formData.membershipCategory} onValueChange={(value) => setFormData({ ...formData, membershipCategory: value as typeof MEMBERSHIP_CATEGORIES[number]["value"] })}><SelectTrigger id="editMembershipCategory"><SelectValue /></SelectTrigger><SelectContent>{MEMBERSHIP_CATEGORIES.map((category) => <SelectItem key={category.value} value={category.value}>{category.label}</SelectItem>)}</SelectContent></Select></div>
+              <div className="space-y-2"><Label htmlFor="editAvailability">Disponibilités</Label><Input id="editAvailability" value={formData.availability} onChange={(e) => setFormData({ ...formData, availability: e.target.value })} placeholder="Week-end, soir, ponctuel" /></div>
+            </div>
+            <div className="space-y-2"><Label htmlFor="editSkills">Compétences bénévoles</Label><Input id="editSkills" value={formData.skills} onChange={(e) => setFormData({ ...formData, skills: e.target.value })} placeholder="Communication, terrain, logistique" /></div>
             <div className="space-y-2">
               <Label htmlFor="editPhoto">Photo du membre *</Label>
               <div className="flex items-center gap-4">

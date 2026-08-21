@@ -14,7 +14,7 @@ import { useCotisationReminders } from "@/hooks/useCotisationReminders";
 import { useCurrency } from "@/contexts/CurrencyContext";
 import { useFormatAmount } from "@/hooks/useFormatAmount";
 import { AmountDisplay } from "@/components/AmountDisplay";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { trpc } from "@/lib/trpc";
 
 interface Cotisation {
@@ -57,6 +57,15 @@ const SORT_OPTIONS = [
   { value: "amount-low", label: "Montant (Bas)" },
 ];
 
+const MEMBERSHIP_CATEGORIES = [
+  { value: "standard", label: "Standard" },
+  { value: "etudiant", label: "Étudiant" },
+  { value: "bienfaiteur", label: "Bienfaiteur" },
+  { value: "fondateur", label: "Fondateur" },
+  { value: "actif", label: "Actif" },
+  { value: "honoraire", label: "Honoraire" },
+] as const;
+
 const escapeHtml = (value: string) => value.replace(/[&<>'"]/g, (character) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "'": "&#39;", '"': "&quot;" }[character] ?? character));
 
 const openPrintableDocument = (html: string) => {
@@ -70,13 +79,24 @@ const openPrintableDocument = (html: string) => {
 };
 
 export default function Finance() {
+  const utils = trpc.useUtils();
   const { currency, convertCurrency } = useCurrency();
   const { formatAmountWithConversion } = useFormatAmount();
   const { data: receipts = [], refetch: refetchReceipts } = trpc.finances.receipts.useQuery({ limit: 100 });
+  const { data: members = [] } = trpc.members.list.useQuery();
+  const { data: feeRules = [] } = trpc.finances.feeRules.useQuery();
   const { data: storedCotisations = [] } = trpc.finances.cotisations.useQuery();
   const { data: storedDons = [] } = trpc.finances.dons.useQuery();
   const { data: storedDepenses = [] } = trpc.finances.depenses.useQuery();
   const createCotisationMutation = trpc.finances.createCotisation.useMutation({ onError: (error) => toast.error(error.message) });
+  const createFeeRuleMutation = trpc.finances.createFeeRule.useMutation({
+    onSuccess: async () => {
+      await utils.finances.feeRules.invalidate();
+      toast.success("Tarif de cotisation enregistré");
+      setNewFeeRule({ category: "standard", currency: "EUR", amount: "", validFrom: new Date().toISOString().slice(0, 10) });
+    },
+    onError: (error) => toast.error(error.message),
+  });
   const createDonMutation = trpc.finances.createDon.useMutation({ onError: (error) => toast.error(error.message) });
   const createDepenseMutation = trpc.finances.createDepense.useMutation({ onError: (error) => toast.error(error.message) });
   const issueReceipt = trpc.finances.issueReceipt.useMutation({
@@ -92,7 +112,7 @@ export default function Finance() {
   const [depenses, setDepenses] = useState<Depense[]>([]);
   const [activeTab, setActiveTab] = useState("cotisations");
   const [sortBy, setSortBy] = useState<string>("date-newest");
-
+  const [newFeeRule, setNewFeeRule] = useState({ category: "standard" as typeof MEMBERSHIP_CATEGORIES[number]["value"], currency: "EUR" as "EUR" | "XOF", amount: "", validFrom: new Date().toISOString().slice(0, 10) });
   useEffect(() => {
     setCotisations(storedCotisations.map((item) => ({ ...item, currency: item.currency as "EUR" | "XOF", dateDebut: new Date(item.dateDebut), dateFin: new Date(item.dateFin), datePayment: item.datePayment ? new Date(item.datePayment) : undefined })));
   }, [storedCotisations]);
@@ -114,6 +134,8 @@ export default function Finance() {
     notes: "",
     currency: "EUR" as "EUR" | "XOF",
   });
+  const suggestedFeeInput = useMemo(() => ({ memberId: Number(newCotisation.memberId), currency: newCotisation.currency }), [newCotisation.memberId, newCotisation.currency]);
+  const { data: suggestedFee, isFetching: isSuggestedFeeLoading } = trpc.finances.suggestedFee.useQuery(suggestedFeeInput, { enabled: suggestedFeeInput.memberId > 0 });
 
   const [newDon, setNewDon] = useState({
     donateur: "",
@@ -156,15 +178,17 @@ export default function Finance() {
   };
 
   const handleAddCotisation = () => {
-    if (!newCotisation.memberId || !newCotisation.montant || !newCotisation.dateDebut || !newCotisation.dateFin) {
-      toast.error("Renseignez le membre, le montant et les deux dates");
+    const suggestedAmount = suggestedFee?.amount?.toString() ?? "";
+    const amount = newCotisation.montant || suggestedAmount;
+    if (!newCotisation.memberId || !amount || !newCotisation.dateDebut || !newCotisation.dateFin) {
+      toast.error("Renseignez le membre, le montant ou configurez un tarif, ainsi que les deux dates");
       return;
     }
 
     const cotisation: Cotisation = {
       id: Date.now(),
       memberId: parseInt(newCotisation.memberId),
-      montant: newCotisation.montant,
+      montant: amount,
       currency: newCotisation.currency,
       dateDebut: new Date(newCotisation.dateDebut),
       dateFin: new Date(newCotisation.dateFin),
@@ -174,7 +198,7 @@ export default function Finance() {
 
     createCotisationMutation.mutate({
       memberId: cotisation.memberId,
-      montant: cotisation.montant,
+      montant: newCotisation.montant || undefined,
       currency: cotisation.currency,
       dateDebut: cotisation.dateDebut.toISOString(),
       dateFin: cotisation.dateFin.toISOString(),
@@ -185,6 +209,19 @@ export default function Finance() {
         setNewCotisation({ memberId: "", montant: "", dateDebut: "", dateFin: "", notes: "", currency: "EUR" });
         toast.success("Cotisation ajoutée avec succès");
       },
+    });
+  };
+
+  const handleCreateFeeRule = () => {
+    if (!newFeeRule.amount || !newFeeRule.validFrom) {
+      toast.error("Renseignez le montant et la date d’entrée en vigueur");
+      return;
+    }
+    createFeeRuleMutation.mutate({
+      category: newFeeRule.category,
+      currency: newFeeRule.currency,
+      amount: newFeeRule.amount,
+      validFrom: newFeeRule.validFrom,
     });
   };
 
@@ -373,6 +410,23 @@ export default function Finance() {
             </Select>
             <Dialog>
               <DialogTrigger asChild>
+                <Button variant="outline" className="gap-2">Gérer les tarifs</Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader><DialogTitle>Tarifs annuels par catégorie</DialogTitle><DialogDescription>Configurez les montants proposés automatiquement lors de l’enregistrement d’une cotisation.</DialogDescription></DialogHeader>
+                <div className="space-y-4">
+                  <div className="grid grid-cols-2 gap-3">
+                    <div><Label>Catégorie</Label><Select value={newFeeRule.category} onValueChange={(value) => setNewFeeRule({ ...newFeeRule, category: value as typeof MEMBERSHIP_CATEGORIES[number]["value"] })}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent>{MEMBERSHIP_CATEGORIES.map((category) => <SelectItem key={category.value} value={category.value}>{category.label}</SelectItem>)}</SelectContent></Select></div>
+                    <div><Label>Devise</Label><Select value={newFeeRule.currency} onValueChange={(value) => setNewFeeRule({ ...newFeeRule, currency: value as "EUR" | "XOF" })}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="EUR">EUR (€)</SelectItem><SelectItem value="XOF">XOF (F CFA)</SelectItem></SelectContent></Select></div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3"><div><Label htmlFor="feeAmount">Montant</Label><Input id="feeAmount" type="number" min="0.01" step="0.01" value={newFeeRule.amount} onChange={(event) => setNewFeeRule({ ...newFeeRule, amount: event.target.value })} placeholder="0.00" /></div><div><Label htmlFor="feeValidFrom">Valable à partir du</Label><Input id="feeValidFrom" type="date" value={newFeeRule.validFrom} onChange={(event) => setNewFeeRule({ ...newFeeRule, validFrom: event.target.value })} /></div></div>
+                  <div className="rounded-lg border bg-muted/30 p-3 text-sm"><p className="font-medium">Tarifs actuellement enregistrés</p>{feeRules.length === 0 ? <p className="mt-1 text-muted-foreground">Aucun barème configuré.</p> : <div className="mt-2 space-y-1">{feeRules.map((rule) => <div key={rule.id} className="flex justify-between gap-3"><span>{MEMBERSHIP_CATEGORIES.find((category) => category.value === rule.category)?.label ?? rule.category} · {rule.currency}</span><span className="font-medium">{Number(rule.amount).toLocaleString("fr-FR")}</span></div>)}</div>}</div>
+                  <Button onClick={handleCreateFeeRule} disabled={createFeeRuleMutation.isPending} className="w-full">{createFeeRuleMutation.isPending ? "Enregistrement…" : "Enregistrer le tarif"}</Button>
+                </div>
+              </DialogContent>
+            </Dialog>
+            <Dialog>
+              <DialogTrigger asChild>
                 <Button className="gap-2">
                   <Plus className="h-4 w-4" />
                   Ajouter une cotisation
@@ -387,14 +441,22 @@ export default function Finance() {
                 </DialogHeader>
                 <div className="space-y-4">
                   <div>
-                    <Label htmlFor="memberId">ID Membre</Label>
-                    <Input
-                      id="memberId"
-                      type="number"
-                      value={newCotisation.memberId}
-                      onChange={(e) => setNewCotisation({ ...newCotisation, memberId: e.target.value })}
-                      placeholder="ID du membre"
-                    />
+                    <Label htmlFor="memberId">Membre</Label>
+                    <Select value={newCotisation.memberId} onValueChange={(value) => setNewCotisation({ ...newCotisation, memberId: value, montant: "" })}>
+                      <SelectTrigger id="memberId"><SelectValue placeholder="Sélectionner un membre" /></SelectTrigger>
+                      <SelectContent>
+                        {members.filter((member) => member.status === "active").map((member) => (
+                          <SelectItem key={member.id} value={String(member.id)}>
+                            {member.firstName} {member.lastName} · {member.membershipCategory ?? "standard"}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    {suggestedFeeInput.memberId > 0 && (
+                      <p className="mt-2 text-xs text-muted-foreground">
+                        {isSuggestedFeeLoading ? "Recherche du tarif de la catégorie…" : suggestedFee?.amount ? `Tarif recommandé : ${suggestedFee.amount.toLocaleString("fr-FR")} ${newCotisation.currency}` : "Aucun tarif configuré pour cette catégorie dans cette devise."}
+                      </p>
+                    )}
                   </div>
                   <div className="grid grid-cols-[1fr_120px] gap-3">
                     <div>
@@ -406,7 +468,7 @@ export default function Finance() {
                         step="0.01"
                         value={newCotisation.montant}
                         onChange={(e) => setNewCotisation({ ...newCotisation, montant: e.target.value })}
-                        placeholder="0.00"
+                        placeholder={suggestedFee?.amount ? `Automatique · ${suggestedFee.amount}` : "Montant ou tarif automatique"}
                       />
                     </div>
                     <div>

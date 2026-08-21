@@ -1698,3 +1698,9 @@
 - [x] Ajouter un sélecteur de devise et l'affichage croisé EUR/XOF dans le module financier
 - [x] Permettre le téléchargement de reçus fiscaux et certificats de dons au format PDF/HTML
 - [x] Écrire un test unitaire `server/financial-multicurrency.test.ts` et valider l'ensemble
+
+## Phase 41 - Catégories d’Adhésion et Tarifs Spécifiques
+- [x] Créer les tables et colonnes pour les catégories d’adhésion (Standard, Étudiant, Bienfaiteur, Fondateur, Actif, Honoraire)
+- [x] Configurer les cotisations automatiques selon la catégorie du membre
+- [x] Mettre à jour les interfaces de gestion des membres pour inclure la sélection de catégorie
+- [x] Valider par des tests unitaires et la build de production

@@ -532,9 +532,24 @@ export const members = mysqlTable("members", {
 		membershipCategory: mysqlEnum(['standard','etudiant','bienfaiteur','fondateur','actif','honoraire']).default('standard').notNull(),
 		skills: text(),
 		availability: varchar({ length: 100 }),
-	});
+		});
 
-	export const memberStatusHistory = mysqlTable("member_status_history", {
+		export const membershipFeeRules = mysqlTable("membership_fee_rules", {
+			id: int().autoincrement().notNull(),
+			category: mysqlEnum(['standard','etudiant','bienfaiteur','fondateur','actif','honoraire']).notNull(),
+			currency: mysqlEnum(['EUR', 'XOF']).notNull(),
+			amount: varchar({ length: 20 }).notNull(),
+			isActive: int().default(1).notNull(),
+			validFrom: date({ mode: 'string' }).notNull(),
+			createdBy: int(),
+			createdAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
+			updatedAt: timestamp({ mode: 'string' }).defaultNow().onUpdateNow().notNull(),
+		}, (table) => [
+			index("membership_fee_rules_category_idx").on(table.category),
+			index("membership_fee_rules_currency_idx").on(table.currency),
+		]);
+
+		export const memberStatusHistory = mysqlTable("member_status_history", {
 		id: int().autoincrement().notNull(),
 		memberId: int().notNull(),
 		previousStatus: varchar({ length: 50 }),
