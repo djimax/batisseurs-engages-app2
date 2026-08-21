@@ -882,8 +882,8 @@
 - [x] Ajouter les liens dans la navigation
 
 ### Fonctionnalités
-- [ ] Profils détaillés des contacts avec historique
-- [ ] Segmentation des contacts
+- [x] Profils détaillés des contacts avec historique
+- [x] Segmentation des contacts
 - [ ] Suivi des tâches, appels, réunions
 - [ ] Pipeline d'adhésion avec statuts
 - [ ] Processus d'onboarding automatisé
