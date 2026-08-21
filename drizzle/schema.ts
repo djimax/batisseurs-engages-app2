@@ -775,3 +775,48 @@ export const users = mysqlTable("users", {
 ]);
 
 
+
+export const financialExpenses = mysqlTable("financial_expenses", {
+	id: int().autoincrement().notNull(),
+	title: varchar({ length: 255 }).notNull(),
+	amount: varchar({ length: 20 }).notNull(),
+	currency: mysqlEnum(['EUR', 'XOF']).default('EUR').notNull(),
+	category: varchar({ length: 100 }).notNull(),
+	projectId: int(),
+	antenneId: int(),
+	expenseDate: timestamp({ mode: 'string' }).notNull(),
+	status: mysqlEnum(['pending', 'approved', 'rejected', 'reimbursed']).default('pending').notNull(),
+	receiptUrl: text(),
+	createdBy: int().notNull(),
+	createdAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
+	updatedAt: timestamp({ mode: 'string' }).defaultNow().onUpdateNow().notNull(),
+});
+
+export const taxReceipts = mysqlTable("tax_receipts", {
+	id: int().autoincrement().notNull(),
+	receiptNumber: varchar({ length: 100 }).notNull(),
+	donorName: varchar({ length: 255 }).notNull(),
+	donorEmail: varchar({ length: 320 }),
+	amount: varchar({ length: 20 }).notNull(),
+	currency: mysqlEnum(['EUR', 'XOF']).default('EUR').notNull(),
+	donationDate: timestamp({ mode: 'string' }).notNull(),
+	pdfUrl: text(),
+	issuedBy: int().notNull(),
+	createdAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
+}, (table) => [
+	uniqueIndex("tax_receipts_number_unique").on(table.receiptNumber),
+]);
+
+export const associationDecisions = mysqlTable("association_decisions", {
+	id: int().autoincrement().notNull(),
+	title: varchar({ length: 255 }).notNull(),
+	referenceNumber: varchar({ length: 100 }).notNull(),
+	content: text().notNull(),
+	decisionDate: timestamp({ mode: 'string' }).notNull(),
+	signedBy: varchar({ length: 255 }).notNull(),
+	status: mysqlEnum(['draft', 'active', 'archived']).default('active').notNull(),
+	createdAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
+	updatedAt: timestamp({ mode: 'string' }).defaultNow().onUpdateNow().notNull(),
+}, (table) => [
+	uniqueIndex("association_decisions_ref_unique").on(table.referenceNumber),
+]);

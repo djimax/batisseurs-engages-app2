@@ -1596,3 +1596,42 @@
 - [x] Ajouter des graphiques globaux accessibles et cohérents avec la nouvelle identité
 - [x] Ajouter les tests de calculs du dashboard
 - [x] Valider TypeScript, tests, build, aperçu et checkpoint
+
+
+## Feuille de route exhaustive — Plateforme associative Les Bâtisseurs Engagés
+
+### 1. Membres, Bénévoles et Cotisations Avancées
+- [ ] Gestion des types de cotisations par catégorie (étudiant, bienfaiteur, fondateur, actif) avec échéanciers
+- [ ] Suivi des reçus fiscaux et attestations de don normalisées (CFA/EUR)
+- [ ] Portail bénévole avec déclaration de disponibilités, compétences et affectation aux antennes/projets
+- [ ] Historique complet des adhésions, radiations et suspensions avec motif
+
+### 2. Trésorerie, Budgets et Rapprochement Bancaire
+- [ ] Ventilation analytique des dépenses et recettes par projet, antenne et catégo. budgétaire
+- [ ] Module de rapprochement bancaire (import relevé / lettrage des paiements Stripe & HelloAsso)
+- [ ] Gestion des notes de frais et justificatifs de déplacement pour les bénévoles
+- [ ] Tableau de bord financier multi-devises (EUR / FCFA) avec taux de change administrable
+
+### 3. Gouvernance, Décisions et Conformité
+- [ ] Registre des délibérations et procès-verbaux signés électroniquement
+- [ ] Gestion des mandats du bureau (Président, Secrétaire, Trésorier) et renouvellement
+- [ ] Registre unique du personnel et des bénévoles actifs (conformité associative)
+- [ ] Suivi des convocations et feuilles de présence certifiées pour les AG
+
+### 4. Opérations Terrain, Événements et Présences
+- [ ] Création d'événements de terrain (réunions publiques, chantiers, collectes) avec jauge et inscription
+- [ ] Feuille de présence numérique par QR code ou émargement rapide sur tablette
+- [ ] Formulaires de collecte de terrain (enquêtes, adhésions directes hors ligne)
+- [ ] Journalisation des actions terrain par antenne
+
+### 5. Communication Ciblée et Automatisation
+- [ ] Segmentation fine pour l'envoi d'e-mails (par antenne, par niveau de cotisation, par projet)
+- [ ] Automatisation des relances de cotisations par SMS/Email programmables
+- [ ] Modèles de newsletters associatives personnalisables avec blocs dynamiques
+- [ ] Journal centralisé des notifications envoyées et accusés de réception
+
+### 6. Pilotage Global et Rapports Stratégiques
+- [ ] Tableaux de bord croisés (croissance des antennes, taux de recouvrement, avancement des projets)
+- [ ] Rapports d'activité annuels exportables en PDF institutionnel
+- [ ] Indicateurs d'impact social et associatif par projet
+- [ ] Vues par périmètre (administrateur national vs responsable d'antenne)
