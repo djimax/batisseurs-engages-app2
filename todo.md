@@ -884,8 +884,8 @@
 ### Fonctionnalités
 - [x] Profils détaillés des contacts avec historique
 - [x] Segmentation des contacts
-- [ ] Suivi des tâches, appels, réunions
-- [ ] Pipeline d'adhésion avec statuts
+- [x] Suivi des tâches, appels, réunions
+- [x] Pipeline d'adhésion avec statuts
 - [ ] Processus d'onboarding automatisé
 - [ ] Tableaux de bord CRM
 - [ ] Métriques d'engagement
