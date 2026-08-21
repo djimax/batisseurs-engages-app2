@@ -625,6 +625,8 @@ export const appRouter = router({
     getById: protectedProcedure
       .input(z.object({ id: z.number() }))
       .query(async ({ input }) => getMemberById(input.id)),
+
+
     
     create: protectedProcedure
       .input(z.object({

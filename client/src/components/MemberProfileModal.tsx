@@ -3,6 +3,8 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Mail, Phone, MapPin, Calendar, User, Edit, Trash2, Upload, Download, X } from "lucide-react";
 import { trpc } from "@/lib/trpc";
 
@@ -183,6 +185,26 @@ export function MemberProfileModal({
 
   const currentPhoto = member.photo;
 
+  const [newStatus, setNewStatus] = useState<string>(member.status ?? "active");
+  const [statusReason, setStatusReason] = useState("");
+  const updateStatusMutation = trpc.members.changeStatus.useMutation({
+    onSuccess: () => {
+      alert("Statut mis à jour avec succès");
+      setStatusReason("");
+      utils.members.list.invalidate();
+      utils.members.directory.invalidate();
+      utils.members.statusHistory.invalidate({ memberId: member.id });
+    },
+    onError: (err) => {
+      alert("Erreur lors de la mise à jour du statut: " + err.message);
+    },
+  });
+
+  const { data: statusHistoryData } = trpc.members.statusHistory.useQuery(
+    { memberId: member.id },
+    { enabled: open && Boolean(member.id) }
+  );
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto">
@@ -357,6 +379,76 @@ export function MemberProfileModal({
               </CardContent>
             </Card>
           )}
+
+          {/* Gestion administrative du statut */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Suivi administratif & Statut</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid gap-3 sm:grid-cols-2">
+                <div>
+                  <label className="text-xs text-muted-foreground mb-1 block">Modifier le statut</label>
+                  <Select value={newStatus} onValueChange={setNewStatus}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="active">Actif</SelectItem>
+                      <SelectItem value="inactive">Inactif</SelectItem>
+                      <SelectItem value="pending">En attente</SelectItem>
+                      <SelectItem value="suspended">Suspendu</SelectItem>
+                      <SelectItem value="resigned">Démissionnaire</SelectItem>
+                      <SelectItem value="deceased">Décédé</SelectItem>
+                      <SelectItem value="archived">Archivé</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <label className="text-xs text-muted-foreground mb-1 block">Motif (suspension / radiation / autre)</label>
+                  <Input
+                    placeholder="Ex. non-paiement, décision AG..."
+                    value={statusReason}
+                    onChange={(e) => setStatusReason(e.target.value)}
+                  />
+                </div>
+              </div>
+              <Button
+                variant="secondary"
+                size="sm"
+                className="w-full"
+                onClick={() => {
+                  updateStatusMutation.mutate({
+                    memberId: member.id,
+                    status: newStatus as any,
+                    reason: statusReason.trim() || undefined,
+                  });
+                }}
+                disabled={updateStatusMutation.isPending}
+              >
+                {updateStatusMutation.isPending ? "Mise à jour..." : "Enregistrer le changement de statut"}
+              </Button>
+
+              <div className="pt-3 border-t">
+                <p className="text-xs font-medium mb-2 text-muted-foreground">Historique des statuts</p>
+                {Array.isArray(statusHistoryData) && statusHistoryData.length ? (
+                  <div className="space-y-2 max-h-40 overflow-y-auto pr-1">
+                    {statusHistoryData.map((item: any) => (
+                      <div key={item.id} className="text-xs bg-muted/50 p-2 rounded-lg flex flex-col gap-1">
+                        <div className="flex items-center justify-between">
+                          <Badge variant="outline" className="text-[10px]">{getStatusLabel(item.status)}</Badge>
+                          <span className="text-muted-foreground">{new Date(item.changedAt).toLocaleDateString("fr-FR")}</span>
+                        </div>
+                        {item.reason && <p className="text-muted-foreground italic">Motif : {item.reason}</p>}
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-xs text-muted-foreground">Aucun changement de statut enregistré.</p>
+                )}
+              </div>
+            </CardContent>
+          </Card>
 
           {/* Actions */}
           <div className="flex gap-2 justify-end pt-4 border-t">

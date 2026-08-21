@@ -1670,3 +1670,19 @@
 ### Tests et Validation
 - [x] Écrire un test unitaire `server/volunteers.test.ts`
 - [x] Vérifier les tests Vitest et la build de production
+
+## Phase 38 - Suivi Administratif Avancé et Historique des Statuts
+
+### Procédure tRPC
+- [x] Vérifier et enrichir les procédures de changement de statut avec enregistrement systématique des motifs (radiations, suspensions, réactivations)
+- [x] Créer la procédure `members.statusHistory` pour récupérer l'historique complet des statuts d'un membre avec auteur et horodatage
+- [x] Valider l'accès protégé par la permission `members.manage`
+
+### Interface Utilisateur (Historique et Motifs)
+- [x] Intégrer l'affichage de l'historique des statuts dans le modal de profil membre (`MemberProfileModal.tsx`)
+- [x] Ajouter un champ de motif obligatoire lors des modifications de statut critique (suspension, radiation, démission)
+- [x] Afficher clairement les horodatages, les anciens et nouveaux statuts ainsi que les auteurs des modifications
+
+### Tests et Validation
+- [x] Créer un test unitaire dédié `server/member-status-history.test.ts`
+- [x] Valider tous les tests Vitest et la compilation de production
