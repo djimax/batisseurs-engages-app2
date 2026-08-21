@@ -1,282 +1,86 @@
-import React, { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
+import { useLocation } from "wouter";
 import { trpc } from "@/lib/trpc";
+import { useAuth as useAuthHook } from "@/_core/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Loader2, Save, CheckCircle2, AlertCircle } from "lucide-react";
-
-
-interface SettingForm {
-  appTitle: string;
-  appDescription: string;
-  appLogo: string;
-  contactEmail: string;
-  supportPhone: string;
-  maxUploadSize: string;
-}
+import { ArrowLeft, FileCog, Loader2, Save, ShieldCheck, Upload } from "lucide-react";
 
 export function AdminSettings() {
-  const { data: user } = trpc.auth.me.useQuery();
-  const [settings, setSettings] = useState<SettingForm>({
-    appTitle: "Les Bâtisseurs Engagés",
-    appDescription: "Plateforme de gestion documentaire pour associations",
-    appLogo: "/logo.png",
-    contactEmail: "",
-    supportPhone: "",
-    maxUploadSize: "50",
-  });
-
-  const [isLoading, setIsLoading] = useState(false);
-  const [successMessage, setSuccessMessage] = useState("");
-  const [errorMessage, setErrorMessage] = useState("");
-
+  const [, setLocation] = useLocation();
+  const { user } = useAuthHook();
   const { data: allSettings, isLoading: settingsLoading } = trpc.adminSettings.getAll.useQuery();
   const updateSettingMutation = trpc.adminSettings.update.useMutation();
+  const [maxUploadSize, setMaxUploadSize] = useState("50");
+  const [isSaving, setIsSaving] = useState(false);
+  const [feedback, setFeedback] = useState<{ type: "success" | "error"; text: string } | null>(null);
 
-  // Load settings from database
   useEffect(() => {
-    if (allSettings) {
-      const settingsMap: Record<string, string> = {};
-      allSettings.forEach((s) => {
-        settingsMap[s.key] = s.value;
-      });
-
-      setSettings((prev) => ({
-        ...prev,
-        appTitle: settingsMap["appTitle"] || prev.appTitle,
-        appDescription: settingsMap["appDescription"] || prev.appDescription,
-        appLogo: settingsMap["appLogo"] || prev.appLogo,
-        contactEmail: settingsMap["contactEmail"] || prev.contactEmail,
-        supportPhone: settingsMap["supportPhone"] || prev.supportPhone,
-        maxUploadSize: settingsMap["maxUploadSize"] || prev.maxUploadSize,
-      }));
-    }
+    const setting = allSettings?.find((item) => item.key === "maxUploadSize");
+    if (setting?.value) setMaxUploadSize(setting.value);
   }, [allSettings]);
 
-  const handleSaveSettings = async () => {
+  const handleSave = async () => {
     if (!user || user.role !== "admin") {
-      setErrorMessage("Vous n'avez pas les permissions pour modifier ces paramètres");
+      setFeedback({ type: "error", text: "Vous n’avez pas les permissions pour modifier ces réglages." });
       return;
     }
 
-    setIsLoading(true);
-    setErrorMessage("");
-    setSuccessMessage("");
+    const value = Number(maxUploadSize);
+    if (!Number.isFinite(value) || value < 1 || value > 500) {
+      setFeedback({ type: "error", text: "La taille maximale doit être comprise entre 1 et 500 Mo." });
+      return;
+    }
 
+    setIsSaving(true);
+    setFeedback(null);
     try {
-      const settingsToUpdate = [
-        { key: "appTitle", value: settings.appTitle, description: "Titre de l'application" },
-        { key: "appDescription", value: settings.appDescription, description: "Description de l'application" },
-        { key: "appLogo", value: settings.appLogo, description: "URL du logo" },
-        { key: "contactEmail", value: settings.contactEmail, description: "Email de contact" },
-        { key: "supportPhone", value: settings.supportPhone, description: "Téléphone de support" },
-        { key: "maxUploadSize", value: settings.maxUploadSize, description: "Taille maximale d'upload en MB" },
-      ];
-
-      for (const setting of settingsToUpdate) {
-        await updateSettingMutation.mutateAsync({
-          key: setting.key,
-          value: setting.value,
-          description: setting.description,
-        });
-      }
-
-      setSuccessMessage("Tous les paramètres ont été sauvegardés avec succès !");
+      await updateSettingMutation.mutateAsync({
+        key: "maxUploadSize",
+        value: String(value),
+        description: "Taille maximale d’upload en Mo",
+      });
+      setFeedback({ type: "success", text: "Réglage technique enregistré." });
     } catch (error) {
-      setErrorMessage(
-        error instanceof Error ? error.message : "Erreur lors de la sauvegarde des paramètres"
-      );
+      setFeedback({ type: "error", text: error instanceof Error ? error.message : "Impossible d’enregistrer le réglage." });
     } finally {
-      setIsLoading(false);
+      setIsSaving(false);
     }
   };
 
   if (settingsLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <Loader2 className="h-8 w-8 animate-spin" />
-      </div>
-    );
+    return <div className="flex min-h-[50vh] items-center justify-center"><Loader2 className="h-7 w-7 animate-spin text-primary" /></div>;
   }
 
   if (!user || user.role !== "admin") {
-    return (
-      <div className="container mx-auto py-8 px-4">
-        <Alert className="border-red-200 bg-red-50">
-          <AlertCircle className="h-4 w-4 text-red-600" />
-          <AlertDescription className="text-red-800">
-            Vous n'avez pas les permissions pour accéder à cette page. Seuls les administrateurs peuvent modifier les paramètres globaux.
-          </AlertDescription>
-        </Alert>
-      </div>
-    );
+    return <div className="space-y-4"><Button variant="outline" onClick={() => setLocation("/settings")} className="gap-2"><ArrowLeft className="h-4 w-4" />Retour aux paramètres</Button><Alert variant="destructive"><AlertDescription>Seuls les administrateurs peuvent accéder aux réglages techniques.</AlertDescription></Alert></div>;
   }
 
   return (
-    <div className="container mx-auto py-8 px-4 max-w-4xl">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold mb-2">Paramètres Globaux</h1>
-        <p className="text-muted-foreground">
-          Gérez les paramètres de configuration de l'application
-        </p>
-      </div>
-
-      <div className="grid gap-6">
-        {/* Messages */}
-        {successMessage && (
-          <Alert className="border-green-200 bg-green-50">
-            <CheckCircle2 className="h-4 w-4 text-green-600" />
-            <AlertDescription className="text-green-800">{successMessage}</AlertDescription>
-          </Alert>
-        )}
-
-        {errorMessage && (
-          <Alert className="border-red-200 bg-red-50">
-            <AlertCircle className="h-4 w-4 text-red-600" />
-            <AlertDescription className="text-red-800">{errorMessage}</AlertDescription>
-          </Alert>
-        )}
-
-        {/* Application Info */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg">Informations de l'Application</CardTitle>
-            <CardDescription>
-              Configurez les informations de base de votre application
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium mb-2">Titre de l'Application</label>
-              <Input
-                placeholder="Ex: Les Bâtisseurs Engagés"
-                value={settings.appTitle}
-                onChange={(e) => setSettings({ ...settings, appTitle: e.target.value })}
-                disabled={isLoading}
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium mb-2">Description</label>
-              <Textarea
-                placeholder="Description courte de l'application"
-                value={settings.appDescription}
-                onChange={(e) => setSettings({ ...settings, appDescription: e.target.value })}
-                disabled={isLoading}
-                rows={3}
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium mb-2">URL du Logo</label>
-              <Input
-                placeholder="Ex: /logo.png"
-                value={settings.appLogo}
-                onChange={(e) => setSettings({ ...settings, appLogo: e.target.value })}
-                disabled={isLoading}
-              />
-              {settings.appLogo && (
-                <div className="mt-2 p-4 bg-muted rounded-lg flex items-center justify-center">
-                  <img src={settings.appLogo} alt="Logo" className="h-16 object-contain" />
-                </div>
-              )}
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Contact Info */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg">Informations de Contact</CardTitle>
-            <CardDescription>
-              Configurez les coordonnées de support
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium mb-2">Email de Contact</label>
-              <Input
-                type="email"
-                placeholder="contact@example.com"
-                value={settings.contactEmail}
-                onChange={(e) => setSettings({ ...settings, contactEmail: e.target.value })}
-                disabled={isLoading}
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium mb-2">Téléphone de Support</label>
-              <Input
-                placeholder="+33 1 23 45 67 89"
-                value={settings.supportPhone}
-                onChange={(e) => setSettings({ ...settings, supportPhone: e.target.value })}
-                disabled={isLoading}
-              />
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Technical Settings */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg">Paramètres Techniques</CardTitle>
-            <CardDescription>
-              Configurez les paramètres techniques de l'application
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium mb-2">
-                Taille Maximale d'Upload (MB)
-              </label>
-              <Input
-                type="number"
-                placeholder="50"
-                value={settings.maxUploadSize}
-                onChange={(e) => setSettings({ ...settings, maxUploadSize: e.target.value })}
-                disabled={isLoading}
-                min="1"
-                max="500"
-              />
-              <p className="text-xs text-muted-foreground mt-1">
-                Taille maximale autorisée pour les uploads de fichiers
-              </p>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Save Button */}
-        <div className="flex gap-2">
-          <Button
-            onClick={handleSaveSettings}
-            disabled={isLoading}
-            className="w-full sm:w-auto"
-          >
-            {isLoading ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Sauvegarde en cours...
-              </>
-            ) : (
-              <>
-                <Save className="mr-2 h-4 w-4" />
-                Sauvegarder les Paramètres
-              </>
-            )}
-          </Button>
+    <div className="space-y-6">
+      <header className="flex flex-col gap-4 border-b border-border/70 pb-5 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <div className="mb-2 inline-flex items-center gap-2 rounded-full bg-muted px-3 py-1 text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground"><FileCog className="h-3.5 w-3.5" />Administration technique</div>
+          <h1 className="text-3xl font-bold tracking-tight">Réglages techniques</h1>
+          <p className="mt-1 max-w-2xl text-muted-foreground">Un espace court pour les paramètres de fonctionnement de l’application.</p>
         </div>
+        <Button variant="outline" onClick={() => setLocation("/settings")} className="gap-2 self-start sm:self-auto"><ArrowLeft className="h-4 w-4" />Retour aux paramètres</Button>
+      </header>
 
-        {/* Info Box */}
-        <Card className="bg-blue-50 border-blue-200">
-          <CardContent className="pt-6">
-            <p className="text-sm text-blue-900">
-              <strong>ℹ️ Information:</strong> Toutes les modifications seront enregistrées dans l'historique d'audit. Seuls les administrateurs peuvent modifier ces paramètres.
-            </p>
-          </CardContent>
-        </Card>
-      </div>
+      <Card className="border-primary/20 bg-primary/[0.03]">
+        <CardContent className="flex gap-3 p-5 text-sm text-muted-foreground"><ShieldCheck className="mt-0.5 h-5 w-5 shrink-0 text-primary" /><p>Les informations de l’association, son logo et ses coordonnées sont gérés uniquement dans <strong className="text-foreground">Identité de l’association</strong>. Cette séparation évite les doublons et limite les modifications sensibles.</p></CardContent>
+      </Card>
+
+      <Card className="max-w-2xl">
+        <CardHeader><CardTitle className="flex items-center gap-2"><Upload className="h-5 w-5 text-primary" />Téléversements</CardTitle><CardDescription>Définissez la taille maximale acceptée pour les fichiers importés.</CardDescription></CardHeader>
+        <CardContent className="space-y-5">
+          {feedback && <Alert variant={feedback.type === "error" ? "destructive" : "default"}><AlertDescription>{feedback.text}</AlertDescription></Alert>}
+          <div className="space-y-2"><label htmlFor="max-upload-size" className="text-sm font-medium">Taille maximale d’upload (Mo)</label><Input id="max-upload-size" type="number" min="1" max="500" value={maxUploadSize} onChange={(event) => setMaxUploadSize(event.target.value)} disabled={isSaving} /><p className="text-xs text-muted-foreground">Valeur autorisée : de 1 à 500 Mo.</p></div>
+          <div className="flex justify-end"><Button onClick={handleSave} disabled={isSaving || updateSettingMutation.isPending} className="gap-2">{isSaving || updateSettingMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}{isSaving || updateSettingMutation.isPending ? "Enregistrement…" : "Enregistrer"}</Button></div>
+        </CardContent>
+      </Card>
     </div>
   );
 }

@@ -8,7 +8,8 @@ import { LoadingButtonContent, LoadingState } from "@/components/LoadingState";
 import { getErrorMessage } from "@/lib/uxFeedback";
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
-import { CreditCard, History, QrCode, Save, ShieldCheck, UserRound } from "lucide-react";
+import { useLocation } from "wouter";
+import { CreditCard, History, QrCode, Save, Settings2, ShieldCheck, UserRound } from "lucide-react";
 
 const STATUS_LABELS: Record<string, string> = {
   active: "Actif",
@@ -21,6 +22,7 @@ const STATUS_LABELS: Record<string, string> = {
 };
 
 export default function MemberPortal() {
+  const [, setLocation] = useLocation();
   const { data, isLoading, refetch } = trpc.members.portalProfile.useQuery();
   const updateMutation = trpc.members.updateSelf.useMutation({
     onSuccess: () => {
@@ -78,28 +80,31 @@ export default function MemberPortal() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight">Mon espace adhérent</h1>
-        <p className="mt-2 text-muted-foreground">Consultez votre adhésion, votre carte et l’historique de votre profil.</p>
-      </div>
+      <header className="flex flex-col gap-4 border-b border-border/70 pb-5 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <div className="mb-2 inline-flex items-center gap-2 rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.14em] text-primary"><UserRound className="h-3.5 w-3.5" />Espace personnel</div>
+          <h1 className="text-3xl font-bold tracking-tight">Mon profil adhérent</h1>
+          <p className="mt-1 text-muted-foreground">Coordonnées, carte adhérent et historique réunis au même endroit.</p>
+        </div>
+        <Button variant="outline" onClick={() => setLocation("/settings")} className="gap-2 self-start sm:self-auto"><Settings2 className="h-4 w-4" />Préférences</Button>
+      </header>
 
       <div className="grid gap-6 xl:grid-cols-[1.4fr_0.8fr]">
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2"><UserRound className="h-5 w-5" />Mon profil</CardTitle>
-            <CardDescription>Vous pouvez modifier uniquement vos coordonnées personnelles.</CardDescription>
+            <CardTitle className="flex items-center gap-2"><UserRound className="h-5 w-5" />Coordonnées personnelles</CardTitle>
+            <CardDescription>Modifiez uniquement les informations de contact qui vous concernent.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
+            <div className="flex flex-wrap items-center gap-2 rounded-xl bg-muted/60 px-4 py-3 text-sm"><span className="text-muted-foreground">Identifiant</span><strong className="font-mono">{data.member.memberId ?? "Non attribué"}</strong><Badge className="ml-auto" variant={status === "active" ? "default" : "secondary"}>{statusLabel}</Badge></div>
             <div className="grid gap-4 sm:grid-cols-2">
               <label className="space-y-2 text-sm font-medium">Prénom<Input value={form.firstName} onChange={(event) => setForm((current) => ({ ...current, firstName: event.target.value }))} /></label>
               <label className="space-y-2 text-sm font-medium">Nom<Input value={form.lastName} onChange={(event) => setForm((current) => ({ ...current, lastName: event.target.value }))} /></label>
               <label className="space-y-2 text-sm font-medium">Email<Input type="email" value={form.email} onChange={(event) => setForm((current) => ({ ...current, email: event.target.value }))} /></label>
               <label className="space-y-2 text-sm font-medium">Téléphone<Input value={form.phone} onChange={(event) => setForm((current) => ({ ...current, phone: event.target.value }))} /></label>
             </div>
-            <div className="flex flex-wrap items-center gap-3 border-t pt-4 text-sm text-muted-foreground">
-              <span>Identifiant : <strong className="text-foreground">{data.member.memberId ?? "Non attribué"}</strong></span>
-              <Badge variant={status === "active" ? "default" : "secondary"}>{statusLabel}</Badge>
-              <Button className="ml-auto" onClick={handleSave} disabled={!hasChanges || updateMutation.isPending}>
+            <div className="flex flex-wrap items-center justify-end gap-3 border-t pt-4 text-sm text-muted-foreground">
+              <Button onClick={handleSave} disabled={!hasChanges || updateMutation.isPending}>
                 <LoadingButtonContent loading={updateMutation.isPending} loadingLabel="Enregistrement…"><Save className="mr-2 h-4 w-4" />Enregistrer</LoadingButtonContent>
               </Button>
             </div>
@@ -113,7 +118,6 @@ export default function MemberPortal() {
           </CardHeader>
           <CardContent className="flex flex-col items-center gap-3">
             {qrCode ? <img src={qrCode} alt="QR code de la carte adhérent" className="rounded-lg border bg-white p-2" /> : <div className="flex h-[220px] w-[220px] items-center justify-center rounded-lg border bg-muted"><QrCode className="h-10 w-10 text-muted-foreground" /></div>}
-            <p className="font-mono text-sm">{data.member.memberId ?? "Identifiant en attente"}</p>
             <p className="flex items-center gap-1 text-xs text-muted-foreground"><ShieldCheck className="h-3.5 w-3.5" />Données de vérification signées par la plateforme</p>
           </CardContent>
         </Card>

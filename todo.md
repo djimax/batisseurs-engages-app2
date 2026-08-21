@@ -1704,3 +1704,17 @@
 - [x] Configurer les cotisations automatiques selon la catégorie du membre
 - [x] Mettre à jour les interfaces de gestion des membres pour inclure la sélection de catégorie
 - [x] Valider par des tests unitaires et la build de production
+
+
+## Optimisation Paramètres et Profils
+- [x] Auditer les surfaces Paramètres utilisateur, Paramètres globaux, Paramètres administrateur et profils pour supprimer les doublons
+- [x] Regrouper les préférences personnelles, le profil adhérent et les réglages généraux dans une architecture claire
+- [x] Simplifier les libellés, la navigation et les cartes sans supprimer les fonctionnalités utiles
+- [x] Vérifier les permissions et les parcours de navigation après réorganisation
+- [x] Ajouter ou mettre à jour les tests et valider TypeScript, Vitest et la build de production
+- [ ] Sauvegarder l’optimisation validée dans un checkpoint
+
+## Décisions de conservation
+- [x] Conserver l’authentification, la récupération de mot de passe, les réglages EUR/XOF, le taux de change, la sauvegarde/restauration et l’historique de synchronisation
+- [x] Conserver le profil adhérent, la carte, l’historique et les paramètres administratifs protégés
+- [x] Documenter les doublons trouvés et tout élément regroupé ou retiré

@@ -86,7 +86,7 @@ const menuItems: MenuItem[] = [
     { icon: HandHeart, label: "Portail bénévoles", path: "/volunteers" },
     { icon: UserCheck, label: "Adhésions", path: "/members/adhesions" },
     { icon: UserCheck, label: "Liste des Adhérents", path: "/adhesions-list" },
-    { icon: UserCheck, label: "Mon espace adhérent", path: "/member-portal" },
+    { icon: UserCheck, label: "Mon profil adhérent", path: "/member-portal" },
     { icon: Shield, label: "Gestion des Rôles", path: "/admin/roles", adminOnly: true },
     { icon: Lock, label: "Permissions & Périmètres", path: "/admin/permissions", adminOnly: true },
   ]},
@@ -129,7 +129,7 @@ const menuItems: MenuItem[] = [
   
   // Administration
   { icon: Settings, label: "Administration", isGroup: true, adminOnly: true, items: [
-    { icon: Settings, label: "Paramètres Globaux", path: "/global-settings", adminOnly: true },
+    { icon: Settings, label: "Identité de l’association", path: "/global-settings", adminOnly: true },
     { icon: Users, label: "Utilisateurs", path: "/users", adminOnly: true },
     { icon: Eye, label: "Journaux d'Audit", path: "/admin/audit-logs", adminOnly: true },
     { icon: Shield, label: "Réinitialisations MDP", path: "/admin/password-resets", adminOnly: true },
@@ -400,7 +400,7 @@ function DashboardLayoutContent({
               <DropdownMenuContent align="end" className="w-56">
                 <DropdownMenuItem onClick={() => setLocation("/settings")}>
                   <Settings className="mr-2 h-4 w-4" />
-                  <span>Paramètres Utilisateur</span>
+                  <span>Paramètres & profil</span>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem
