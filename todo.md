@@ -1653,3 +1653,20 @@
 ### Tests et Validation
 - [x] Écrire un test unitaire `server/member-directory.test.ts`
 - [x] Vérifier les 268+ tests Vitest et la build de production
+
+## Phase 37 - Portail et Coordination des Bénévoles
+
+### Procédure tRPC
+- [x] Créer la procédure `volunteers.list` pour filtrer les membres par compétences, disponibilités et rattachement aux antennes/projets
+- [x] Créer la mutation `volunteers.updateProfile` permettant aux membres de mettre à jour leurs compétences et disponibilités
+- [x] Créer la mutation `volunteers.assignProject` pour lier un bénévole à une antenne ou un projet spécifique
+
+### Interface Utilisateur (Portail Bénévole)
+- [x] Créer la page `client/src/pages/VolunteerPortal.tsx`
+- [x] Ajouter les filtres par compétences (communication, technique, terrain, logistique) et disponibilités (week-end, soir, temps partiel, permanent)
+- [x] Intégrer l'affichage des affectations aux antennes et projets de l'association
+- [x] Ajouter le lien "Bénévoles" dans le menu de navigation (DashboardLayout) et la route dans App.tsx
+
+### Tests et Validation
+- [x] Écrire un test unitaire `server/volunteers.test.ts`
+- [x] Vérifier les tests Vitest et la build de production

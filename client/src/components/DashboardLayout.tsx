@@ -49,7 +49,8 @@ import {
   Briefcase,
   Gavel,
   ChevronDown,
-  MapPin
+  MapPin,
+  HandHeart
 } from "lucide-react";
 import { CSSProperties, useEffect, useRef, useState } from "react";
 import { useLocation } from "wouter";
@@ -82,6 +83,7 @@ const menuItems: MenuItem[] = [
   { icon: Users, label: "Gestion des membres", isGroup: true, items: [
     { icon: Users, label: "Membres", path: "/members" },
     { icon: Users, label: "Annuaire interne", path: "/member-directory" },
+    { icon: HandHeart, label: "Portail bénévoles", path: "/volunteers" },
     { icon: UserCheck, label: "Adhésions", path: "/members/adhesions" },
     { icon: UserCheck, label: "Liste des Adhérents", path: "/adhesions-list" },
     { icon: UserCheck, label: "Mon espace adhérent", path: "/member-portal" },

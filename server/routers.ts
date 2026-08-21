@@ -33,7 +33,7 @@ import {
   getAnnouncements, createAnnouncement, updateAnnouncement, deleteAnnouncement,
   getNewsList, createNews, updateNews, deleteNews, getNewsComments, addNewsComment, deleteNewsComment
 } from "./db";
-import { roles, permissions, rolePermissions, userRoles, userScopes, auditLogs, emailTemplates, emailHistory, emailRecipients, members, adhesions, notificationSchedules, announcements, news, newsComments } from "../drizzle/schema";
+import { roles, permissions, rolePermissions, userRoles, userScopes, auditLogs, emailTemplates, emailHistory, emailRecipients, members, adhesions, notificationSchedules, announcements, news, newsComments, projects, projectMembers, groupes, groupeMembers, antennes } from "../drizzle/schema";
 import { buildMemberCardPayload, getMemberHistory, getMemberStatusHistory, memberStatusSchema, recordMemberHistory, recordMemberStatus } from "./member-lifecycle";
 import { createUserNotification, generateMembershipReminderNotifications, getOrCreateNotificationPreferences, listUserNotifications, markAllNotificationsRead, markNotificationRead, updateNotificationPreferences } from "./notification-center";
 import { and, eq, desc } from "drizzle-orm";
@@ -396,6 +396,143 @@ export const appRouter = router({
           details: `Note supprimée`,
         });
         return { success: true };
+      }),
+  }),
+
+  // ============ VOLUNTEERS COORDINATION ============
+  volunteers: router({
+    list: protectedProcedure
+      .input(z.object({
+        search: z.string().optional(),
+        skill: z.string().optional(),
+        availability: z.string().optional(),
+      }).optional())
+      .query(async ({ input, ctx }) => {
+        await assertPermission(ctx.user, "members.view");
+        const db = await getDb();
+        if (!db) return [];
+        const allMembers = await getAllMembers();
+        const filtered = allMembers.filter((m) => {
+          if (m.status !== "active") return false;
+          if (input?.availability && input.availability !== 'all' && (m as any).availability !== input.availability) {
+            return false;
+          }
+          if (input?.skill && input.skill !== 'all') {
+            const skills = ((m as any).skills || '').toLowerCase();
+            if (!skills.includes(input.skill.toLowerCase())) return false;
+          }
+          if (input?.search) {
+            const query = input.search.toLowerCase();
+            const fullName = `${m.firstName} ${m.lastName}`.toLowerCase();
+            const email = (m.email || '').toLowerCase();
+            const skills = ((m as any).skills || '').toLowerCase();
+            if (!fullName.includes(query) && !email.includes(query) && !skills.includes(query)) {
+              return false;
+            }
+          }
+          return true;
+        });
+
+        return Promise.all(filtered.map(async (member) => {
+          const [projectAssignments, groupAssignments] = await Promise.all([
+            db.select({
+              id: projectMembers.id,
+              projectId: projectMembers.projectId,
+              role: projectMembers.role,
+              joinedAt: projectMembers.joinedAt,
+              projectName: projects.name,
+            }).from(projectMembers).leftJoin(projects, eq(projectMembers.projectId, projects.id)).where(eq(projectMembers.memberId, member.id)),
+            db.select({
+              id: groupeMembers.id,
+              groupeId: groupeMembers.groupeId,
+              role: groupeMembers.role,
+              joinedAt: groupeMembers.joinedAt,
+              groupeName: groupes.name,
+              antenneId: groupes.antenneId,
+              antenneName: antennes.name,
+            }).from(groupeMembers)
+              .leftJoin(groupes, eq(groupeMembers.groupeId, groupes.id))
+              .leftJoin(antennes, eq(groupes.antenneId, antennes.id))
+              .where(eq(groupeMembers.memberId, member.id)),
+          ]);
+
+          return {
+            ...member,
+            assignments: {
+              projects: projectAssignments,
+              groups: groupAssignments,
+            },
+          };
+        }));
+      }),
+
+    updateProfile: protectedProcedure
+      .input(z.object({
+        memberId: z.number(),
+        skills: z.string().optional(),
+        availability: z.string().optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        await assertPermission(ctx.user, "members.edit");
+        const db = await getDb();
+        if (!db) throw new Error("Database not available");
+
+        const current = await getMemberById(input.memberId);
+        if (!current) throw new TRPCError({ code: "NOT_FOUND", message: "Membre introuvable" });
+
+        await db.update(members)
+          .set({
+            skills: input.skills,
+            availability: input.availability,
+            updatedAt: new Date().toISOString(),
+          } as any)
+          .where(eq(members.id, input.memberId));
+
+        for (const [fieldName, newValue] of Object.entries({ skills: input.skills, availability: input.availability })) {
+          if (newValue === undefined) continue;
+          const oldValue = (current as Record<string, unknown>)[fieldName];
+          if (String(oldValue ?? "") !== String(newValue ?? "")) {
+            await recordMemberHistory({ memberId: input.memberId, fieldName, oldValue, newValue, changedBy: ctx.user.id });
+          }
+        }
+
+        return { success: true };
+      }),
+
+    assignProject: protectedProcedure
+      .input(z.object({
+        memberId: z.number().int().positive(),
+        projectId: z.number().int().positive().optional(),
+        groupId: z.number().int().positive().optional(),
+        projectRole: z.enum(["project-lead", "member", "observer"]).default("member"),
+        groupRole: z.enum(["leader", "coordinator", "member"]).default("member"),
+      }).refine((value) => Boolean(value.projectId) !== Boolean(value.groupId), {
+        message: "Sélectionnez un projet ou un groupe d’antenne, mais pas les deux.",
+      }))
+      .mutation(async ({ input, ctx }) => {
+        await assertPermission(ctx.user, "members.edit");
+        const db = await getDb();
+        if (!db) throw new Error("Database not available");
+        const member = await getMemberById(input.memberId);
+        if (!member) throw new TRPCError({ code: "NOT_FOUND", message: "Membre introuvable" });
+
+        if (input.projectId) {
+          const project = await db.select({ id: projects.id, name: projects.name }).from(projects).where(eq(projects.id, input.projectId));
+          if (!project[0]) throw new TRPCError({ code: "NOT_FOUND", message: "Projet introuvable" });
+          const existing = await db.select({ id: projectMembers.id }).from(projectMembers).where(and(eq(projectMembers.projectId, input.projectId), eq(projectMembers.memberId, input.memberId)));
+          if (existing[0]) throw new TRPCError({ code: "CONFLICT", message: "Le bénévole est déjà affecté à ce projet." });
+          await db.insert(projectMembers).values({ projectId: input.projectId, memberId: input.memberId, role: input.projectRole });
+          await logActivity({ userId: ctx.user.id, action: "assign", entityType: "volunteer_project", entityId: input.memberId, details: `Affectation au projet ${project[0].name}` });
+          return { success: true, scope: "project", name: project[0].name };
+        }
+
+        const group = await db.select({ id: groupes.id, name: groupes.name, antenneId: groupes.antenneId }).from(groupes).where(eq(groupes.id, input.groupId!));
+        if (!group[0]) throw new TRPCError({ code: "NOT_FOUND", message: "Groupe d’antenne introuvable" });
+        const existing = await db.select({ id: groupeMembers.id }).from(groupeMembers).where(and(eq(groupeMembers.groupeId, input.groupId!), eq(groupeMembers.memberId, input.memberId)));
+        if (existing[0]) throw new TRPCError({ code: "CONFLICT", message: "Le bénévole est déjà affecté à ce groupe." });
+        await db.insert(groupeMembers).values({ groupeId: input.groupId!, memberId: input.memberId, role: input.groupRole });
+        await logActivity({ userId: ctx.user.id, action: "assign", entityType: "volunteer_group", entityId: input.memberId, details: `Affectation au groupe d’antenne ${group[0].name}` });
+        return { success: true, scope: "group", name: group[0].name };
       }),
   }),
 
