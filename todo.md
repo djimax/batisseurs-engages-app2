@@ -1712,9 +1712,16 @@
 - [x] Simplifier les libellés, la navigation et les cartes sans supprimer les fonctionnalités utiles
 - [x] Vérifier les permissions et les parcours de navigation après réorganisation
 - [x] Ajouter ou mettre à jour les tests et valider TypeScript, Vitest et la build de production
-- [ ] Sauvegarder l’optimisation validée dans un checkpoint
+- [x] Sauvegarder l’optimisation validée dans un checkpoint
 
 ## Décisions de conservation
 - [x] Conserver l’authentification, la récupération de mot de passe, les réglages EUR/XOF, le taux de change, la sauvegarde/restauration et l’historique de synchronisation
 - [x] Conserver le profil adhérent, la carte, l’historique et les paramètres administratifs protégés
 - [x] Documenter les doublons trouvés et tout élément regroupé ou retiré
+
+
+## Animation de la page Paramètres
+- [x] Ajouter une transition fluide entre les contenus d’onglets
+- [x] Respecter prefers-reduced-motion et conserver l’accessibilité des onglets
+- [x] Tester et compiler la modification
+- [ ] Sauvegarder la transition validée dans un checkpoint
