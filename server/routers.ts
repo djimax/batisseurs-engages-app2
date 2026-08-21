@@ -45,6 +45,7 @@ import { storagePut } from "./storage";
 import { notifyOwner } from "./_core/notification";
 import { nanoid } from "nanoid";
 import { membersAdhesionsRouter } from "./members-adhesions-router";
+import { buildDonationDocumentHtml, convertFinancialAmount, createTaxReceipt, FINANCIAL_CURRENCIES, formatFinancialAmount, listTaxReceipts, parseFinancialAmount } from "./financial";
 import { antennasRouter, groupesRouter } from "./antennes-groupes-router";
 import { governanceRouter } from "./governance-router";
 
@@ -1027,7 +1028,127 @@ export const appRouter = router({
 
   // ============ FINANCES ============
   finances: router({
-    stats: protectedProcedure.query(async () => getFinancialStats()),
+    stats: protectedProcedure.query(async ({ ctx }) => {
+      await assertPermission(ctx.user, "finances.view");
+      return getFinancialStats();
+    }),
+
+    cotisations: protectedProcedure.query(async ({ ctx }) => {
+      await assertPermission(ctx.user, "finances.view");
+      return getCotisations();
+    }),
+
+    dons: protectedProcedure.query(async ({ ctx }) => {
+      await assertPermission(ctx.user, "finances.view");
+      return getDons();
+    }),
+
+    depenses: protectedProcedure.query(async ({ ctx }) => {
+      await assertPermission(ctx.user, "finances.view");
+      return getDepenses();
+    }),
+
+    createCotisation: protectedProcedure
+      .input(z.object({
+        memberId: z.number().int().positive(),
+        montant: z.union([z.string(), z.number()]),
+        currency: z.enum(["EUR", "XOF"]),
+        dateDebut: z.string().datetime(),
+        dateFin: z.string().datetime(),
+        notes: z.string().max(2000).optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        await assertPermission(ctx.user, "finances.manage");
+        const amount = parseFinancialAmount(input.montant);
+        await createCotisation({ ...input, montant: amount.toFixed(2) });
+        return { success: true as const, amount, currency: input.currency };
+      }),
+
+    createDon: protectedProcedure
+      .input(z.object({
+        donateur: z.string().trim().min(2).max(255),
+        montant: z.union([z.string(), z.number()]),
+        currency: z.enum(["EUR", "XOF"]),
+        description: z.string().max(2000).optional(),
+        email: z.string().email().optional(),
+        telephone: z.string().max(30).optional(),
+        date: z.string().datetime().optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        await assertPermission(ctx.user, "finances.manage");
+        const amount = parseFinancialAmount(input.montant);
+        await createDon({ ...input, montant: amount.toFixed(2), date: input.date ?? new Date().toISOString() });
+        return { success: true as const, amount, currency: input.currency };
+      }),
+
+    createDepense: protectedProcedure
+      .input(z.object({
+        description: z.string().trim().min(2).max(255),
+        montant: z.union([z.string(), z.number()]),
+        currency: z.enum(["EUR", "XOF"]),
+        categorie: z.string().trim().min(2).max(100),
+        date: z.string().datetime().optional(),
+        notes: z.string().max(2000).optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        await assertPermission(ctx.user, "finances.manage");
+        const amount = parseFinancialAmount(input.montant);
+        await createDepense({ ...input, montant: amount.toFixed(2), date: input.date ?? new Date().toISOString() });
+        return { success: true as const, amount, currency: input.currency };
+      }),
+
+    convertAmount: protectedProcedure
+      .input(z.object({
+        amount: z.union([z.string(), z.number()]),
+        from: z.enum(["EUR", "XOF"]),
+        to: z.enum(["EUR", "XOF"]),
+      }))
+      .query(async ({ input, ctx }) => {
+        await assertPermission(ctx.user, "finances.view");
+        const amount = parseFinancialAmount(input.amount);
+        const converted = convertFinancialAmount(amount, input.from, input.to);
+        return {
+          amount,
+          converted,
+          from: input.from,
+          to: input.to,
+          formatted: formatFinancialAmount(converted, input.to),
+        };
+      }),
+
+    receipts: protectedProcedure
+      .input(z.object({ limit: z.number().int().min(1).max(100).optional() }).optional())
+      .query(async ({ input, ctx }) => {
+        await assertPermission(ctx.user, "finances.view");
+        return listTaxReceipts(input?.limit);
+      }),
+
+    issueReceipt: protectedProcedure
+      .input(z.object({
+        documentType: z.enum(["tax_receipt", "donation_certificate"]).default("tax_receipt"),
+        donorName: z.string().trim().min(2).max(255),
+        donorEmail: z.string().email().optional(),
+        amount: z.union([z.string(), z.number()]),
+        currency: z.enum(["EUR", "XOF"]),
+        donationDate: z.string().datetime(),
+        associationName: z.string().trim().min(2).max(255).default("Les Bâtisseurs Engagés"),
+        legalMention: z.string().trim().max(1000).optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        await assertPermission(ctx.user, "finances.manage");
+        const receipt = await createTaxReceipt({ ...input, issuedBy: ctx.user.id });
+        await logAudit({
+          userId: ctx.user.id,
+          action: "CREATE",
+          entityType: "finances",
+          entityId: receipt.id,
+          entityName: receipt.receiptNumber,
+          description: `${input.documentType === "tax_receipt" ? "Reçu fiscal" : "Certificat de don"} généré pour ${input.donorName}`,
+          newValue: JSON.stringify({ amount: receipt.amount, currency: receipt.currency }),
+          status: "success",
+        });
+        return receipt;
+      }),
     generateMembershipReminders: protectedProcedure.mutation(async ({ ctx }) => {
       await assertPermission(ctx.user, "finances.manage");
       return generateMembershipReminderNotifications();

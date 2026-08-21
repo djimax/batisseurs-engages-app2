@@ -7,7 +7,7 @@ describe('CurrencyContext', () => {
   });
 
   describe('Conversion Functions', () => {
-    it('should convert EUR to CFA correctly', () => {
+    it('should convert EUR to XOF correctly', () => {
       const DEFAULT_EXCHANGE_RATE = 655.957;
       const eurAmount = 100;
       const expectedCfa = eurAmount * DEFAULT_EXCHANGE_RATE;
@@ -15,10 +15,10 @@ describe('CurrencyContext', () => {
       expect(expectedCfa).toBeCloseTo(65595.7, 1);
     });
 
-    it('should convert CFA to EUR correctly', () => {
+    it('should convert XOF to EUR correctly', () => {
       const DEFAULT_EXCHANGE_RATE = 655.957;
-      const cfaAmount = 65595.7;
-      const expectedEur = cfaAmount / DEFAULT_EXCHANGE_RATE;
+      const xofAmount = 65595.7;
+      const expectedEur = xofAmount / DEFAULT_EXCHANGE_RATE;
       
       expect(expectedEur).toBeCloseTo(100, 1);
     });
@@ -77,7 +77,7 @@ describe('CurrencyContext', () => {
       expect(formatted).toBe('100.00 €');
     });
 
-    it('should format CFA with F symbol', () => {
+    it('should format XOF with F symbol', () => {
       const symbol = 'F';
       const amount = 65595.7;
       const formatted = `${amount.toFixed(2)} ${symbol}`;
@@ -107,17 +107,17 @@ describe('CurrencyContext', () => {
 
     it('should default to EUR if no currency saved', () => {
       const saved = localStorage.getItem('currency');
-      const defaultCurrency = (saved as 'EUR' | 'CFA') || 'EUR';
+      const defaultCurrency = (saved as 'EUR' | 'XOF') || 'EUR';
       
       expect(defaultCurrency).toBe('EUR');
     });
 
-    it('should switch between EUR and CFA', () => {
-      let currency: 'EUR' | 'CFA' = 'EUR';
+    it('should switch between EUR and XOF', () => {
+      let currency: 'EUR' | 'XOF' = 'EUR';
       expect(currency).toBe('EUR');
       
-      currency = 'CFA';
-      expect(currency).toBe('CFA');
+      currency = 'XOF';
+      expect(currency).toBe('XOF');
       
       currency = 'EUR';
       expect(currency).toBe('EUR');
@@ -128,25 +128,25 @@ describe('CurrencyContext', () => {
     it('should handle zero amounts', () => {
       const eurAmount = 0;
       const DEFAULT_EXCHANGE_RATE = 655.957;
-      const cfaAmount = eurAmount * DEFAULT_EXCHANGE_RATE;
+      const xofAmount = eurAmount * DEFAULT_EXCHANGE_RATE;
       
-      expect(cfaAmount).toBe(0);
+      expect(xofAmount).toBe(0);
     });
 
     it('should handle very large amounts', () => {
       const eurAmount = 1000000;
       const DEFAULT_EXCHANGE_RATE = 655.957;
-      const cfaAmount = eurAmount * DEFAULT_EXCHANGE_RATE;
+      const xofAmount = eurAmount * DEFAULT_EXCHANGE_RATE;
       
-      expect(cfaAmount).toBeCloseTo(655957000, -3);
+      expect(xofAmount).toBeCloseTo(655957000, -3);
     });
 
     it('should handle decimal precision', () => {
       const eurAmount = 0.01;
       const DEFAULT_EXCHANGE_RATE = 655.957;
-      const cfaAmount = eurAmount * DEFAULT_EXCHANGE_RATE;
+      const xofAmount = eurAmount * DEFAULT_EXCHANGE_RATE;
       
-      expect(cfaAmount).toBeCloseTo(6.56, 2);
+      expect(xofAmount).toBeCloseTo(6.56, 2);
     });
 
     it('should handle exchange rate reset', () => {

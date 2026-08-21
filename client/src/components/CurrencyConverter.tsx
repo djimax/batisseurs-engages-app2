@@ -9,20 +9,20 @@ import { toast } from 'sonner';
 export const CurrencyConverter: React.FC = () => {
   const { convertCurrency, exchangeRate, formatAmount } = useCurrency();
   const [eurAmount, setEurAmount] = useState('100');
-  const [cfaAmount, setCfaAmount] = useState('');
+  const [xofAmount, setXofAmount] = useState('');
 
   useEffect(() => {
     if (eurAmount) {
-      const converted = convertCurrency(parseFloat(eurAmount), 'EUR', 'CFA');
-      setCfaAmount(converted.toFixed(2));
+      const converted = convertCurrency(parseFloat(eurAmount), 'EUR', 'XOF');
+      setXofAmount(converted.toFixed(2));
     } else {
-      setCfaAmount('');
+      setXofAmount('');
     }
   }, [eurAmount, exchangeRate, convertCurrency]);
 
   const handleSwap = () => {
-    if (cfaAmount) {
-      setEurAmount(parseFloat(cfaAmount).toFixed(2));
+    if (xofAmount) {
+      setEurAmount(parseFloat(xofAmount).toFixed(2));
     }
   };
 
@@ -31,9 +31,9 @@ export const CurrencyConverter: React.FC = () => {
     toast.success('EUR copié dans le presse-papiers');
   };
 
-  const handleCopyCfa = () => {
-    navigator.clipboard.writeText(cfaAmount);
-    toast.success('CFA copié dans le presse-papiers');
+  const handleCopyXof = () => {
+    navigator.clipboard.writeText(xofAmount);
+    toast.success('XOF copié dans le presse-papiers');
   };
 
   return (
@@ -41,14 +41,14 @@ export const CurrencyConverter: React.FC = () => {
       <CardHeader>
         <CardTitle>Convertisseur de Devises</CardTitle>
         <CardDescription>
-          Convertissez automatiquement entre EUR et CFA
+          Convertissez automatiquement entre EUR et XOF
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
         {/* Exchange Rate Info */}
         <div className="bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-lg p-3">
           <p className="text-sm text-blue-900 dark:text-blue-100">
-            Taux de change: <strong>1 EUR = {exchangeRate.toFixed(3)} CFA</strong>
+            Taux de change: <strong>1 EUR = {exchangeRate.toFixed(3)} XOF</strong>
           </p>
         </div>
 
@@ -88,19 +88,19 @@ export const CurrencyConverter: React.FC = () => {
           </Button>
         </div>
 
-        {/* CFA Input */}
+        {/* XOF Input */}
         <div className="space-y-2">
-          <label className="text-sm font-medium">Montant en CFA</label>
+          <label className="text-sm font-medium">Montant en XOF</label>
           <div className="flex gap-2">
             <input
               type="number"
-              value={cfaAmount}
+              value={xofAmount}
               readOnly
               placeholder="0.00"
               className="flex-1 px-3 py-2 border border-input rounded-md bg-muted text-foreground"
             />
             <Button
-              onClick={handleCopyCfa}
+              onClick={handleCopyXof}
               variant="outline"
               size="sm"
               className="px-3"
@@ -113,7 +113,7 @@ export const CurrencyConverter: React.FC = () => {
         {/* Summary */}
         <div className="bg-green-50 dark:bg-green-950 border border-green-200 dark:border-green-800 rounded-lg p-3">
           <p className="text-sm text-green-900 dark:text-green-100">
-            <strong>{eurAmount || '0'} EUR</strong> = <strong>{cfaAmount || '0'} CFA</strong>
+            <strong>{eurAmount || '0'} EUR</strong> = <strong>{xofAmount || '0'} XOF</strong>
           </p>
         </div>
       </CardContent>

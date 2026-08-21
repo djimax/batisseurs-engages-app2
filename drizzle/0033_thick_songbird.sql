@@ -1,0 +1,1 @@
+ALTER TABLE `depenses` ADD `currency` enum('EUR','XOF') DEFAULT 'EUR' NOT NULL;

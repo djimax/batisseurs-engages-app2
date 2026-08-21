@@ -1686,3 +1686,15 @@
 ### Tests et Validation
 - [x] Créer un test unitaire dédié `server/member-status-history.test.ts`
 - [x] Valider tous les tests Vitest et la compilation de production
+
+## Phase 39 - Conformité Financière et Multi-devises (EUR / XOF)
+
+### Schéma et Procédure tRPC
+- [x] Vérifier la prise en charge des devises (EUR et XOF) dans les transactions et adhésions
+- [x] Créer des procédures tRPC pour le calcul des équivalences (taux fixe 1 EUR = 655.957 XOF)
+- [x] Automatiser l'émission de reçus fiscaux conformes avec numérotation unique et mention légale
+
+### Interface et Validation
+- [x] Ajouter un sélecteur de devise et l'affichage croisé EUR/XOF dans le module financier
+- [x] Permettre le téléchargement de reçus fiscaux et certificats de dons au format PDF/HTML
+- [x] Écrire un test unitaire `server/financial-multicurrency.test.ts` et valider l'ensemble

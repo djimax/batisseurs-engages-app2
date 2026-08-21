@@ -1,0 +1,1 @@
+ALTER TABLE `tax_receipts` ADD `documentType` enum('tax_receipt','donation_certificate') DEFAULT 'tax_receipt' NOT NULL;

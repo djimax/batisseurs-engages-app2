@@ -1,12 +1,15 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 
-export type Currency = 'EUR' | 'CFA';
+export type Currency = 'EUR' | 'XOF' | 'CFA';
+export type CanonicalCurrency = 'EUR' | 'XOF';
 
-// Taux de change par défaut : 1 EUR = 655.957 CFA (taux officiel BEAC)
+// Taux de change fixe de référence : 1 EUR = 655,957 XOF.
 const DEFAULT_EXCHANGE_RATE = 655.957;
 
+const normalizeCurrency = (value: Currency): CanonicalCurrency => value === 'EUR' ? 'EUR' : 'XOF';
+
 interface CurrencyContextType {
-  currency: Currency;
+  currency: CanonicalCurrency;
   setCurrency: (currency: Currency) => void;
   symbol: string;
   formatAmount: (amount: number) => string;
@@ -19,9 +22,9 @@ interface CurrencyContextType {
 const CurrencyContext = createContext<CurrencyContextType | undefined>(undefined);
 
 export const CurrencyProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [currency, setCurrencyState] = useState<Currency>(() => {
+  const [currency, setCurrencyState] = useState<CanonicalCurrency>(() => {
     const saved = localStorage.getItem('currency');
-    return (saved as Currency) || 'EUR';
+    return saved === 'XOF' || saved === 'CFA' ? 'XOF' : 'EUR';
   });
 
   const [exchangeRate, setExchangeRateState] = useState<number>(() => {
@@ -37,22 +40,22 @@ export const CurrencyProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     localStorage.setItem('exchangeRate', exchangeRate.toString());
   }, [exchangeRate]);
 
-  const symbol = currency === 'EUR' ? '€' : 'F';
+  const symbol = currency === 'EUR' ? '€' : 'F CFA';
 
   const formatAmount = (amount: number): string => {
     const formatted = new Intl.NumberFormat('fr-FR', {
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
+      minimumFractionDigits: currency === 'EUR' ? 2 : 0,
+      maximumFractionDigits: currency === 'EUR' ? 2 : 0,
     }).format(amount);
     return `${formatted} ${symbol}`;
   };
 
   const setCurrency = (newCurrency: Currency) => {
-    setCurrencyState(newCurrency);
+    setCurrencyState(normalizeCurrency(newCurrency));
   };
 
   const setExchangeRate = (rate: number) => {
-    if (rate > 0) {
+    if (rate > 0 && Number.isFinite(rate)) {
       setExchangeRateState(rate);
     }
   };
@@ -62,28 +65,23 @@ export const CurrencyProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   };
 
   const convertCurrency = (amount: number, from: Currency, to: Currency): number => {
-    if (from === to) return amount;
-    
-    if (from === 'EUR' && to === 'CFA') {
-      return amount * exchangeRate;
-    } else if (from === 'CFA' && to === 'EUR') {
-      return amount / exchangeRate;
-    }
-    
-    return amount;
+    const normalizedFrom = normalizeCurrency(from);
+    const normalizedTo = normalizeCurrency(to);
+    if (normalizedFrom === normalizedTo) return amount;
+    return normalizedFrom === 'EUR' ? amount * exchangeRate : amount / exchangeRate;
   };
 
   return (
-    <CurrencyContext.Provider 
-      value={{ 
-        currency, 
-        setCurrency, 
-        symbol, 
+    <CurrencyContext.Provider
+      value={{
+        currency,
+        setCurrency,
+        symbol,
         formatAmount,
         exchangeRate,
         setExchangeRate,
         resetExchangeRate,
-        convertCurrency
+        convertCurrency,
       }}
     >
       {children}
@@ -94,7 +92,7 @@ export const CurrencyProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 export const useCurrency = () => {
   const context = useContext(CurrencyContext);
   if (!context) {
-    throw new Error('useCurrency must be used within a CurrencyProvider');
+    throw new Error('useCurrency must be used within CurrencyProvider');
   }
   return context;
 };

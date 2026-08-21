@@ -105,13 +105,13 @@ export default function Settings() {
       return;
     }
     setExchangeRate(rate);
-    toast.success(`Taux de change mis a jour: 1 EUR = ${rate.toFixed(3)} CFA`);
+    toast.success(`Taux de change mis a jour: 1 EUR = ${rate.toFixed(3)} XOF`);
   };
 
   const handleResetExchangeRate = () => {
     resetExchangeRate();
     setNewExchangeRate('655.957');
-    toast.success('Taux de change reinitialise au taux par defaut (1 EUR = 655.957 CFA)');
+    toast.success('Taux de change reinitialise au taux par defaut (1 EUR = 655.957 XOF)');
   };
 
   useEffect(() => {
@@ -350,19 +350,19 @@ export default function Settings() {
             </Button>
             <Button
               onClick={() => {
-                setCurrency('CFA');
-                toast.success('Devise changée en CFA (F)');
+                setCurrency('XOF');
+                toast.success('Devise changée en XOF (F)');
               }}
-              variant={currency === 'CFA' ? 'default' : 'outline'}
+              variant={currency === 'XOF' ? 'default' : 'outline'}
               size="lg"
               className="w-full"
             >
-              <span className="mr-2">F</span> CFA
+              <span className="mr-2">F</span> XOF
             </Button>
           </div>
           <div className="bg-primary/5 border border-primary/15 rounded-lg p-4">
             <p className="text-sm text-primary">
-              Devise sélectionnée: <strong>{currency === 'EUR' ? 'Euro (€)' : 'CFA (F)'}</strong>
+              Devise sélectionnée: <strong>{currency === 'EUR' ? 'Euro (€)' : 'XOF (F)'}</strong>
             </p>
           </div>
         </CardContent>
@@ -376,18 +376,18 @@ export default function Settings() {
             Taux de Change
           </CardTitle>
           <CardDescription>
-            Gerez le taux de change EUR/CFA pour les conversions automatiques
+            Gerez le taux de change EUR/XOF pour les conversions automatiques
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="bg-primary/5 border border-primary/15 rounded-lg p-4">
             <p className="text-sm text-primary">
-              Taux actuel: <strong>1 EUR = {exchangeRate.toFixed(3)} CFA</strong>
+              Taux actuel: <strong>1 EUR = {exchangeRate.toFixed(3)} XOF</strong>
             </p>
           </div>
           
           <div className="space-y-3">
-            <label className="text-sm font-medium">Nouveau taux de change (1 EUR = ? CFA)</label>
+            <label className="text-sm font-medium">Nouveau taux de change (1 EUR = ? XOF)</label>
             <div className="flex gap-2">
               <input
                 type="number"
@@ -417,7 +417,7 @@ export default function Settings() {
 
           <div className="bg-accent/10 border border-accent/20 rounded-lg p-4">
             <p className="text-xs text-accent-foreground">
-              Le taux de change est utilise pour convertir automatiquement les montants entre EUR et CFA dans toute l'application.
+              Le taux de change est utilise pour convertir automatiquement les montants entre EUR et XOF dans toute l'application.
             </p>
           </div>
         </CardContent>

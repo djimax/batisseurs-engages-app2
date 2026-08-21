@@ -227,6 +227,7 @@ export const cotisations = mysqlTable("cotisations", {
 	id: int().autoincrement().notNull(),
 	memberId: int().notNull(),
 	montant: varchar({ length: 20 }).notNull(),
+	currency: mysqlEnum(['EUR', 'XOF']).default('EUR').notNull(),
 	dateDebut: timestamp({ mode: 'string' }).notNull(),
 	dateFin: timestamp({ mode: 'string' }).notNull(),
 	statut: mysqlEnum(['payée','en attente','en retard']).default('en attente').notNull(),
@@ -311,6 +312,7 @@ export const depenses = mysqlTable("depenses", {
 	id: int().autoincrement().notNull(),
 	description: varchar({ length: 255 }).notNull(),
 	montant: varchar({ length: 20 }).notNull(),
+	currency: mysqlEnum(['EUR', 'XOF']).default('EUR').notNull(),
 	categorie: varchar({ length: 100 }).notNull(),
 	date: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
 	approuvePar: int(),
@@ -363,6 +365,7 @@ export const dons = mysqlTable("dons", {
 	id: int().autoincrement().notNull(),
 	donateur: varchar({ length: 255 }).notNull(),
 	montant: varchar({ length: 20 }).notNull(),
+	currency: mysqlEnum(['EUR', 'XOF']).default('EUR').notNull(),
 	description: text(),
 	email: varchar({ length: 320 }),
 	telephone: varchar({ length: 20 }),
@@ -751,11 +754,12 @@ export const roles = mysqlTable("roles", {
 	index("roles_name_unique").on(table.name),
 ]);
 
-export const transactions = mysqlTable("transactions", {
-	id: int().autoincrement().notNull(),
-	type: mysqlEnum(['cotisation','don','depense','autre']).notNull(),
-	montant: varchar({ length: 20 }).notNull(),
-	description: varchar({ length: 255 }).notNull(),
+	export const transactions = mysqlTable("transactions", {
+		id: int().autoincrement().notNull(),
+		type: mysqlEnum(['cotisation','don','depense','autre']).notNull(),
+		montant: varchar({ length: 20 }).notNull(),
+		currency: mysqlEnum(['EUR', 'XOF']).default('EUR').notNull(),
+		description: varchar({ length: 255 }).notNull(),
 	date: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
 	memberId: int(),
 	referenceId: int(),
@@ -822,6 +826,7 @@ export const financialExpenses = mysqlTable("financial_expenses", {
 export const taxReceipts = mysqlTable("tax_receipts", {
 	id: int().autoincrement().notNull(),
 	receiptNumber: varchar({ length: 100 }).notNull(),
+	documentType: mysqlEnum(['tax_receipt','donation_certificate']).default('tax_receipt').notNull(),
 	donorName: varchar({ length: 255 }).notNull(),
 	donorEmail: varchar({ length: 320 }),
 	amount: varchar({ length: 20 }).notNull(),

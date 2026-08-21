@@ -553,6 +553,17 @@ export async function getTransactions() {
 
 // ============ STATISTIQUES FINANCIÈRES ============
 
+const EUR_TO_XOF_REFERENCE = 655.957;
+const toEurReference = (amount: string | number, currency: "EUR" | "XOF" | "CFA" = "EUR") => {
+  const value = typeof amount === "number" ? amount : Number.parseFloat(amount || "0");
+  return currency === "EUR" ? value : value / EUR_TO_XOF_REFERENCE;
+};
+
+const addByCurrency = (bucket: { EUR: number; XOF: number }, amount: string | number, currency: "EUR" | "XOF" | "CFA" = "EUR") => {
+  const normalized = currency === "EUR" ? "EUR" : "XOF";
+  bucket[normalized] += typeof amount === "number" ? amount : Number.parseFloat(amount || "0");
+};
+
 export async function getFinancialStats() {
   const db = await getDb();
   if (!db) return null;
@@ -560,10 +571,16 @@ export async function getFinancialStats() {
   const allCotisations = await db.select().from(cotisations);
   const allDons = await db.select().from(dons);
   const allDepenses = await db.select().from(depenses);
+  const cotisationsByCurrency = { EUR: 0, XOF: 0 };
+  const donsByCurrency = { EUR: 0, XOF: 0 };
+  const depensesByCurrency = { EUR: 0, XOF: 0 };
   
-  const totalCotisations = allCotisations.reduce((sum, c) => sum + parseFloat(c.montant), 0);
-  const totalDons = allDons.reduce((sum, d) => sum + parseFloat(d.montant), 0);
-  const totalDepenses = allDepenses.reduce((sum, d) => sum + parseFloat(d.montant), 0);
+  allCotisations.forEach((item) => addByCurrency(cotisationsByCurrency, item.montant, item.currency));
+  allDons.forEach((item) => addByCurrency(donsByCurrency, item.montant, item.currency));
+  allDepenses.forEach((item) => addByCurrency(depensesByCurrency, item.montant, item.currency));
+  const totalCotisations = allCotisations.reduce((sum, c) => sum + toEurReference(c.montant, c.currency), 0);
+  const totalDons = allDons.reduce((sum, d) => sum + toEurReference(d.montant, d.currency), 0);
+  const totalDepenses = allDepenses.reduce((sum, d) => sum + toEurReference(d.montant, d.currency), 0);
   
   const cotisationsPayees = allCotisations.filter(c => c.statut === "payée").length;
   const cotisationsEnAttente = allCotisations.filter(c => c.statut === "en attente").length;
@@ -574,6 +591,8 @@ export async function getFinancialStats() {
     totalDons,
     totalDepenses,
     solde: totalCotisations + totalDons - totalDepenses,
+    currency: "EUR" as const,
+    byCurrency: { cotisations: cotisationsByCurrency, dons: donsByCurrency, depenses: depensesByCurrency },
     cotisationsPayees,
     cotisationsEnAttente,
     cotisationsEnRetard,
@@ -1330,24 +1349,23 @@ export async function getFinanceStatistics() {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
 
-  const [
+  const [allCotisations, allDons, allDepenses] = await Promise.all([
+    db.select().from(cotisations),
+    db.select().from(dons),
+    db.select().from(depenses),
+  ]);
+  const totalCotisations = allCotisations.reduce((sum, item) => sum + toEurReference(item.montant, item.currency), 0);
+  const paidCotisations = allCotisations.filter((item) => item.statut === "payée").reduce((sum, item) => sum + toEurReference(item.montant, item.currency), 0);
+  const totalDons = allDons.reduce((sum, item) => sum + toEurReference(item.montant, item.currency), 0);
+  const totalDepenses = allDepenses.reduce((sum, item) => sum + toEurReference(item.montant, item.currency), 0);
+
+  return {
     totalCotisations,
     paidCotisations,
     totalDons,
     totalDepenses,
-  ] = await Promise.all([
-    db.select({ total: sql<number>`COALESCE(SUM(CAST(montant AS DECIMAL(10,2))), 0)` }).from(cotisations),
-    db.select({ total: sql<number>`COALESCE(SUM(CAST(montant AS DECIMAL(10,2))), 0)` }).from(cotisations).where(eq(cotisations.statut, "payée")),
-    db.select({ total: sql<number>`COALESCE(SUM(CAST(montant AS DECIMAL(10,2))), 0)` }).from(dons),
-    db.select({ total: sql<number>`COALESCE(SUM(CAST(montant AS DECIMAL(10,2))), 0)` }).from(depenses),
-  ]);
-
-  return {
-    totalCotisations: totalCotisations[0]?.total || 0,
-    paidCotisations: paidCotisations[0]?.total || 0,
-    totalDons: totalDons[0]?.total || 0,
-    totalDepenses: totalDepenses[0]?.total || 0,
-    balance: (paidCotisations[0]?.total || 0) + (totalDons[0]?.total || 0) - (totalDepenses[0]?.total || 0),
+    currency: "EUR" as const,
+    balance: paidCotisations + totalDons - totalDepenses,
   };
 }
 

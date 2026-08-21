@@ -3,7 +3,7 @@ import { useFormatAmount } from '@/hooks/useFormatAmount';
 
 interface AmountDisplayProps {
   amount: number;
-  sourceCurrency?: 'EUR' | 'CFA';
+  sourceCurrency?: 'EUR' | 'XOF' | 'CFA';
   showEquivalent?: boolean;
   decimals?: number;
   className?: string;
@@ -38,7 +38,7 @@ export const AmountDisplay: React.FC<AmountDisplayProps> = ({
 
 interface AmountWithEquivalentProps {
   amount: number;
-  sourceCurrency?: 'EUR' | 'CFA';
+  sourceCurrency?: 'EUR' | 'XOF' | 'CFA';
   decimals?: number;
   className?: string;
   label?: string;
@@ -71,7 +71,7 @@ export const AmountWithEquivalent: React.FC<AmountWithEquivalentProps> = ({
 
 interface AmountTableCellProps {
   amount: number;
-  sourceCurrency?: 'EUR' | 'CFA';
+  sourceCurrency?: 'EUR' | 'XOF' | 'CFA';
   showEquivalent?: boolean;
   decimals?: number;
 }
