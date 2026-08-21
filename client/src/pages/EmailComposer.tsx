@@ -48,37 +48,14 @@ export default function EmailComposer() {
   const [excludedMemberIds, setExcludedMemberIds] = useState<number[]>([]);
 
   const { data: templates, isLoading: templatesLoading } = trpc.email.templates.list.useQuery();
-  const { data: members } = trpc.members.list.useQuery();
+  const recipientFilter = useMemo(() => ({
+    roles: selectedRoles.length > 0 ? selectedRoles : undefined,
+    statuses: selectedStatuses.length > 0 ? selectedStatuses : undefined,
+    excludeNoEmail,
+    excludedMemberIds: excludedMemberIds.length > 0 ? excludedMemberIds : undefined,
+  }), [selectedRoles, selectedStatuses, excludeNoEmail, excludedMemberIds]);
+  const { data: filteredRecipients = [], isFetching: recipientsLoading } = trpc.email.getFilteredRecipients.useQuery(recipientFilter);
   const sendEmailMutation = trpc.email.sendMassEmail.useMutation();
-
-  // Calculer les destinataires filtrés
-  const filteredRecipients = useMemo(() => {
-    if (!members) return [];
-    
-    return members.filter((member) => {
-      // Filtre par rôle
-      if (selectedRoles.length > 0 && !selectedRoles.includes(member.role || "member")) {
-        return false;
-      }
-      
-      // Filtre par statut
-      if (selectedStatuses.length > 0 && !selectedStatuses.includes(member.status || "active")) {
-        return false;
-      }
-      
-      // Exclure les membres sans email
-      if (excludeNoEmail && !member.email) {
-        return false;
-      }
-      
-      // Exclure les membres sélectionnés
-      if (excludedMemberIds.includes(member.id)) {
-        return false;
-      }
-      
-      return true;
-    });
-  }, [members, selectedRoles, selectedStatuses, excludeNoEmail, excludedMemberIds]);
 
   const handleLoadTemplate = (id: string) => {
     if (id === "new") {
@@ -133,6 +110,7 @@ export default function EmailComposer() {
         subject,
         content,
         templateId: templateId && templateId !== "new" ? parseInt(templateId) : undefined,
+        recipientFilter,
       });
 
       if (result.success) {
@@ -329,7 +307,7 @@ export default function EmailComposer() {
               <CardHeader>
                 <CardTitle className="text-lg">Aperçu des Destinataires</CardTitle>
                 <CardDescription>
-                  {filteredRecipients.length} destinataire(s) recevront cet email
+                  {recipientsLoading ? "Mise à jour des destinataires…" : `${filteredRecipients.length} destinataire(s) recevront cet email`}
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -384,7 +362,7 @@ export default function EmailComposer() {
           <div className="flex gap-2">
             <Button
               onClick={handleSendEmail}
-              disabled={isLoading || !subject.trim() || !content.trim() || filteredRecipients.length === 0}
+              disabled={isLoading || recipientsLoading || !subject.trim() || !content.trim() || filteredRecipients.length === 0}
               className="w-full sm:w-auto"
             >
               {isLoading ? (

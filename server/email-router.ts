@@ -3,7 +3,7 @@ import {
   getEmailTemplates, getEmailTemplateById, createEmailTemplate, updateEmailTemplate, deleteEmailTemplate,
   getEmailHistory, getEmailHistoryById, createEmailHistory, updateEmailHistory,
   getEmailRecipients, createEmailRecipient, updateEmailRecipient,
-  getAllMembers,
+  getAllMembers, getFilteredMembers,
   createPasswordResetRequest, listPasswordResetRequests, updatePasswordResetRequest, getPasswordResetRequest,
 } from "./db";
 import { logAudit } from "./audit";
@@ -93,6 +93,26 @@ export const emailRouter = router({
       }),
   }),
 
+  // Recipient targeting
+  getFilteredRecipients: protectedProcedure
+    .input(z.object({
+      roles: z.array(z.string().min(1)).max(20).optional(),
+      statuses: z.array(z.string().min(1)).max(20).optional(),
+      excludeNoEmail: z.boolean().optional(),
+      excludedMemberIds: z.array(z.number().int().positive()).max(500).optional(),
+    }))
+    .query(async ({ input }) => {
+      const members = await getFilteredMembers(input);
+      return members.map((member) => ({
+        id: member.id,
+        firstName: member.firstName,
+        lastName: member.lastName,
+        email: member.email,
+        role: member.role,
+        status: member.status,
+      }));
+    }),
+
   // Send mass emails
   sendMassEmail: protectedProcedure
     .input(z.object({
@@ -100,13 +120,15 @@ export const emailRouter = router({
       content: z.string().min(1),
       templateId: z.number().optional(),
       recipientFilter: z.object({
-        role: z.string().optional(),
-        status: z.string().optional(),
+        roles: z.array(z.string().min(1)).max(20).optional(),
+        statuses: z.array(z.string().min(1)).max(20).optional(),
+        excludeNoEmail: z.boolean().optional(),
+        excludedMemberIds: z.array(z.number().int().positive()).max(500).optional(),
       }).optional(),
     }))
     .mutation(async ({ input, ctx }) => {
       try {
-        const members = await getAllMembers();
+        const members = await getFilteredMembers(input.recipientFilter);
         if (members.length === 0) {
           return {
             success: false,

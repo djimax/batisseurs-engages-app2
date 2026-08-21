@@ -991,31 +991,31 @@
 
 ### Sélection des Catégories de Membres
 - [ ] Ajouter un sélecteur de catégories dans EmailComposer
-- [ ] Permettre la sélection multiple des rôles (Admin, Président, Secrétaire, Trésorier, Membre)
-- [ ] Permettre la sélection par statut (Actif, Inactif, En attente)
+- [x] Permettre la sélection multiple des rôles (Admin, Président, Secrétaire, Trésorier, Membre)
+- [x] Permettre la sélection par statut (Actif, Inactif, En attente)
 - [ ] Afficher le nombre de destinataires par catégorie
 
 ### Filtres d'Exclusion
-- [ ] Ajouter la possibilité d'exclure des membres spécifiques
-- [ ] Ajouter un filtre pour exclure les membres sans email
-- [ ] Ajouter un filtre pour exclure les membres inactifs
+- [x] Ajouter la possibilité d'exclure des membres spécifiques
+- [x] Ajouter un filtre pour exclure les membres sans email
+- [x] Ajouter un filtre pour exclure les membres inactifs
 - [ ] Afficher la liste des membres exclus
 
 ### Aperçu des Destinataires
-- [ ] Afficher la liste complète des destinataires avant envoi
-- [ ] Afficher le nombre total de destinataires
-- [ ] Permettre de modifier la sélection avant envoi
-- [ ] Afficher les emails des destinataires
+- [x] Afficher la liste complète des destinataires avant envoi
+- [x] Afficher le nombre total de destinataires
+- [x] Permettre de modifier la sélection avant envoi
+- [x] Afficher les emails des destinataires
 
 ### Procédures tRPC
-- [ ] Mettre à jour emails.sendMassEmail pour supporter les filtres
-- [ ] Créer une procédure pour récupérer les destinataires filtrés
-- [ ] Ajouter la validation des filtres
+- [x] Mettre à jour emails.sendMassEmail pour supporter les filtres
+- [x] Créer une procédure pour récupérer les destinataires filtrés
+- [x] Ajouter la validation des filtres
 
 ### Tests
-- [ ] Tester la sélection des catégories
-- [ ] Tester les filtres d'exclusion
-- [ ] Tester l'aperçu des destinataires
+- [x] Tester la sélection des catégories
+- [x] Tester les filtres d'exclusion
+- [x] Tester l'aperçu des destinataires
 
 
 ## Phase 32 - Fonctionnalités Avancées CRM

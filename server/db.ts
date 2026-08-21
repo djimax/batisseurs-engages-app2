@@ -1718,3 +1718,26 @@ export async function deleteNewsComment(id: number, authorId?: number) {
   const conditions = authorId ? and(eq(newsComments.id, id), eq(newsComments.authorId, authorId)) : eq(newsComments.id, id);
   await db.delete(newsComments).where(conditions);
 }
+
+
+export type MemberRecipientFilters = {
+  roles?: string[];
+  statuses?: string[];
+  excludeNoEmail?: boolean;
+  excludedMemberIds?: number[];
+};
+
+export async function getFilteredMembers(filters: MemberRecipientFilters = {}) {
+  const membersList = await getAllMembers();
+  const roles = filters.roles?.filter(Boolean) ?? [];
+  const statuses = filters.statuses?.filter(Boolean) ?? [];
+  const excludedIds = new Set(filters.excludedMemberIds ?? []);
+
+  return membersList.filter((member) => {
+    if (roles.length > 0 && !roles.includes(member.role ?? "member")) return false;
+    if (statuses.length > 0 && !statuses.includes(member.status)) return false;
+    if (filters.excludeNoEmail && !member.email) return false;
+    if (excludedIds.has(member.id)) return false;
+    return true;
+  });
+}
