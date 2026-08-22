@@ -11,7 +11,7 @@ import {
   getAllCategories, getCategoryById, createCategory, seedDefaultCategories,
   getAllDocuments, getDocumentById, createDocument, updateDocument, deleteDocument, getDocumentStats, seedDefaultDocuments,
   getNotesByDocumentId, createNote, deleteNote,
-  getAllMembers, getMemberById, createMember, updateMember, deleteMember,
+  getAllMembers, getAllMembersWithGrades, getMemberById, createMember, updateMember, deleteMember,
   logActivity, getRecentActivity,
   createCotisation, getCotisations, getCotisationsByMember, updateCotisation,
   getMembershipFeeRules, getActiveMembershipFeeRule, createMembershipFeeRule,
@@ -542,7 +542,7 @@ export const appRouter = router({
 
   // ============ MEMBERS ============
   members: router({
-    list: protectedProcedure.query(async () => getAllMembers()),
+    list: protectedProcedure.query(async () => getAllMembersWithGrades()),
 
     directory: protectedProcedure
       .input(z.object({

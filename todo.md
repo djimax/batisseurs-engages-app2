@@ -1784,4 +1784,23 @@
 - [x] Afficher le seuil minimal et un résumé des responsabilités dans chaque infobulle
 - [x] Garantir la compatibilité clavier, le contraste et le responsive
 - [x] Ajouter un test de contrat et valider Vitest et la build de production
-- [ ] Sauvegarder l’intégration validée dans un checkpoint
+- [x] Sauvegarder l’intégration validée dans un checkpoint
+
+
+## Filtrage interactif par grade
+- [x] Rendre chaque barre du graphique activable par clic et par clavier
+- [x] Transmettre le grade sélectionné vers la liste des membres
+- [x] Afficher le filtre actif et une action pour revenir à tous les membres
+- [x] Préserver recherche, tri, pagination et état vide lors du filtrage
+- [x] Ajouter un test de contrat et valider Vitest et la build de production
+- [x] Sauvegarder l’intégration validée dans un checkpoint
+
+## Phase 18 - Filtrage interactif par grade
+
+- [x] Préserver le contrat typé de `getAllMembers` et isoler la liste enrichie de grades
+- [x] Exposer le grade actuel dans `members.list` sans régression des autres procédures
+- [x] Naviguer du graphique de grades vers `/members?grade=...`
+- [x] Appliquer le filtre de grade dans la liste des membres
+- [x] Afficher une action claire pour retirer le filtre actif
+- [x] Ajouter les tests de contrat du parcours clic → filtre → réinitialisation
+- [x] Valider TypeScript, tests Vitest, build et rendu responsive du parcours

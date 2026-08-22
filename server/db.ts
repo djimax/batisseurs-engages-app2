@@ -381,6 +381,20 @@ export async function getAllMembers() {
   return db.select().from(members).orderBy(asc(members.lastName));
 }
 
+export async function getAllMembersWithGrades() {
+  const db = await getDb();
+  if (!db) return [];
+  const rows = await db
+    .select()
+    .from(members)
+    .leftJoin(memberGrades, eq(memberGrades.memberId, members.id))
+    .orderBy(asc(members.lastName));
+  return rows.map(({ members: member, member_grades: grade }) => ({
+    ...member,
+    grade: grade?.currentGrade ?? null,
+  }));
+}
+
 export async function getMemberById(id: number) {
   const db = await getDb();
   if (!db) return undefined;

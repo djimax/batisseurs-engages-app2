@@ -3,6 +3,7 @@ import { ExportPDF } from "@/components/ExportPDF";
 import { HeroSection } from "@/components/HeroSection";
 import { Pagination } from "@/components/Pagination";
 import { trpc } from "@/lib/trpc";
+import { useLocation } from "wouter";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -55,7 +56,8 @@ import {
   Shield,
   Lock,
   Copy,
-  Award
+  Award,
+  X
 } from "lucide-react";
 import { generateMemberId } from "@/../../shared/memberIdGenerator";
 import { canAssignMemberGrade, getMemberGradeLevel, MEMBER_GRADE_LEVELS } from "@/../../shared/memberProgression";
@@ -92,6 +94,9 @@ const getMembershipCategory = (value?: string | null) => MEMBERSHIP_CATEGORIES.f
 
 export default function Members() {
   const utils = trpc.useUtils();
+  const [location, setLocation] = useLocation();
+  const gradeFromUrl = new URLSearchParams(location.split("?")[1] || "").get("grade");
+  const selectedGradeFilter = MEMBER_GRADE_LEVELS.some((grade) => grade.value === gradeFromUrl) ? gradeFromUrl : null;
   const [searchTerm, setSearchTerm] = useState("");
   const [sortBy, setSortBy] = useState<string>("name-asc");
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
@@ -294,14 +299,16 @@ export default function Members() {
     }
   };
 
+  const activeGrade = selectedGradeFilter ? getMemberGradeLevel(selectedGradeFilter) : null;
+
   const filteredMembers = (members?.filter(member => {
     const searchLower = searchTerm.toLowerCase();
-    return (
-      member.firstName.toLowerCase().includes(searchLower) ||
-      member.lastName.toLowerCase().includes(searchLower) ||
-      (member.email && member.email.toLowerCase().includes(searchLower)) ||
-      (member.role && member.role.toLowerCase().includes(searchLower))
-    );
+    const matchesSearch = member.firstName.toLowerCase().includes(searchLower)
+      || member.lastName.toLowerCase().includes(searchLower)
+      || (member.email && member.email.toLowerCase().includes(searchLower))
+      || (member.role && member.role.toLowerCase().includes(searchLower));
+    const matchesGrade = !selectedGradeFilter || member.grade === selectedGradeFilter;
+    return matchesSearch && matchesGrade;
   }) || []).sort((a, b) => {
     switch (sortBy) {
       case "name-asc":
@@ -449,15 +456,33 @@ export default function Members() {
                 </SelectContent>
               </Select>
             </div>
-          </div>
+                    </div>
+          {activeGrade && (
+            <div className="mt-4 flex flex-wrap items-center gap-2 rounded-lg border border-primary/20 bg-primary/5 px-3 py-2 text-sm">
+              <span className="text-muted-foreground">Filtre grade actif :</span>
+              <Badge className="bg-primary/10 text-primary hover:bg-primary/15">{activeGrade.label}</Badge>
+              <span className="text-xs text-muted-foreground">{activeGrade.minimumScore}/100 minimum</span>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="ml-auto h-8 gap-1.5 text-muted-foreground hover:text-foreground"
+                onClick={() => setLocation("/members")}
+              >
+                <X className="h-3.5 w-3.5" />
+                Afficher tous les membres
+              </Button>
+            </div>
+          )}
         </CardContent>
       </Card>
-
       {/* Members Table */}
       <Card>
         <CardHeader>
           <CardTitle>Liste des membres</CardTitle>
-          <CardDescription>{filteredMembers.length} membre(s) trouvé(s)</CardDescription>
+          <CardDescription>
+            {filteredMembers.length} membre(s) trouvé(s){activeGrade ? ` · grade ${activeGrade.label}` : ""}
+          </CardDescription>
         </CardHeader>
         <CardContent>
           {isLoading ? (

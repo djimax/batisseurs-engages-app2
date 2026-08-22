@@ -35,6 +35,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
+import { useLocation } from "wouter";
 
 const DEFAULT_WIDGETS: Widget[] = [
   { id: "documents-stat", title: "Documents", type: "statistic", visible: true, position: 0 },
@@ -50,6 +51,7 @@ const DEFAULT_WIDGETS: Widget[] = [
 const STORAGE_KEY = "dashboard-widgets-config";
 
 export default function Dashboard() {
+  const [, setLocation] = useLocation();
   const [widgets, setWidgets] = useState<Widget[]>(DEFAULT_WIDGETS);
   const [isEditMode, setIsEditMode] = useState(false);
   const [draggedWidget, setDraggedWidget] = useState<string | null>(null);
@@ -88,6 +90,10 @@ export default function Dashboard() {
     { label: "Dons", collected: Number(globalSummary.finance.totalDons ?? 0), expenses: 0 },
     { label: "Dépenses", collected: 0, expenses: Number(globalSummary.finance.totalDepenses ?? 0) },
   ] : [];
+
+  const handleGradeSelect = (grade: string) => {
+    setLocation(`/members?grade=${encodeURIComponent(grade)}`);
+  };
 
   const handleRemoveWidget = (widgetId: string) => {
     const updated = widgets.map((w) =>
@@ -463,6 +469,7 @@ export default function Dashboard() {
                 >
                   <MemberGradesChartWidget
                     gradesBreakdown={membersStats?.gradesBreakdown || {}}
+                    onSelectGrade={handleGradeSelect}
                     onRemove={isEditMode ? () => handleRemoveWidget(widget.id) : undefined}
                     isDragging={draggedWidget === widget.id}
                   />

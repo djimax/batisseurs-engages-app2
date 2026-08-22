@@ -8,12 +8,14 @@ import { MEMBER_GRADE_LEVELS } from "../../../shared/memberProgression";
 interface MemberGradesChartWidgetProps {
   gradesBreakdown?: Record<string, number>;
   onRemove?: () => void;
+  onSelectGrade?: (grade: string) => void;
   isDragging?: boolean;
 }
 
 export function MemberGradesChartWidget({
   gradesBreakdown = {},
   onRemove,
+  onSelectGrade,
   isDragging,
 }: MemberGradesChartWidgetProps) {
   const totalEvaluated = Object.values(gradesBreakdown).reduce((a, b) => a + b, 0);
@@ -48,10 +50,11 @@ export function MemberGradesChartWidget({
               return (
                 <Tooltip key={grade.value}>
                   <TooltipTrigger asChild>
-                    <div
-                      tabIndex={0}
-                      aria-label={`${grade.label} : seuil minimal ${grade.minimumScore} sur 100`}
-                      className="space-y-1.5 rounded-md outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                    <button
+                      type="button"
+                      onClick={() => onSelectGrade?.(grade.value)}
+                      aria-label={`${grade.label} : seuil minimal ${grade.minimumScore} sur 100. Cliquer pour filtrer les membres.`}
+                      className="block w-full space-y-1.5 rounded-md text-left outline-none transition-colors hover:bg-primary/5 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                     >
                       <div className="flex items-center justify-between text-sm">
                         <span className="font-medium flex items-center gap-2">
@@ -69,7 +72,7 @@ export function MemberGradesChartWidget({
                           style={{ width: `${percentage}%` }}
                         />
                       </div>
-                    </div>
+                    </button>
                   </TooltipTrigger>
                   <TooltipContent side="top" className="max-w-xs space-y-1">
                     <p className="font-semibold">{grade.label} · minimum {grade.minimumScore}/100</p>
