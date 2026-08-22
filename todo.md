@@ -1771,9 +1771,17 @@
 
 
 ## Graphique de répartition des grades sur le tableau de bord
-- [ ] Ajouter la fonction d’agrégation des membres par grade dans server/db.ts
-- [ ] Exposer les statistiques de grades dans la procédure dashboard.members de server/routers.ts
-- [ ] Créer le composant de visualisation graphique ou de barres de répartition par grade dans le tableau de bord principal
-- [ ] Gérer l’état vide lorsque aucun grade n’est encore attribué
-- [ ] Ajouter un test de non-régression et valider avec Vitest et la build de production
+- [x] Ajouter la fonction d’agrégation des membres par grade dans server/db.ts
+- [x] Exposer les statistiques de grades dans la procédure dashboard.members de server/routers.ts
+- [x] Créer le composant de visualisation graphique ou de barres de répartition par grade dans le tableau de bord principal
+- [x] Gérer l’état vide lorsque aucun grade n’est encore attribué
+- [x] Ajouter un test de non-régression et valider avec Vitest et la build de production
+- [x] Sauvegarder l’intégration validée dans un checkpoint
+
+
+## Infobulles des critères de grade
+- [x] Ajouter une infobulle au survol et à la mise au focus de chaque barre de grade
+- [x] Afficher le seuil minimal et un résumé des responsabilités dans chaque infobulle
+- [x] Garantir la compatibilité clavier, le contraste et le responsive
+- [x] Ajouter un test de contrat et valider Vitest et la build de production
 - [ ] Sauvegarder l’intégration validée dans un checkpoint

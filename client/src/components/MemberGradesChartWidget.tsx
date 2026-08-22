@@ -2,6 +2,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Award, X } from "lucide-react";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { MEMBER_GRADE_LEVELS } from "../../../shared/memberProgression";
 
 interface MemberGradesChartWidgetProps {
@@ -45,24 +46,36 @@ export function MemberGradesChartWidget({
               const count = gradesBreakdown[grade.value] || 0;
               const percentage = totalEvaluated > 0 ? Math.round((count / totalEvaluated) * 100) : 0;
               return (
-                <div key={grade.value} className="space-y-1.5">
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="font-medium flex items-center gap-2">
-                      <span className="h-2 w-2 rounded-full bg-primary" />
-                      {grade.label}
-                    </span>
-                    <div className="flex items-center gap-2">
-                      <Badge variant="secondary">{count} membre{count > 1 ? "s" : ""}</Badge>
-                      <span className="text-xs text-muted-foreground w-10 text-right">{percentage}%</span>
-                    </div>
-                  </div>
-                  <div className="h-2 overflow-hidden rounded-full bg-muted">
+                <Tooltip key={grade.value}>
+                  <TooltipTrigger asChild>
                     <div
-                      className="h-full rounded-full bg-primary transition-all duration-500"
-                      style={{ width: `${percentage}%` }}
-                    />
-                  </div>
-                </div>
+                      tabIndex={0}
+                      aria-label={`${grade.label} : seuil minimal ${grade.minimumScore} sur 100`}
+                      className="space-y-1.5 rounded-md outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                    >
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="font-medium flex items-center gap-2">
+                          <span className="h-2 w-2 rounded-full bg-primary" />
+                          {grade.label}
+                        </span>
+                        <div className="flex items-center gap-2">
+                          <Badge variant="secondary">{count} membre{count > 1 ? "s" : ""}</Badge>
+                          <span className="text-xs text-muted-foreground w-10 text-right">{percentage}%</span>
+                        </div>
+                      </div>
+                      <div className="h-2 overflow-hidden rounded-full bg-muted">
+                        <div
+                          className="h-full rounded-full bg-primary transition-all duration-500"
+                          style={{ width: `${percentage}%` }}
+                        />
+                      </div>
+                    </div>
+                  </TooltipTrigger>
+                  <TooltipContent side="top" className="max-w-xs space-y-1">
+                    <p className="font-semibold">{grade.label} · minimum {grade.minimumScore}/100</p>
+                    <p>{grade.responsibilities}</p>
+                  </TooltipContent>
+                </Tooltip>
               );
             })}
           </div>

@@ -17,6 +17,14 @@ describe("member grades chart integration", () => {
     expect(widgetSource).toContain("MEMBER_GRADE_LEVELS");
   });
 
+  it("explains each grade threshold and responsibilities in a tooltip", () => {
+    expect(widgetSource).toContain("TooltipTrigger");
+    expect(widgetSource).toContain("TooltipContent");
+    expect(widgetSource).toContain("minimum {grade.minimumScore}/100");
+    expect(widgetSource).toContain("grade.responsibilities");
+    expect(widgetSource).toContain("tabIndex={0}");
+  });
+
   it("registers the member grades chart widget in the main dashboard", () => {
     expect(dashboardSource).toContain("member-grades-chart");
     expect(dashboardSource).toContain("MemberGradesChartWidget");
