@@ -9,7 +9,7 @@ export interface UserPreferences {
   autoSaveInterval: number; // en secondes
 }
 
-const DEFAULT_PREFERENCES: UserPreferences = {
+export const DEFAULT_PREFERENCES: UserPreferences = {
   language: 'fr',
   dateFormat: 'DD/MM/YYYY',
   emailNotifications: false,
@@ -17,6 +17,12 @@ const DEFAULT_PREFERENCES: UserPreferences = {
   itemsPerPage: 10,
   autoSaveInterval: 300, // 5 minutes
 };
+
+export function resetStoredPreferences() {
+  const defaults = { ...DEFAULT_PREFERENCES };
+  localStorage.setItem('userPreferences', JSON.stringify(defaults));
+  return defaults;
+}
 
 export function usePreferences() {
   const [preferences, setPreferences] = useState<UserPreferences>(DEFAULT_PREFERENCES);
@@ -54,8 +60,9 @@ export function usePreferences() {
 
   // Réinitialiser aux valeurs par défaut
   const resetPreferences = useCallback(() => {
-    localStorage.removeItem('userPreferences');
-    setPreferences(DEFAULT_PREFERENCES);
+    const defaults = resetStoredPreferences();
+    setPreferences(defaults);
+    return defaults;
   }, []);
 
   // Formater une date selon les préférences

@@ -1,4 +1,5 @@
 import { Button } from "@/components/ui/button";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
@@ -46,13 +47,14 @@ const DATE_FORMATS: Array<{ value: UserPreferences["dateFormat"]; label: string 
 export default function Settings() {
   const [, setLocation] = useLocation();
   const { user: currentUser } = useAuthHook();
-  const { preferences, updatePreference } = usePreferences();
+  const { preferences, updatePreference, resetPreferences } = usePreferences();
   const { theme, toggleTheme } = useTheme();
   const { exportData, importData, getBackupSize } = useBackup();
   const { getLastSync, getStats: getSyncStats } = useSyncHistory();
   const { currency, setCurrency, exchangeRate, setExchangeRate, resetExchangeRate } = useCurrency();
   const [currentMode, setCurrentMode] = useState<"online" | "offline">("offline");
   const [newExchangeRate, setNewExchangeRate] = useState(exchangeRate.toString());
+  const [isResetDialogOpen, setIsResetDialogOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const syncStats = getSyncStats();
   const lastSync = getLastSync();
@@ -79,6 +81,13 @@ export default function Settings() {
     localStorage.removeItem("appMode");
     toast.success("Déconnexion réussie");
     setLocation("/");
+  };
+
+  const handleResetPreferences = () => {
+    resetPreferences();
+    if (theme === "dark") toggleTheme?.();
+    setIsResetDialogOpen(false);
+    toast.success("Préférences réinitialisées");
   };
 
   const handleThemeChange = () => {
@@ -266,6 +275,28 @@ export default function Settings() {
                 </div>
                 <Switch id="email-notifications" checked={preferences.emailNotifications} onCheckedChange={(value) => { updatePreference("emailNotifications", value); toast.success(`Notifications email ${value ? "activées" : "désactivées"}`); }} />
               </div>
+            </CardContent>
+          </Card>
+
+          <Card className="border-destructive/25 bg-destructive/[0.02]">
+            <CardContent className="flex flex-col gap-4 p-5 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <p className="font-semibold">Réinitialiser les préférences</p>
+                <p className="mt-1 text-sm text-muted-foreground">Langue, format de date, notifications et thème seront remis à leur valeur par défaut. Les données métier, la devise et le taux EUR/XOF ne seront pas modifiés.</p>
+              </div>
+              <AlertDialog open={isResetDialogOpen} onOpenChange={setIsResetDialogOpen}>
+                <AlertDialogTrigger asChild><Button variant="outline" className="shrink-0 gap-2 border-destructive/40 text-destructive hover:bg-destructive/10 hover:text-destructive"><RotateCcw className="h-4 w-4" />Réinitialiser</Button></AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Réinitialiser les préférences ?</AlertDialogTitle>
+                    <AlertDialogDescription>Cette action remettra la langue, le format de date, les notifications et le thème à leurs valeurs par défaut. Elle ne supprimera ni vos membres, ni vos documents, ni vos données financières.</AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Annuler</AlertDialogCancel>
+                    <AlertDialogAction onClick={handleResetPreferences} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">Réinitialiser les préférences</AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
             </CardContent>
           </Card>
         </TabsContent>

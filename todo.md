@@ -1731,4 +1731,11 @@
 - [x] Ajouter une classe ou un style d’indicateur glissant sous l’onglet actif
 - [x] Gérer l’accessibilité et prefers-reduced-motion pour l’indicateur
 - [x] Valider avec un test de contrat et la build de production
-- [ ] Sauvegarder le raffinement visuel dans un checkpoint
+- [x] Sauvegarder le raffinement visuel dans un checkpoint
+
+
+## Réinitialisation des préférences avec confirmation
+- [x] Ajouter une boîte de dialogue de confirmation pour réinitialiser les préférences
+- [x] Réinitialiser les choix locaux (langue, format de date, notifications) sans impacter les données métier
+- [x] Écrire un test de non-régression et valider avec Vitest et la build
+- [ ] Sauvegarder la modification dans un checkpoint
