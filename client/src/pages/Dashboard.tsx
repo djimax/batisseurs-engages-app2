@@ -25,7 +25,9 @@ import {
   Megaphone,
   WalletCards,
   ArrowUpRight,
+  Award,
 } from "lucide-react";
+import { MemberGradesChartWidget } from "@/components/MemberGradesChartWidget";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -39,9 +41,10 @@ const DEFAULT_WIDGETS: Widget[] = [
   { id: "members-stat", title: "Membres", type: "statistic", visible: true, position: 1 },
   { id: "projects-stat", title: "Projets", type: "statistic", visible: true, position: 2 },
   { id: "finance-stat", title: "Finance", type: "statistic", visible: true, position: 3 },
-  { id: "recent-documents", title: "Documents Récents", type: "list", visible: true, position: 4 },
-  { id: "urgent-tasks", title: "Tâches Urgentes", type: "list", visible: true, position: 5 },
-  { id: "active-projects", title: "Projets Actifs", type: "list", visible: true, position: 6 },
+  { id: "member-grades-chart", title: "Répartition des grades", type: "chart", visible: true, position: 4 },
+  { id: "recent-documents", title: "Documents Récents", type: "list", visible: true, position: 5 },
+  { id: "urgent-tasks", title: "Tâches Urgentes", type: "list", visible: true, position: 6 },
+  { id: "active-projects", title: "Projets Actifs", type: "list", visible: true, position: 7 },
 ];
 
 const STORAGE_KEY = "dashboard-widgets-config";
@@ -442,6 +445,24 @@ export default function Dashboard() {
                       label: project.name,
                       status: "pending",
                     }))}
+                    onRemove={isEditMode ? () => handleRemoveWidget(widget.id) : undefined}
+                    isDragging={draggedWidget === widget.id}
+                  />
+                </div>
+              );
+
+            case "member-grades-chart":
+              return (
+                <div
+                  key={widget.id}
+                  draggable={isEditMode}
+                  onDragStart={handleDragStart_}
+                  onDragOver={handleDragOver_}
+                  onDrop={handleDrop_}
+                  className={isEditMode ? "cursor-grab active:cursor-grabbing md:col-span-2" : "md:col-span-2"}
+                >
+                  <MemberGradesChartWidget
+                    gradesBreakdown={membersStats?.gradesBreakdown || {}}
                     onRemove={isEditMode ? () => handleRemoveWidget(widget.id) : undefined}
                     isDragging={draggedWidget === widget.id}
                   />

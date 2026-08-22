@@ -1413,18 +1413,29 @@ export async function getMembersStatistics() {
     adminMembers,
     secretaryMembers,
     regularMembers,
+    gradesRows,
   ] = await Promise.all([
     db.select({ count: sql<number>`count(*)` }).from(members),
     db.select({ count: sql<number>`count(*)` }).from(members).where(eq(members.role, "Président")),
     db.select({ count: sql<number>`count(*)` }).from(members).where(like(members.role, "%Secrétaire%")),
     db.select({ count: sql<number>`count(*)` }).from(members).where(eq(members.role, "Membre")),
+    db.select({
+      grade: memberGrades.currentGrade,
+      count: sql<number>`count(*)`,
+    }).from(memberGrades).groupBy(memberGrades.currentGrade),
   ]);
+
+  const gradesBreakdown = gradesRows.reduce((acc, row) => {
+    acc[row.grade] = row.count;
+    return acc;
+  }, {} as Record<string, number>);
 
   return {
     total: totalMembers[0]?.count || 0,
     presidents: adminMembers[0]?.count || 0,
     secretaries: secretaryMembers[0]?.count || 0,
     regular: regularMembers[0]?.count || 0,
+    gradesBreakdown,
   };
 }
 

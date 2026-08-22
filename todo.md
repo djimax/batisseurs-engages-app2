@@ -1768,3 +1768,12 @@
 - [ ] Développer les procédures tRPC sécurisées pour noter, promouvoir et assigner des responsabilités
 - [ ] Créer l’interface de notation et de suivi des grades dans la section membres et fiches individuelles
 - [ ] Écrire les tests Vitest, valider la compilation de production et sauvegarder le checkpoint
+
+
+## Graphique de répartition des grades sur le tableau de bord
+- [ ] Ajouter la fonction d’agrégation des membres par grade dans server/db.ts
+- [ ] Exposer les statistiques de grades dans la procédure dashboard.members de server/routers.ts
+- [ ] Créer le composant de visualisation graphique ou de barres de répartition par grade dans le tableau de bord principal
+- [ ] Gérer l’état vide lorsque aucun grade n’est encore attribué
+- [ ] Ajouter un test de non-régression et valider avec Vitest et la build de production
+- [ ] Sauvegarder l’intégration validée dans un checkpoint
