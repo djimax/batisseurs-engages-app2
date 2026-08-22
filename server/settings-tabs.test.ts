@@ -9,6 +9,7 @@ describe("Settings tabs transition contract", () => {
   it("keeps one animated panel class on each settings tab", () => {
     expect(settingsPage.match(/<TabsContent value=/g)).toHaveLength(4);
     expect(settingsPage.match(/className=\"settings-tab-content space-y-5\"/g)).toHaveLength(4);
+    expect(settingsPage.match(/className=\"settings-tab-trigger gap-2 py-2.5\"/g)).toHaveLength(4);
   });
 
   it("defines a short enter animation using the reduced-motion exception", () => {
@@ -17,5 +18,9 @@ describe("Settings tabs transition contract", () => {
     expect(globalStyles).toContain("@media (prefers-reduced-motion: no-preference)");
     expect(globalStyles).toContain("@media (prefers-reduced-motion: reduce)");
     expect(globalStyles).toContain("180ms cubic-bezier(0.23, 1, 0.32, 1)");
+    expect(globalStyles).toContain(".settings-tab-trigger::after");
+    expect(globalStyles).toContain(".settings-tab-trigger[data-state=\"active\"]::after");
+    expect(globalStyles).toContain("transform: scaleX(1)");
+    expect(globalStyles).toContain("transition: none;");
   });
 });

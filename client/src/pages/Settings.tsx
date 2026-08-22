@@ -193,10 +193,10 @@ export default function Settings() {
 
       <Tabs defaultValue="preferences" className="space-y-5">
         <TabsList className="grid h-auto w-full max-w-3xl grid-cols-2 gap-1 p-1 sm:grid-cols-4">
-          <TabsTrigger value="preferences" className="gap-2 py-2.5"><Palette className="h-4 w-4" />Préférences</TabsTrigger>
-          <TabsTrigger value="data" className="gap-2 py-2.5"><Database className="h-4 w-4" />Données</TabsTrigger>
-          <TabsTrigger value="finance" className="gap-2 py-2.5"><DollarSign className="h-4 w-4" />Finance</TabsTrigger>
-          <TabsTrigger value="about" className="gap-2 py-2.5"><SettingsIcon className="h-4 w-4" />À propos</TabsTrigger>
+          <TabsTrigger value="preferences" className="settings-tab-trigger gap-2 py-2.5"><Palette className="h-4 w-4" />Préférences</TabsTrigger>
+          <TabsTrigger value="data" className="settings-tab-trigger gap-2 py-2.5"><Database className="h-4 w-4" />Données</TabsTrigger>
+          <TabsTrigger value="finance" className="settings-tab-trigger gap-2 py-2.5"><DollarSign className="h-4 w-4" />Finance</TabsTrigger>
+          <TabsTrigger value="about" className="settings-tab-trigger gap-2 py-2.5"><SettingsIcon className="h-4 w-4" />À propos</TabsTrigger>
         </TabsList>
 
         <TabsContent value="preferences" className="settings-tab-content space-y-5">

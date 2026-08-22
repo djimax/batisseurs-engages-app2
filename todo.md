@@ -1724,4 +1724,11 @@
 - [x] Ajouter une transition fluide entre les contenus d’onglets
 - [x] Respecter prefers-reduced-motion et conserver l’accessibilité des onglets
 - [x] Tester et compiler la modification
-- [ ] Sauvegarder la transition validée dans un checkpoint
+- [x] Sauvegarder la transition validée dans un checkpoint
+
+
+## Indicateur actif dynamique sur les onglets de Paramètres
+- [x] Ajouter une classe ou un style d’indicateur glissant sous l’onglet actif
+- [x] Gérer l’accessibilité et prefers-reduced-motion pour l’indicateur
+- [x] Valider avec un test de contrat et la build de production
+- [ ] Sauvegarder le raffinement visuel dans un checkpoint
