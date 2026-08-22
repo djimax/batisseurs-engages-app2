@@ -1744,4 +1744,11 @@
 ## Toast de succès après réinitialisation des paramètres
 - [x] Personnaliser le toast de confirmation pour qu’il soit explicite et bref
 - [x] Valider l’intégration par les tests Vitest et la build de production
-- [ ] Sauvegarder la modification validée dans un checkpoint
+- [x] Sauvegarder la modification validée dans un checkpoint
+
+
+## Basculement de thème clair/sombre dans les paramètres généraux
+- [x] Ajouter une option claire et explicite pour basculer entre mode clair et mode sombre dans l’onglet Préférences
+- [x] Connecter le sélecteur à ThemeContext et usePreferences pour une persistance synchrone
+- [x] Valider l’intégration par les tests Vitest et la build de production
+- [x] Sauvegarder l’option validée dans un checkpoint

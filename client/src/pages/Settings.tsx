@@ -48,7 +48,7 @@ export default function Settings() {
   const [, setLocation] = useLocation();
   const { user: currentUser } = useAuthHook();
   const { preferences, updatePreference, resetPreferences } = usePreferences();
-  const { theme, toggleTheme } = useTheme();
+  const { theme, toggleTheme, setTheme } = useTheme();
   const { exportData, importData, getBackupSize } = useBackup();
   const { getLastSync, getStats: getSyncStats } = useSyncHistory();
   const { currency, setCurrency, exchangeRate, setExchangeRate, resetExchangeRate } = useCurrency();
@@ -93,11 +93,13 @@ export default function Settings() {
     });
   };
 
-  const handleThemeChange = () => {
-    const nextTheme = theme === "dark" ? "light" : "dark";
-    toggleTheme?.();
+  const handleThemeChange = (nextTheme: "light" | "dark") => {
+    setTheme?.(nextTheme);
     updatePreference("theme", nextTheme);
-    toast.success(`Thème ${nextTheme === "dark" ? "sombre" : "clair"} activé`);
+    toast.success(`Thème ${nextTheme === "dark" ? "sombre" : "clair"} activé`, {
+      description: "L'interface s'est adaptée à votre choix.",
+      duration: 2000,
+    });
   };
 
   const handleExportBackup = () => {
@@ -234,19 +236,50 @@ export default function Settings() {
 
             <Card>
               <CardHeader>
-                <CardTitle className="flex items-center gap-2"><Sun className="h-5 w-5 text-primary" />Apparence</CardTitle>
-                <CardDescription>Utilisez une interface adaptée à vos conditions de travail.</CardDescription>
+                <CardTitle className="flex items-center gap-2"><Sun className="h-5 w-5 text-primary" />Apparence & Thème</CardTitle>
+                <CardDescription>Basculez instantanément entre le mode clair et le mode sombre.</CardDescription>
               </CardHeader>
-              <CardContent>
-                <div className="flex items-center justify-between gap-4 rounded-xl border p-4">
-                  <div className="flex items-center gap-3">
-                    {theme === "dark" ? <Moon className="h-5 w-5 text-primary" /> : <Sun className="h-5 w-5 text-amber-600" />}
-                    <div>
-                      <Label htmlFor="dark-mode" className="cursor-pointer">Thème sombre</Label>
-                      <p className="mt-1 text-xs text-muted-foreground">Thème actuel : {theme === "dark" ? "sombre" : "clair"}</p>
-                    </div>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-2 gap-3">
+                  <button
+                    type="button"
+                    onClick={() => handleThemeChange("light")}
+                    className={`flex items-center justify-center gap-2 rounded-xl border p-3.5 text-sm font-medium transition-all ${
+                      theme === "light"
+                        ? "border-primary bg-primary/10 text-primary shadow-sm"
+                        : "border-border bg-background text-muted-foreground hover:border-primary/40 hover:text-foreground"
+                    }`}
+                  >
+                    <Sun className="h-4 w-4 text-amber-500" />
+                    Mode clair
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleThemeChange("dark")}
+                    className={`flex items-center justify-center gap-2 rounded-xl border p-3.5 text-sm font-medium transition-all ${
+                      theme === "dark"
+                        ? "border-primary bg-primary/10 text-primary shadow-sm"
+                        : "border-border bg-background text-muted-foreground hover:border-primary/40 hover:text-foreground"
+                    }`}
+                  >
+                    <Moon className="h-4 w-4 text-primary" />
+                    Mode sombre
+                  </button>
+                </div>
+                <div className="flex items-center justify-between gap-3 rounded-xl border px-4 py-3 text-sm">
+                  <div className="flex items-center gap-2 text-muted-foreground">
+                    <span>État actuel :</span>
+                    <span className="font-semibold text-foreground">{theme === "dark" ? "Mode sombre" : "Mode clair"}</span>
                   </div>
-                  <Switch id="dark-mode" checked={theme === "dark"} onCheckedChange={handleThemeChange} />
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleThemeChange(theme === "dark" ? "light" : "dark")}
+                    className="gap-2"
+                  >
+                    {theme === "dark" ? <Sun className="h-3.5 w-3.5" /> : <Moon className="h-3.5 w-3.5" />}
+                    Basculer
+                  </Button>
                 </div>
               </CardContent>
             </Card>
