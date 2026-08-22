@@ -1804,3 +1804,10 @@
 - [x] Afficher une action claire pour retirer le filtre actif
 - [x] Ajouter les tests de contrat du parcours clic → filtre → réinitialisation
 - [x] Valider TypeScript, tests Vitest, build et rendu responsive du parcours
+
+## Phase 19 - Transition fluide et chargement animé vers l’annuaire filtré
+- [x] Ajouter un état de transition (isTransitioning) lors du clic sur un grade dans le tableau de bord
+- [x] Afficher une superposition de chargement animée (spinner, fondu d’entrée/sortie et message explicite)
+- [x] Respecter les directives d’animation (durée < 300ms, transform/opacity, prefers-reduced-motion)
+- [x] Valider par des tests unitaires et la compilation de production
+- [x] Sauvegarder la modification validée dans un checkpoint

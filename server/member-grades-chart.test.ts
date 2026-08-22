@@ -39,4 +39,10 @@ describe("member grades chart integration", () => {
     expect(membersSource).toContain("setLocation(\"/members\")");
     expect(membersSource).toContain("Afficher tous les membres");
   });
+
+  it("includes a fluid loading transition overlay when navigating from grades chart", () => {
+    expect(dashboardSource).toContain("transitioningGrade");
+    expect(dashboardSource).toContain("Chargement de l’annuaire filtré");
+    expect(dashboardSource).toContain("animate-spin");
+  });
 });

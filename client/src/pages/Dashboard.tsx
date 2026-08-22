@@ -50,11 +50,14 @@ const DEFAULT_WIDGETS: Widget[] = [
 
 const STORAGE_KEY = "dashboard-widgets-config";
 
+import { Loader2 } from "lucide-react";
+
 export default function Dashboard() {
   const [, setLocation] = useLocation();
   const [widgets, setWidgets] = useState<Widget[]>(DEFAULT_WIDGETS);
   const [isEditMode, setIsEditMode] = useState(false);
   const [draggedWidget, setDraggedWidget] = useState<string | null>(null);
+  const [transitioningGrade, setTransitioningGrade] = useState<string | null>(null);
 
   // Load widgets configuration from localStorage
   useEffect(() => {
@@ -92,7 +95,10 @@ export default function Dashboard() {
   ] : [];
 
   const handleGradeSelect = (grade: string) => {
-    setLocation(`/members?grade=${encodeURIComponent(grade)}`);
+    setTransitioningGrade(grade);
+    setTimeout(() => {
+      setLocation(`/members?grade=${encodeURIComponent(grade)}`);
+    }, 220);
   };
 
   const handleRemoveWidget = (widgetId: string) => {
@@ -172,6 +178,14 @@ export default function Dashboard() {
 
   return (
     <div className="space-y-6">
+      {transitioningGrade && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm transition-all duration-200 animate-in fade-in-0">
+          <div className="flex flex-col items-center gap-3 rounded-xl border bg-card p-6 shadow-xl">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            <p className="text-sm font-medium">Chargement de l’annuaire filtré…</p>
+          </div>
+        </div>
+      )}
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold">Tableau de Bord</h1>
