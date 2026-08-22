@@ -1739,3 +1739,9 @@
 - [x] Réinitialiser les choix locaux (langue, format de date, notifications) sans impacter les données métier
 - [x] Écrire un test de non-régression et valider avec Vitest et la build
 - [ ] Sauvegarder la modification dans un checkpoint
+
+
+## Toast de succès après réinitialisation des paramètres
+- [x] Personnaliser le toast de confirmation pour qu’il soit explicite et bref
+- [x] Valider l’intégration par les tests Vitest et la build de production
+- [ ] Sauvegarder la modification validée dans un checkpoint

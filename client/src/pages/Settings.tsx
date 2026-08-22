@@ -87,7 +87,10 @@ export default function Settings() {
     resetPreferences();
     if (theme === "dark") toggleTheme?.();
     setIsResetDialogOpen(false);
-    toast.success("Préférences réinitialisées");
+    toast.success("Préférences réinitialisées", {
+      description: "Vos choix personnels sont revenus aux valeurs par défaut.",
+      duration: 2200,
+    });
   };
 
   const handleThemeChange = () => {
