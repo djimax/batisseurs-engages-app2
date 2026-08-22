@@ -867,3 +867,28 @@ export const associationDecisions = mysqlTable("association_decisions", {
 }, (table) => [
 	uniqueIndex("association_decisions_ref_unique").on(table.referenceNumber),
 ]);
+
+
+export const memberEvaluations = mysqlTable("member_evaluations", {
+	id: int().autoincrement().notNull(),
+	memberId: int().notNull(),
+	evaluatorId: int().notNull(),
+	score: int().notNull(), // Note sur 20 ou 100
+	gradeProposed: varchar({ length: 100 }).notNull(), // ex: "Membre Actif", "Chef d'Antenne", "Référent Régional", "Administrateur"
+	responsibilitiesAssigned: text(), // Responsabilités proposées ou conférées
+	comments: text().notNull(), // Justification et observations qualitatives
+	evaluatedAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
+	createdAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
+}, (table) => [
+	index("member_evaluations_member_idx").on(table.memberId),
+]);
+
+export const memberGrades = mysqlTable("member_grades", {
+	id: int().autoincrement().notNull(),
+	memberId: int().notNull().unique(),
+	currentGrade: varchar({ length: 100 }).default("Membre Adhérent").notNull(),
+	currentResponsibilities: text(),
+	lastEvaluationId: int(),
+	promotedAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
+	updatedAt: timestamp({ mode: 'string' }).defaultNow().onUpdateNow().notNull(),
+});

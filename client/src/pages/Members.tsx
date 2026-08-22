@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { ExportPDF } from "@/components/ExportPDF";
 import { HeroSection } from "@/components/HeroSection";
 import { Pagination } from "@/components/Pagination";
@@ -54,9 +54,11 @@ import {
   Loader2,
   Shield,
   Lock,
-  Copy
+  Copy,
+  Award
 } from "lucide-react";
 import { generateMemberId } from "@/../../shared/memberIdGenerator";
+import { canAssignMemberGrade, getMemberGradeLevel, MEMBER_GRADE_LEVELS } from "@/../../shared/memberProgression";
 
 const MEMBER_ROLES = [
   { value: "admin", label: "Admin", description: "Accès complet à tous les documents" },
@@ -94,7 +96,15 @@ export default function Members() {
   const [sortBy, setSortBy] = useState<string>("name-asc");
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [isProgressDialogOpen, setIsProgressDialogOpen] = useState(false);
   const [selectedMember, setSelectedMember] = useState<any>(null);
+  const [progressMember, setProgressMember] = useState<any>(null);
+  const [progressForm, setProgressForm] = useState({
+    score: "",
+    gradeProposed: "member",
+    responsibilitiesAssigned: "",
+    comments: "",
+  });
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
 
@@ -130,6 +140,14 @@ export default function Members() {
 
   const { data: members, isLoading } = trpc.members.list.useQuery();
   const { data: exportData } = trpc.members.exportList.useQuery();
+  const { data: currentGrade } = trpc.members.getGrade.useQuery(
+    { memberId: progressMember?.id ?? 0 },
+    { enabled: Boolean(progressMember?.id) },
+  );
+  const { data: evaluationHistory } = trpc.members.getEvaluations.useQuery(
+    { memberId: progressMember?.id ?? 0 },
+    { enabled: Boolean(progressMember?.id) },
+  );
 
   const createMember = trpc.members.create.useMutation({
     onSuccess: () => {
@@ -166,6 +184,23 @@ export default function Members() {
     },
     onError: (error) => {
       toast.error("Erreur: " + error.message);
+    },
+  });
+
+  const evaluateAndPromote = trpc.members.evaluateAndPromote.useMutation({
+    onSuccess: () => {
+      if (progressMember?.id) {
+        utils.members.getGrade.invalidate({ memberId: progressMember.id });
+        utils.members.getEvaluations.invalidate({ memberId: progressMember.id });
+        utils.members.history.invalidate({ memberId: progressMember.id });
+      }
+      setIsProgressDialogOpen(false);
+      setProgressMember(null);
+      setProgressForm({ score: "", gradeProposed: "member", responsibilitiesAssigned: "", comments: "" });
+      toast.success("Évaluation enregistrée", { description: "Le grade et les responsabilités du membre ont été actualisés." });
+    },
+    onError: (error) => {
+      toast.error("Impossible d’enregistrer l’évaluation : " + error.message);
     },
   });
 
@@ -211,6 +246,12 @@ export default function Members() {
     });
   };
 
+  const openProgressDialog = (member: any) => {
+    setProgressMember(member);
+    setProgressForm({ score: "", gradeProposed: "member", responsibilitiesAssigned: "", comments: "" });
+    setIsProgressDialogOpen(true);
+  };
+
   const openEditDialog = (member: any) => {
     setSelectedMember(member);
     setFormData({
@@ -232,6 +273,13 @@ export default function Members() {
     setPhotoPreview(member.photo || "");
     setIsEditDialogOpen(true);
   };
+
+  useEffect(() => {
+    const grade = currentGrade?.currentGrade;
+    if (grade && MEMBER_GRADE_LEVELS.some((option) => option.value === grade)) {
+      setProgressForm((previous) => ({ ...previous, gradeProposed: grade }));
+    }
+  }, [currentGrade?.currentGrade]);
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -276,6 +324,29 @@ export default function Members() {
     active: members?.filter(m => m.status === "active").length || 0,
     inactive: members?.filter(m => m.status === "inactive").length || 0,
     pending: members?.filter(m => m.status === "pending").length || 0,
+  };
+
+  const progressScore = Number(progressForm.score);
+  const selectedGrade = getMemberGradeLevel(progressForm.gradeProposed);
+  const canSubmitProgress = progressForm.score !== ""
+    && Number.isInteger(progressScore)
+    && progressScore >= 0
+    && progressScore <= 100
+    && canAssignMemberGrade(progressScore, progressForm.gradeProposed)
+    && progressForm.comments.trim().length >= 10;
+
+  const handleProgressSubmit = () => {
+    if (!progressMember || !canSubmitProgress) {
+      toast.error("Saisissez une note valide et une justification d’au moins 10 caractères.");
+      return;
+    }
+    evaluateAndPromote.mutate({
+      memberId: progressMember.id,
+      score: progressScore,
+      gradeProposed: progressForm.gradeProposed,
+      responsibilitiesAssigned: progressForm.responsibilitiesAssigned.trim() || undefined,
+      comments: progressForm.comments.trim(),
+    });
   };
 
     return (
@@ -487,6 +558,10 @@ export default function Members() {
                             <DropdownMenuItem onClick={() => openEditDialog(member)}>
                               <Edit className="mr-2 h-4 w-4" />
                               Modifier
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => openProgressDialog(member)}>
+                              <Award className="mr-2 h-4 w-4 text-primary" />
+                              Évaluer / promouvoir
                             </DropdownMenuItem>
                             <DropdownMenuSeparator />
                             <DropdownMenuItem 
@@ -868,6 +943,121 @@ export default function Members() {
                 <Edit className="mr-2 h-4 w-4" />
               )}
               Enregistrer
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Member Progression Dialog */}
+      <Dialog open={isProgressDialogOpen} onOpenChange={(open) => {
+        setIsProgressDialogOpen(open);
+        if (!open) setProgressMember(null);
+      }}>
+        <DialogContent className="sm:max-w-[620px]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Award className="h-5 w-5 text-primary" />
+              Évaluer et faire progresser un membre
+            </DialogTitle>
+            <DialogDescription>
+              Une évaluation documentée permet de proposer un grade et des responsabilités adaptés.
+            </DialogDescription>
+          </DialogHeader>
+
+          {progressMember && (
+            <div className="space-y-5">
+              <div className="flex items-center justify-between rounded-lg border bg-muted/30 p-3">
+                <div>
+                  <p className="font-medium">{progressMember.firstName} {progressMember.lastName}</p>
+                  <p className="text-sm text-muted-foreground">{progressMember.memberID || progressMember.memberId || "Identifiant non renseigné"}</p>
+                </div>
+                <div className="text-right">
+                  <p className="text-xs uppercase tracking-wide text-muted-foreground">Grade actuel</p>
+                  <Badge variant="secondary">{getMemberGradeLevel(currentGrade?.currentGrade || "member").label}</Badge>
+                </div>
+              </div>
+
+              <div className="grid gap-4 sm:grid-cols-[150px_1fr]">
+                <div className="space-y-2">
+                  <Label htmlFor="progressScore">Note / 100</Label>
+                  <Input
+                    id="progressScore"
+                    type="number"
+                    min={0}
+                    max={100}
+                    step={1}
+                    value={progressForm.score}
+                    onChange={(event) => setProgressForm({ ...progressForm, score: event.target.value })}
+                    placeholder="0–100"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="progressGrade">Grade proposé</Label>
+                  <Select
+                    value={progressForm.gradeProposed}
+                    onValueChange={(value) => setProgressForm({
+                      ...progressForm,
+                      gradeProposed: value,
+                      responsibilitiesAssigned: progressForm.responsibilitiesAssigned || getMemberGradeLevel(value).responsibilities,
+                    })}
+                  >
+                    <SelectTrigger id="progressGrade"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      {MEMBER_GRADE_LEVELS.map((grade) => (
+                        <SelectItem key={grade.value} value={grade.value}>
+                          {grade.label} · {grade.minimumScore}/100 minimum
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <p className="text-xs text-muted-foreground">Seuil requis : {selectedGrade.minimumScore}/100</p>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="progressResponsibilities">Responsabilités associées</Label>
+                <Input
+                  id="progressResponsibilities"
+                  value={progressForm.responsibilitiesAssigned}
+                  onChange={(event) => setProgressForm({ ...progressForm, responsibilitiesAssigned: event.target.value })}
+                  placeholder={selectedGrade.responsibilities}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="progressComments">Justification de l’évaluation *</Label>
+                <textarea
+                  id="progressComments"
+                  value={progressForm.comments}
+                  onChange={(event) => setProgressForm({ ...progressForm, comments: event.target.value })}
+                  placeholder="Décrivez les contributions, compétences et éléments observables…"
+                  className="min-h-24 w-full rounded-md border border-input bg-background px-3 py-2 text-sm outline-none ring-offset-background placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring"
+                />
+                <p className="text-xs text-muted-foreground">Une justification d’au moins 10 caractères est requise pour assurer la traçabilité.</p>
+              </div>
+
+              {evaluationHistory && evaluationHistory.length > 0 && (
+                <div className="rounded-lg border p-3">
+                  <p className="mb-2 text-sm font-medium">Dernières évaluations</p>
+                  <div className="space-y-2">
+                    {evaluationHistory.slice(0, 3).map((evaluation) => (
+                      <div key={evaluation.id} className="flex items-center justify-between gap-3 text-sm">
+                        <span className="text-muted-foreground">{new Date(evaluation.evaluatedAt).toLocaleDateString("fr-FR")}</span>
+                        <span>{getMemberGradeLevel(evaluation.gradeProposed).label}</span>
+                        <Badge variant="outline">{evaluation.score}/100</Badge>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsProgressDialogOpen(false)}>Annuler</Button>
+            <Button onClick={handleProgressSubmit} disabled={evaluateAndPromote.isPending || !canSubmitProgress}>
+              {evaluateAndPromote.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Award className="mr-2 h-4 w-4" />}
+              Enregistrer la progression
             </Button>
           </DialogFooter>
         </DialogContent>

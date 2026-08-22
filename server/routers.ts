@@ -32,7 +32,8 @@ import {
   createMemberCertificate, getMemberCertificates,
   getAllUsers, getUserById, updateUserRole, getAdminCount, isUserAdmin,
   getAnnouncements, createAnnouncement, updateAnnouncement, deleteAnnouncement,
-  getNewsList, createNews, updateNews, deleteNews, getNewsComments, addNewsComment, deleteNewsComment
+  getNewsList, createNews, updateNews, deleteNews, getNewsComments, addNewsComment, deleteNewsComment,
+  createMemberEvaluation, getMemberEvaluations, getMemberGrade
 } from "./db";
 import { roles, permissions, rolePermissions, userRoles, userScopes, auditLogs, emailTemplates, emailHistory, emailRecipients, members, adhesions, notificationSchedules, announcements, news, newsComments, projects, projectMembers, groupes, groupeMembers, antennes } from "../drizzle/schema";
 import { buildMemberCardPayload, getMemberHistory, getMemberStatusHistory, memberStatusSchema, recordMemberHistory, recordMemberStatus } from "./member-lifecycle";
@@ -48,6 +49,7 @@ import { nanoid } from "nanoid";
 import { membersAdhesionsRouter } from "./members-adhesions-router";
 import { buildDonationDocumentHtml, convertFinancialAmount, createTaxReceipt, FINANCIAL_CURRENCIES, formatFinancialAmount, listTaxReceipts, parseFinancialAmount } from "./financial";
 import { antennasRouter, groupesRouter } from "./antennes-groupes-router";
+import { canAssignMemberGrade, MEMBER_GRADE_LEVELS } from "../shared/memberProgression";
 import { governanceRouter } from "./governance-router";
 
 // Note: Email procedures are now in email-router.ts and imported above
@@ -870,11 +872,87 @@ export const appRouter = router({
         if (!member) throw new TRPCError({ code: "NOT_FOUND", message: "Membre introuvable" });
         return {
           member,
-          payload: buildMemberCardPayload(member),
-          memberCode: member.memberId,
+          cardPayload: buildMemberCardPayload(member),
         };
       }),
 
+    getEvaluations: protectedProcedure
+      .input(z.object({ memberId: z.number().int().positive() }))
+      .query(async ({ input, ctx }) => {
+        await assertPermission(ctx.user, "members.view");
+        return getMemberEvaluations(input.memberId);
+      }),
+
+    getGrade: protectedProcedure
+      .input(z.object({ memberId: z.number().int().positive() }))
+      .query(async ({ input, ctx }) => {
+        await assertPermission(ctx.user, "members.view");
+        return getMemberGrade(input.memberId);
+      }),
+
+    evaluateAndPromote: protectedProcedure
+      .input(z.object({
+        memberId: z.number().int().positive(),
+        score: z.number().int().min(0).max(100),
+        gradeProposed: z.string().trim().min(1).max(100),
+        responsibilitiesAssigned: z.string().trim().max(1000).optional(),
+        comments: z.string().trim().min(1).max(2000),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        await assertPermission(ctx.user, "members.manage");
+        const member = await getMemberById(input.memberId);
+        if (!member) throw new TRPCError({ code: "NOT_FOUND", message: "Membre introuvable" });
+        if (member.status !== "active") {
+          throw new TRPCError({ code: "BAD_REQUEST", message: "Seuls les membres actifs peuvent être évalués et promus." });
+        }
+        if (!MEMBER_GRADE_LEVELS.some((grade) => grade.value === input.gradeProposed)) {
+          throw new TRPCError({ code: "BAD_REQUEST", message: "Grade non reconnu." });
+        }
+        if (!canAssignMemberGrade(input.score, input.gradeProposed)) {
+          const requiredScore = MEMBER_GRADE_LEVELS.find((grade) => grade.value === input.gradeProposed)?.minimumScore ?? 0;
+          throw new TRPCError({ code: "BAD_REQUEST", message: `La note minimale pour ce grade est de ${requiredScore}/100.` });
+        }
+
+        const previousGrade = await getMemberGrade(input.memberId);
+        const evaluation = await createMemberEvaluation({
+          memberId: input.memberId,
+          evaluatorId: ctx.user.id,
+          score: input.score,
+          gradeProposed: input.gradeProposed,
+          responsibilitiesAssigned: input.responsibilitiesAssigned,
+          comments: input.comments,
+        });
+
+        await recordMemberHistory({
+          memberId: input.memberId,
+          fieldName: "grade",
+          oldValue: previousGrade.currentGrade,
+          newValue: `${input.gradeProposed}${input.responsibilitiesAssigned ? ` — Responsabilités : ${input.responsibilitiesAssigned}` : ""}`,
+          changedBy: ctx.user.id,
+        });
+
+        await logActivity({
+          userId: ctx.user.id,
+          action: "update",
+          entityType: "member",
+          entityId: input.memberId,
+          details: `Membre #${input.memberId} évalué et promu au grade de ${input.gradeProposed}`,
+        });
+
+        await logAudit({
+          userId: ctx.user.id,
+          action: "PROMOTE",
+          entityType: "member",
+          entityId: input.memberId,
+          entityName: `${member.firstName} ${member.lastName}`,
+          description: `Membre évalué (score ${input.score}) et promu au grade ${input.gradeProposed}`,
+          status: "success",
+        });
+
+        return evaluation;
+      }),
+
+  // ============ MEMBER PROFILE & ADVANCED ============
     portalProfile: protectedProcedure.query(async ({ ctx }) => {
       const db = await getDb();
       if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Base de données indisponible" });

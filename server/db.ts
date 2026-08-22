@@ -46,7 +46,9 @@ import {
   announcements,
   news,
   newsComments,
-  membershipFeeRules
+  membershipFeeRules,
+  memberEvaluations,
+  memberGrades
 } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
@@ -91,7 +93,9 @@ const schema = {
   projectUpdates,
   projectTaskComments,
   projectBudgetItems,
-  membershipFeeRules
+  membershipFeeRules,
+  memberEvaluations,
+  memberGrades,
 };
 
 export async function getDb() {
@@ -1804,4 +1808,64 @@ export async function getFilteredMembers(filters: MemberRecipientFilters = {}) {
     if (excludedIds.has(member.id)) return false;
     return true;
   });
+}
+
+
+// Member Evaluations & Grades
+export async function createMemberEvaluation(data: {
+  memberId: number;
+  evaluatorId: number;
+  score: number;
+  gradeProposed: string;
+  responsibilitiesAssigned?: string;
+  comments: string;
+}) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  const result = await db.insert(memberEvaluations).values({
+    ...data,
+    evaluatedAt: new Date().toISOString(),
+    createdAt: new Date().toISOString(),
+  });
+  const evalId = Number(result[0].insertId);
+
+  // Mettre à jour ou insérer le grade actuel du membre
+  const existingGrade = await db.select().from(memberGrades).where(eq(memberGrades.memberId, data.memberId));
+  if (existingGrade.length > 0) {
+    await db.update(memberGrades).set({
+      currentGrade: data.gradeProposed,
+      currentResponsibilities: data.responsibilitiesAssigned || existingGrade[0].currentResponsibilities,
+      lastEvaluationId: evalId,
+      promotedAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    }).where(eq(memberGrades.memberId, data.memberId));
+  } else {
+    await db.insert(memberGrades).values({
+      memberId: data.memberId,
+      currentGrade: data.gradeProposed,
+      currentResponsibilities: data.responsibilitiesAssigned,
+      lastEvaluationId: evalId,
+      promotedAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    });
+  }
+
+  const rows = await db.select().from(memberEvaluations).where(eq(memberEvaluations.id, evalId));
+  return rows[0];
+}
+
+export async function getMemberEvaluations(memberId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  return await db.select().from(memberEvaluations).where(eq(memberEvaluations.memberId, memberId)).orderBy(desc(memberEvaluations.evaluatedAt));
+}
+
+export async function getMemberGrade(memberId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  const rows = await db.select().from(memberGrades).where(eq(memberGrades.memberId, memberId));
+  return rows[0] || { currentGrade: "Membre Adhérent", currentResponsibilities: null, promotedAt: new Date().toISOString() };
 }

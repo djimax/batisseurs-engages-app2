@@ -1759,4 +1759,12 @@
 - [x] Implémenter l’écoute des préférences du système d’exploitation via matchMedia
 - [x] Ajouter le bouton Système dans les paramètres d’apparence de /settings
 - [x] Écrire un test Vitest et valider la compilation de production
-- [ ] Sauvegarder la modification validée dans un checkpoint
+- [x] Sauvegarder la modification validée dans un checkpoint
+
+
+## Système de notation et progression des membres (Grades et Responsabilités)
+- [ ] Créer les tables member_evaluations et member_grades dans drizzle/schema.ts
+- [ ] Ajouter les helpers de requête de notation et de grade dans server/db.ts
+- [ ] Développer les procédures tRPC sécurisées pour noter, promouvoir et assigner des responsabilités
+- [ ] Créer l’interface de notation et de suivi des grades dans la section membres et fiches individuelles
+- [ ] Écrire les tests Vitest, valider la compilation de production et sauvegarder le checkpoint
