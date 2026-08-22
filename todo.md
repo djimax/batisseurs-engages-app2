@@ -1738,7 +1738,7 @@
 - [x] Ajouter une boîte de dialogue de confirmation pour réinitialiser les préférences
 - [x] Réinitialiser les choix locaux (langue, format de date, notifications) sans impacter les données métier
 - [x] Écrire un test de non-régression et valider avec Vitest et la build
-- [ ] Sauvegarder la modification dans un checkpoint
+- [x] Sauvegarder la modification dans un checkpoint
 
 
 ## Toast de succès après réinitialisation des paramètres
@@ -1763,11 +1763,11 @@
 
 
 ## Système de notation et progression des membres (Grades et Responsabilités)
-- [ ] Créer les tables member_evaluations et member_grades dans drizzle/schema.ts
-- [ ] Ajouter les helpers de requête de notation et de grade dans server/db.ts
-- [ ] Développer les procédures tRPC sécurisées pour noter, promouvoir et assigner des responsabilités
-- [ ] Créer l’interface de notation et de suivi des grades dans la section membres et fiches individuelles
-- [ ] Écrire les tests Vitest, valider la compilation de production et sauvegarder le checkpoint
+- [x] Créer les tables member_evaluations et member_grades dans drizzle/schema.ts
+- [x] Ajouter les helpers de requête de notation et de grade dans server/db.ts
+- [x] Développer les procédures tRPC sécurisées pour noter, promouvoir et assigner des responsabilités
+- [x] Créer l’interface de notation et de suivi des grades dans la section membres et fiches individuelles
+- [x] Écrire les tests Vitest, valider la compilation de production et sauvegarder le checkpoint
 
 
 ## Graphique de répartition des grades sur le tableau de bord

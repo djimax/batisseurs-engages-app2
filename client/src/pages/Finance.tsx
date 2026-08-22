@@ -8,6 +8,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Plus, DollarSign, Gift, TrendingUp, AlertCircle, FileText, Printer } from "lucide-react";
 import { toast } from "sonner";
 import { FinanceCharts } from "@/components/FinanceCharts";
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip as RechartsTooltip, Legend } from "recharts";
 import { HeroSection } from "@/components/HeroSection";
 import { FinanceReportPDF } from "@/components/FinanceReportPDF";
 import { useCotisationReminders } from "@/hooks/useCotisationReminders";
@@ -818,29 +819,117 @@ export default function Finance() {
         </TabsContent>
 
         {/* Graphiques Tab */}
-        <TabsContent value="graphiques" className="space-y-4">
-          <div>
-            <h2 className="text-xl font-semibold mb-4">Visualisation Financière</h2>
-            <FinanceCharts
-              expensesByCategory={depenses.map((d) => ({
-                category: d.categorie,
-                amount: parseFloat(d.montant || "0"),
-              }))}
-              monthlyData={[
-                {
-                  month: "Janvier",
-                  revenues: totalCotisations + totalDons,
-                  expenses: totalDepenses,
-                },
-              ]}
-              balanceHistory={[
-                {
-                  month: "Janvier",
-                  balance: solde,
-                },
-              ]}
-            />
+        <TabsContent value="graphiques" className="space-y-6">
+          <div className="flex items-center justify-between">
+            <h2 className="text-xl font-semibold">Visualisation Financière et Analytique</h2>
           </div>
+          <div className="grid gap-6 grid-cols-1 lg:grid-cols-2">
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg">Cotisations encaissées par catégorie d’adhésion</CardTitle>
+                <CardDescription>Répartition du volume des cotisations payées selon le profil des membres</CardDescription>
+              </CardHeader>
+              <CardContent>
+                {(() => {
+                  const categoryMap: Record<string, number> = {};
+                  MEMBERSHIP_CATEGORIES.forEach(cat => { categoryMap[cat.value] = 0; });
+                  
+                  cotisations.filter(c => c.statut === "payée").forEach(cot => {
+                    const member = members.find(m => m.id === cot.memberId);
+                    const cat = member?.membershipCategory ?? "standard";
+                    const amount = parseFloat(cot.montant || "0");
+                    categoryMap[cat] = (categoryMap[cat] || 0) + amount;
+                  });
+
+                  const data = MEMBERSHIP_CATEGORIES.map(cat => ({
+                    name: cat.label,
+                    amount: categoryMap[cat.value] || 0,
+                  })).filter(d => d.amount > 0);
+
+                  if (data.length === 0) {
+                    return <div className="py-12 text-center text-sm text-muted-foreground">Aucune cotisation payée enregistrée pour l’instant.</div>;
+                  }
+
+                  const COLORS = ["#10b981", "#3b82f6", "#f59e0b", "#8b5cf6", "#ec4899", "#6366f1"];
+
+                  return (
+                    <ResponsiveContainer width="100%" height={300}>
+                      <PieChart>
+                        <Pie
+                          data={data}
+                          dataKey="amount"
+                          nameKey="name"
+                          cx="50%"
+                          cy="50%"
+                          outerRadius={95}
+                          label={({ name, percent }) => `${name} (${(percent * 100).toFixed(0)}%)`}
+                        >
+                          {data.map((_, index) => (
+                            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                          ))}
+                        </Pie>
+                        <RechartsTooltip formatter={(value: any) => [`${Number(value).toLocaleString("fr-FR")} F`, "Montant"]} />
+                        <Legend />
+                      </PieChart>
+                    </ResponsiveContainer>
+                  );
+                })()}
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg">Synthèse des catégories d’adhésion</CardTitle>
+                <CardDescription>Nombre de cotisants et part du chiffre d’affaires associatif</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {MEMBERSHIP_CATEGORIES.map(cat => {
+                    const paidCotis = cotisations.filter(c => c.statut === "payée");
+                    const catCotis = paidCotis.filter(cot => {
+                      const member = members.find(m => m.id === cot.memberId);
+                      return (member?.membershipCategory ?? "standard") === cat.value;
+                    });
+                    const totalAmount = catCotis.reduce((sum, c) => sum + parseFloat(c.montant || "0"), 0);
+                    const memberCount = members.filter(m => (m.membershipCategory ?? "standard") === cat.value).length;
+
+                    return (
+                      <div key={cat.value} className="flex items-center justify-between border-b pb-3 text-sm">
+                        <div>
+                          <p className="font-medium">{cat.label}</p>
+                          <p className="text-xs text-muted-foreground">{memberCount} membre(s) dans cette catégorie</p>
+                        </div>
+                        <div className="text-right">
+                          <p className="font-semibold">{totalAmount.toLocaleString("fr-FR")} F</p>
+                          <p className="text-xs text-muted-foreground">{catCotis.length} cotisation(s) réglée(s)</p>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          <FinanceCharts
+            expensesByCategory={depenses.map((d) => ({
+              category: d.categorie,
+              amount: parseFloat(d.montant || "0"),
+            }))}
+            monthlyData={[
+              {
+                month: "Janvier",
+                revenues: totalCotisations + totalDons,
+                expenses: totalDepenses,
+              },
+            ]}
+            balanceHistory={[
+              {
+                month: "Janvier",
+                balance: solde,
+              },
+            ]}
+          />
         </TabsContent>
       </Tabs>
     </div>
