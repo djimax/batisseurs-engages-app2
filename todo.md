@@ -1752,3 +1752,11 @@
 - [x] Connecter le sélecteur à ThemeContext et usePreferences pour une persistance synchrone
 - [x] Valider l’intégration par les tests Vitest et la build de production
 - [x] Sauvegarder l’option validée dans un checkpoint
+
+
+## Option de thème Système
+- [x] Étendre le type Theme à "light" | "dark" | "system" dans ThemeContext
+- [x] Implémenter l’écoute des préférences du système d’exploitation via matchMedia
+- [x] Ajouter le bouton Système dans les paramètres d’apparence de /settings
+- [x] Écrire un test Vitest et valider la compilation de production
+- [ ] Sauvegarder la modification validée dans un checkpoint

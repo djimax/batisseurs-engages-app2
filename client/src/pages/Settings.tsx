@@ -26,6 +26,7 @@ import {
   Loader2,
   LogOut,
   Moon,
+  Monitor,
   Palette,
   RefreshCw,
   RotateCcw,
@@ -48,7 +49,7 @@ export default function Settings() {
   const [, setLocation] = useLocation();
   const { user: currentUser } = useAuthHook();
   const { preferences, updatePreference, resetPreferences } = usePreferences();
-  const { theme, toggleTheme, setTheme } = useTheme();
+  const { theme, resolvedTheme, setTheme } = useTheme();
   const { exportData, importData, getBackupSize } = useBackup();
   const { getLastSync, getStats: getSyncStats } = useSyncHistory();
   const { currency, setCurrency, exchangeRate, setExchangeRate, resetExchangeRate } = useCurrency();
@@ -85,7 +86,7 @@ export default function Settings() {
 
   const handleResetPreferences = () => {
     resetPreferences();
-    if (theme === "dark") toggleTheme?.();
+    setTheme?.("light");
     setIsResetDialogOpen(false);
     toast.success("Préférences réinitialisées", {
       description: "Vos choix personnels sont revenus aux valeurs par défaut.",
@@ -93,10 +94,11 @@ export default function Settings() {
     });
   };
 
-  const handleThemeChange = (nextTheme: "light" | "dark") => {
+  const handleThemeChange = (nextTheme: UserPreferences["theme"]) => {
     setTheme?.(nextTheme);
     updatePreference("theme", nextTheme);
-    toast.success(`Thème ${nextTheme === "dark" ? "sombre" : "clair"} activé`, {
+    const themeLabel = nextTheme === "system" ? "système" : nextTheme === "dark" ? "sombre" : "clair";
+    toast.success(`Thème ${themeLabel} activé`, {
       description: "L'interface s'est adaptée à votre choix.",
       duration: 2000,
     });
@@ -237,12 +239,13 @@ export default function Settings() {
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2"><Sun className="h-5 w-5 text-primary" />Apparence & Thème</CardTitle>
-                <CardDescription>Basculez instantanément entre le mode clair et le mode sombre.</CardDescription>
+                <CardDescription>Choisissez un mode fixe ou laissez l’interface suivre votre système.</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
                   <button
                     type="button"
+                    aria-pressed={theme === "light"}
                     onClick={() => handleThemeChange("light")}
                     className={`flex items-center justify-center gap-2 rounded-xl border p-3.5 text-sm font-medium transition-all ${
                       theme === "light"
@@ -255,6 +258,7 @@ export default function Settings() {
                   </button>
                   <button
                     type="button"
+                    aria-pressed={theme === "dark"}
                     onClick={() => handleThemeChange("dark")}
                     className={`flex items-center justify-center gap-2 rounded-xl border p-3.5 text-sm font-medium transition-all ${
                       theme === "dark"
@@ -265,17 +269,32 @@ export default function Settings() {
                     <Moon className="h-4 w-4 text-primary" />
                     Mode sombre
                   </button>
+                  <button
+                    type="button"
+                    aria-pressed={theme === "system"}
+                    onClick={() => handleThemeChange("system")}
+                    className={`flex items-center justify-center gap-2 rounded-xl border p-3.5 text-sm font-medium transition-all ${
+                      theme === "system"
+                        ? "border-primary bg-primary/10 text-primary shadow-sm"
+                        : "border-border bg-background text-muted-foreground hover:border-primary/40 hover:text-foreground"
+                    }`}
+                  >
+                    <Monitor className="h-4 w-4" />
+                    Système
+                  </button>
                 </div>
-                <div className="flex items-center justify-between gap-3 rounded-xl border px-4 py-3 text-sm">
+                <div className="flex flex-col gap-3 rounded-xl border px-4 py-3 text-sm sm:flex-row sm:items-center sm:justify-between">
                   <div className="flex items-center gap-2 text-muted-foreground">
                     <span>État actuel :</span>
-                    <span className="font-semibold text-foreground">{theme === "dark" ? "Mode sombre" : "Mode clair"}</span>
+                    <span className="font-semibold text-foreground">
+                      {theme === "system" ? `Système · ${resolvedTheme === "dark" ? "sombre" : "clair"}` : theme === "dark" ? "Mode sombre" : "Mode clair"}
+                    </span>
                   </div>
                   <Button
                     variant="outline"
                     size="sm"
                     onClick={() => handleThemeChange(theme === "dark" ? "light" : "dark")}
-                    className="gap-2"
+                    className="gap-2 self-start sm:self-auto"
                   >
                     {theme === "dark" ? <Sun className="h-3.5 w-3.5" /> : <Moon className="h-3.5 w-3.5" />}
                     Basculer

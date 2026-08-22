@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { getStoredTheme } from "../client/src/contexts/ThemeContext";
+import { getStoredTheme, getSystemTheme } from "../client/src/contexts/ThemeContext";
 
 function createStorage() {
   const values = new Map<string, string>();
@@ -34,5 +34,19 @@ describe("ThemeContext storage", () => {
     localStorage.setItem("userPreferences", "not-json");
 
     expect(getStoredTheme("light")).toBe("light");
+  });
+
+  it("keeps the system choice when it is stored with user preferences", () => {
+    localStorage.setItem("userPreferences", JSON.stringify({ theme: "system" }));
+
+    expect(getStoredTheme("light")).toBe("system");
+  });
+
+  it("resolves the operating system preference through matchMedia", () => {
+    vi.stubGlobal("window", { matchMedia: () => ({ matches: true }) });
+    expect(getSystemTheme()).toBe("dark");
+
+    vi.stubGlobal("window", { matchMedia: () => ({ matches: false }) });
+    expect(getSystemTheme()).toBe("light");
   });
 });

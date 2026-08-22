@@ -4,7 +4,7 @@ export interface UserPreferences {
   language: 'fr' | 'en';
   dateFormat: 'DD/MM/YYYY' | 'MM/DD/YYYY' | 'YYYY-MM-DD';
   emailNotifications: boolean;
-  theme: 'light' | 'dark' | 'auto';
+  theme: 'light' | 'dark' | 'system';
   itemsPerPage: number;
   autoSaveInterval: number; // en secondes
 }
