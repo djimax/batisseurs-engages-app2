@@ -17,6 +17,7 @@ import { useFormatAmount } from "@/hooks/useFormatAmount";
 import { AmountDisplay } from "@/components/AmountDisplay";
 import { useEffect, useMemo, useState } from "react";
 import { trpc } from "@/lib/trpc";
+import { StripeCheckoutCard } from "@/components/StripeCheckoutCard";
 
 interface Cotisation {
   id: number;
@@ -117,6 +118,17 @@ export default function Finance() {
   useEffect(() => {
     setCotisations(storedCotisations.map((item) => ({ ...item, currency: item.currency as "EUR" | "XOF", dateDebut: new Date(item.dateDebut), dateFin: new Date(item.dateFin), datePayment: item.datePayment ? new Date(item.datePayment) : undefined })));
   }, [storedCotisations]);
+
+  useEffect(() => {
+    const status = new URLSearchParams(window.location.search).get("stripe");
+    if (status === "success") {
+      toast.success("Paiement Stripe confirmé", { description: "Le rapprochement financier sera mis à jour après réception du webhook." });
+      window.history.replaceState({}, document.title, window.location.pathname);
+    } else if (status === "cancelled") {
+      toast.info("Paiement Stripe annulé");
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
+  }, []);
 
   useEffect(() => {
     setDons(storedDons.map((item) => ({ ...item, currency: item.currency as "EUR" | "XOF", date: new Date(item.date) })));
@@ -382,6 +394,8 @@ export default function Finance() {
           </CardContent>
         </Card>
       </div>
+
+      <StripeCheckoutCard members={members} />
 
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">

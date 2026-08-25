@@ -46,9 +46,11 @@ import {
   announcements,
   news,
   newsComments,
-  membershipFeeRules,
-  memberEvaluations,
-  memberGrades
+ 	membershipFeeRules,
+	memberEvaluations,
+	memberGrades,
+	stripePayments,
+	stripeEvents
 } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
@@ -78,8 +80,11 @@ const schema = {
   crmEmailIntegration,
   globalSettings,
   passwordResetRequests,
-  roles,
-  permissions,
+  	roles,
+	permissions,
+	stripePayments,
+	stripeEvents,
+
   rolePermissions,
   userRoles,
   userScopes,

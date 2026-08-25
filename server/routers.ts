@@ -51,6 +51,7 @@ import { buildDonationDocumentHtml, convertFinancialAmount, createTaxReceipt, FI
 import { antennasRouter, groupesRouter } from "./antennes-groupes-router";
 import { canAssignMemberGrade, MEMBER_GRADE_LEVELS } from "../shared/memberProgression";
 import { governanceRouter } from "./governance-router";
+import { stripeRouter } from "./stripe-router";
 
 // Note: Email procedures are now in email-router.ts and imported above
 
@@ -63,6 +64,7 @@ export const appRouter = router({
   antennes: antennasRouter,
   groupes: groupesRouter,
   governance: governanceRouter,
+  stripe: stripeRouter,
   
   auth: router({
     me: publicProcedure.query(opts => opts.ctx.user),

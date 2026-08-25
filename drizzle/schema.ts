@@ -769,7 +769,41 @@ export const roles = mysqlTable("roles", {
 	index("roles_name_unique").on(table.name),
 ]);
 
-	export const transactions = mysqlTable("transactions", {
+	export const stripePayments = mysqlTable("stripe_payments", {
+	id: int().autoincrement().notNull(),
+	paymentType: mysqlEnum(['cotisation','don','campagne']).notNull(),
+	memberId: int(),
+	cotisationId: int(),
+	donationId: int(),
+	campaignId: int(),
+	stripeCheckoutSessionId: varchar({ length: 255 }).notNull(),
+	stripePaymentIntentId: varchar({ length: 255 }),
+	status: mysqlEnum(['created','completed','failed','refunded']).default('created').notNull(),
+	createdAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
+	updatedAt: timestamp({ mode: 'string' }).defaultNow().onUpdateNow().notNull(),
+},
+	(table) => [
+		uniqueIndex("stripe_payments_checkout_session_unique").on(table.stripeCheckoutSessionId),
+		uniqueIndex("stripe_payments_payment_intent_unique").on(table.stripePaymentIntentId),
+		index("stripe_payments_member_idx").on(table.memberId),
+		index("stripe_payments_campaign_idx").on(table.campaignId),
+	]
+);
+
+export const stripeEvents = mysqlTable("stripe_events", {
+	id: int().autoincrement().notNull(),
+	stripeEventId: varchar({ length: 255 }).notNull(),
+	eventType: varchar({ length: 120 }).notNull(),
+	status: mysqlEnum(['received','processed','failed']).default('received').notNull(),
+	receivedAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
+	processedAt: timestamp({ mode: 'string' }),
+},
+	(table) => [
+		uniqueIndex("stripe_events_event_id_unique").on(table.stripeEventId),
+	]
+);
+
+export const transactions = mysqlTable("transactions", {
 		id: int().autoincrement().notNull(),
 		type: mysqlEnum(['cotisation','don','depense','autre']).notNull(),
 		montant: varchar({ length: 20 }).notNull(),

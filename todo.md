@@ -1840,3 +1840,22 @@
 - [x] Vérifier les besoins d’authentification, paiements, notifications, fichiers, cartes et automatisations
 - [x] Documenter les prérequis, données échangées, risques et coûts indicatifs
 - [x] Livrer une matrice priorisée des API nécessaires à l’application
+
+## Intégration Stripe
+- [x] Ajouter la configuration Stripe côté serveur et documenter les secrets requis
+- [x] Définir le modèle de paiement et le lien avec membres, cotisations, dons et campagnes
+- [x] Implémenter Checkout Stripe avec métadonnées et idempotence
+- [x] Implémenter le webhook Stripe avec vérification de signature et déduplication
+- [x] Rapprocher les paiements Stripe avec les écritures financières internes
+- [x] Connecter l’interface aux états de paiement et aux retours Checkout
+- [x] Ajouter les tests de sécurité, de validation et de non-régression Stripe
+- [x] Valider TypeScript, tests, build et sauvegarder l’intégration
+- [x] Configurer un parcours Stripe Checkout pour les cotisations avec rattachement au membre et à la catégorie d’adhésion
+- [x] Configurer un parcours Stripe Checkout pour les dons ponctuels et affectés à une campagne
+- [x] Configurer un parcours Stripe Checkout pour les campagnes de collecte avec objectifs et métadonnées de campagne
+- [x] Mettre à niveau nanoid vers une version corrigée et vérifier les usages générant des identifiants
+- [x] Mettre à niveau axios/form-data vers une chaîne corrigée et vérifier les intégrations concernées
+- [x] Rejouer l’audit des dépendances et documenter les alertes transitives impossibles à corriger sans changement majeur
+- [x] Mettre à niveau drizzle-orm vers une version corrigée et vérifier les requêtes Drizzle existantes
+- [x] Créer l’écriture locale `dons` lors de la confirmation Stripe d’un don ou d’une campagne et relier son identifiant au paiement
+- [x] Ajouter un test de régression du rapprochement Stripe vers une cotisation, un don et une campagne
