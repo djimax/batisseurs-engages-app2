@@ -162,7 +162,7 @@ export default function Settings() {
         </Button>
       </header>
 
-      <section aria-label="Accès rapides" className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+      <section aria-label="Accès rapides" className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
         <button
           type="button"
           onClick={() => setLocation("/member-portal")}
@@ -174,6 +174,19 @@ export default function Settings() {
           </div>
           <p className="mt-4 font-semibold">Mon profil adhérent</p>
           <p className="mt-1 text-sm text-muted-foreground">Coordonnées, carte et historique personnel.</p>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setLocation("/finance?tab=paiements")}
+          className="group rounded-2xl border border-primary/20 bg-primary/[0.04] p-4 text-left shadow-sm transition-[border-color,box-shadow,transform] duration-200 hover:-translate-y-0.5 hover:border-primary/50 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        >
+          <div className="flex items-start justify-between gap-3">
+            <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary"><DollarSign className="h-5 w-5" /></span>
+            <ArrowRight className="h-4 w-4 text-muted-foreground transition-transform group-hover:translate-x-0.5" />
+          </div>
+          <p className="mt-4 font-semibold">Paiements Stripe</p>
+          <p className="mt-1 text-sm text-muted-foreground">Cotisations, dons et campagnes de collecte en ligne.</p>
         </button>
 
         {isAdmin && (

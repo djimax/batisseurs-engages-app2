@@ -1866,3 +1866,11 @@
 - [x] Corriger la boucle sans supprimer les fonctionnalités de paiement ou de finance
 - [x] Ajouter un test de non-régression du composant concerné
 - [x] Valider TypeScript, tests, build et rendu Finance
+
+## Visibilité Stripe dans Finance
+- [x] Vérifier si le panneau Stripe est monté dans la page Finance et s’il est masqué par le mode hors ligne ou une permission
+- [x] Vérifier le lien Paramètres → Paiement et l’état des clés Stripe
+- [x] Corriger le point d’accès ou l’affichage Stripe si nécessaire
+- [x] Ajouter un test de non-régression de visibilité du panneau Stripe
+- [x] Valider TypeScript, tests, build et sauvegarder le correctif
+- [x] Ajouter un onglet « Paiements Stripe » visible dans Finance, avec explication du mode en ligne et de la configuration requise

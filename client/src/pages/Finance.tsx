@@ -116,7 +116,7 @@ export default function Finance() {
   const [cotisations, setCotisations] = useState<Cotisation[]>([]);
   const [dons, setDons] = useState<Don[]>([]);
   const [depenses, setDepenses] = useState<Depense[]>([]);
-  const [activeTab, setActiveTab] = useState("cotisations");
+  const [activeTab, setActiveTab] = useState(() => new URLSearchParams(window.location.search).get("tab") === "paiements" ? "paiements" : "cotisations");
   const [sortBy, setSortBy] = useState<string>("date-newest");
   const [newFeeRule, setNewFeeRule] = useState({ category: "standard" as typeof MEMBERSHIP_CATEGORIES[number]["value"], currency: "EUR" as "EUR" | "XOF", amount: "", validFrom: new Date().toISOString().slice(0, 10) });
   useEffect(() => {
@@ -399,17 +399,28 @@ export default function Finance() {
         </Card>
       </div>
 
-      <StripeCheckoutCard members={members} />
-
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-5">
+        <TabsList className="grid w-full grid-cols-2 sm:grid-cols-3 lg:grid-cols-6">
           <TabsTrigger value="cotisations">Cotisations</TabsTrigger>
           <TabsTrigger value="dons">Dons</TabsTrigger>
           <TabsTrigger value="depenses">Dépenses</TabsTrigger>
           <TabsTrigger value="graphiques">Graphiques</TabsTrigger>
           <TabsTrigger value="recus">Reçus</TabsTrigger>
+          <TabsTrigger value="paiements">Paiements Stripe</TabsTrigger>
         </TabsList>
+
+        <TabsContent value="paiements" className="space-y-4">
+          <Card className="border-primary/20 bg-primary/[0.03]">
+            <CardHeader>
+              <CardTitle>Paiements en ligne</CardTitle>
+              <CardDescription>Utilisez Stripe pour les cotisations, les dons et les campagnes de collecte. Le paiement s’ouvre dans une nouvelle fenêtre sécurisée.</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <StripeCheckoutCard members={members} />
+            </CardContent>
+          </Card>
+        </TabsContent>
 
         {/* Cotisations Tab */}
         <TabsContent value="cotisations" className="space-y-4">
