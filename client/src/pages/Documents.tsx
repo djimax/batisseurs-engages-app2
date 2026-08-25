@@ -97,8 +97,12 @@ export default function Documents() {
   const { data: exportData } = trpc.documents.exportReport.useQuery({});
   const { data: documents, isLoading } = trpc.documents.list.useQuery({
     categoryId: categoryFilter !== "all" ? parseInt(categoryFilter) : undefined,
-    status: statusFilter !== "all" ? statusFilter : undefined,
-    priority: priorityFilter !== "all" ? priorityFilter : undefined,
+    status: statusFilter !== "all" && ["pending", "in-progress", "completed"].includes(statusFilter)
+      ? (statusFilter as "pending" | "in-progress" | "completed")
+      : undefined,
+    priority: priorityFilter !== "all" && ["low", "medium", "high", "urgent"].includes(priorityFilter)
+      ? (priorityFilter as "low" | "medium" | "high" | "urgent")
+      : undefined,
     search: searchTerm || undefined,
     isArchived: showArchived,
   });

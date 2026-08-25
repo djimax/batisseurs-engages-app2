@@ -1811,3 +1811,25 @@
 - [x] Respecter les directives d’animation (durée < 300ms, transform/opacity, prefers-reduced-motion)
 - [x] Valider par des tests unitaires et la compilation de production
 - [x] Sauvegarder la modification validée dans un checkpoint
+
+## Audit général de l’application
+- [x] Inventorier les routes, pages, procédures tRPC et dépendances principales
+- [x] Vérifier TypeScript, tests, build, logs serveur et console navigateur
+- [x] Contrôler les boutons, liens, formulaires, états de chargement et routes orphelines
+- [x] Rechercher les répétitions, incohérences de libellés, devises, statuts et formats de date
+- [x] Vérifier les permissions, validations Zod, contrôles d’accès objet et exposition de données
+- [x] Rechercher les secrets, injections, XSS, fichiers non sécurisés et configurations fragiles
+- [x] Corriger les problèmes critiques et élevés confirmés par l’audit
+- [x] Ajouter les tests de non-régression associés aux corrections
+- [x] Produire un rapport d’audit avec risques, preuves, priorités et recommandations
+- [x] Valider TypeScript, tests, build et sauvegarder le résultat
+- [x] Corriger l’exposition publique des documents, archives, statistiques, exports et notes en imposant l’authentification et la permission documents.view
+- [x] Ajouter un test de régression garantissant le refus des accès documentaires non authentifiés
+- [x] Remplacer streamdown 1.x et la chaîne mermaid vulnérable par une version maintenue, puis vérifier la compatibilité de rendu Markdown
+- [x] Mettre à niveau la chaîne AWS/S3 qui fournit fast-xml-parser et vérifier la disparition de l’alerte critique
+- [x] Imposer `documents.manage` aux créations, modifications, suppressions, archivages et opérations de fichiers documentaires
+- [x] Valider strictement le nom, le type, la taille et le contenu Base64 des fichiers téléversés
+- [x] Ajouter des tests de régression pour refuser les mutations documentaires sans permission de gestion
+- [x] Imposer `members.view` aux lectures membres, cartes, adhésions et exports
+- [x] Imposer `members.manage` aux créations, modifications, suppressions et photos des membres
+- [x] Ajouter un test de régression garantissant le refus des lectures et mutations membres sans permission

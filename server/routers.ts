@@ -108,15 +108,16 @@ export const appRouter = router({
 
   // ============ DOCUMENTS ============
   documents: router({
-    list: publicProcedure
+    list: protectedProcedure
       .input(z.object({
-        categoryId: z.number().optional(),
-        status: z.string().optional(),
-        priority: z.string().optional(),
-        search: z.string().optional(),
+        categoryId: z.number().int().positive().optional(),
+        status: z.enum(["pending", "in-progress", "completed"]).optional(),
+        priority: z.enum(["low", "medium", "high", "urgent"]).optional(),
+        search: z.string().trim().max(200).optional(),
         isArchived: z.boolean().optional(),
       }).optional())
-      .query(async ({ input }) => {
+      .query(async ({ input, ctx }) => {
+        await assertPermission(ctx.user, "documents.view");
         await seedDefaultCategories();
         await seedDefaultDocuments();
         return getAllDocuments({
@@ -125,11 +126,15 @@ export const appRouter = router({
         });
       }),
     
-    getById: publicProcedure
-      .input(z.object({ id: z.number() }))
-      .query(async ({ input }) => getDocumentById(input.id)),
+    getById: protectedProcedure
+      .input(z.object({ id: z.number().int().positive() }))
+      .query(async ({ input, ctx }) => {
+        await assertPermission(ctx.user, "documents.view");
+        return getDocumentById(input.id);
+      }),
     
-    stats: publicProcedure.query(async () => {
+    stats: protectedProcedure.query(async ({ ctx }) => {
+      await assertPermission(ctx.user, "documents.view");
       await seedDefaultCategories();
       await seedDefaultDocuments();
       return getDocumentStats();
@@ -139,12 +144,13 @@ export const appRouter = router({
       .input(z.object({
         title: z.string().min(1),
         description: z.string().optional(),
-        categoryId: z.number(),
+        categoryId: z.number().int().positive(),
         status: z.enum(["pending", "in-progress", "completed"]).optional(),
         priority: z.enum(["low", "medium", "high", "urgent"]).optional(),
         dueDate: z.date().optional(),
       }))
       .mutation(async ({ input, ctx }) => {
+        await assertPermission(ctx.user, "documents.manage");
         const result = await createDocument({
           ...input,
           dueDate: input.dueDate ? input.dueDate.toISOString() : undefined,
@@ -166,16 +172,17 @@ export const appRouter = router({
     
     update: protectedProcedure
       .input(z.object({
-        id: z.number(),
-        title: z.string().optional(),
-        description: z.string().optional(),
-        categoryId: z.number().optional(),
+        id: z.number().int().positive(),
+        title: z.string().trim().min(1).max(255).optional(),
+        description: z.string().trim().max(5000).optional(),
+        categoryId: z.number().int().positive().optional(),
         status: z.enum(["pending", "in-progress", "completed"]).optional(),
         priority: z.enum(["low", "medium", "high", "urgent"]).optional(),
         dueDate: z.date().nullable().optional(),
         isArchived: z.boolean().optional(),
       }))
       .mutation(async ({ input, ctx }) => {
+        await assertPermission(ctx.user, "documents.manage");
         const { id, ...data } = input;
         const convertedData = {
           ...data,
@@ -194,8 +201,9 @@ export const appRouter = router({
       }),
     
     delete: protectedProcedure
-      .input(z.object({ id: z.number() }))
+      .input(z.object({ id: z.number().int().positive() }))
       .mutation(async ({ input, ctx }) => {
+        await assertPermission(ctx.user, "documents.manage");
         await deleteDocument(input.id);
         await logActivity({
           userId: ctx.user.id,
@@ -209,20 +217,25 @@ export const appRouter = router({
     
     uploadFile: protectedProcedure
       .input(z.object({
-        documentId: z.number(),
-        fileName: z.string(),
-        fileType: z.string(),
-        fileSize: z.number(),
-        fileBase64: z.string(),
+        documentId: z.number().int().positive(),
+        fileName: z.string().trim().min(1).max(255).refine(name => !name.includes("/") && !name.includes("\\") && !name.includes("\0"), "Nom de fichier invalide"),
+        fileType: z.string().trim().min(1).max(150).refine(value => value.includes("/") && !value.includes(" "), "Type MIME invalide"),
+        fileSize: z.number().int().positive().max(50 * 1024 * 1024),
+        fileBase64: z.string().regex(/^[A-Za-z0-9+/]*={0,2}$/, "Contenu Base64 invalide").max(70 * 1024 * 1024),
       }))
       .mutation(async ({ input, ctx }) => {
+        await assertPermission(ctx.user, "documents.manage");
         const { documentId, fileName, fileType, fileSize, fileBase64 } = input;
         
-        // Convert base64 to buffer
+        // Convert base64 to buffer and reject forged size metadata
         const fileBuffer = Buffer.from(fileBase64, "base64");
+        if (fileBuffer.length !== fileSize) {
+          throw new TRPCError({ code: "BAD_REQUEST", message: "La taille du fichier ne correspond pas à son contenu." });
+        }
         
-        // Generate unique file key
-        const fileKey = `documents/${documentId}/${nanoid()}-${fileName}`;
+        // Generate a safe, non-enumerable file key
+        const safeFileName = fileName.replace(/[^a-zA-Z0-9._-]/g, "_");
+        const fileKey = `documents/${documentId}/${nanoid()}-${safeFileName}`;
         
         // Upload to S3
         const { url } = await storagePut(fileKey, fileBuffer, fileType);
@@ -254,8 +267,9 @@ export const appRouter = router({
       }),
     
     removeFile: protectedProcedure
-      .input(z.object({ documentId: z.number() }))
+      .input(z.object({ documentId: z.number().int().positive() }))
       .mutation(async ({ input, ctx }) => {
+        await assertPermission(ctx.user, "documents.manage");
         await updateDocument(input.documentId, {
           fileUrl: null,
           fileKey: null,
@@ -275,12 +289,13 @@ export const appRouter = router({
       }),
     
     // Export documents report data
-    exportReport: publicProcedure
+    exportReport: protectedProcedure
       .input(z.object({
-        categoryId: z.number().optional(),
-        status: z.string().optional(),
+        categoryId: z.number().int().positive().optional(),
+        status: z.enum(["pending", "in-progress", "completed"]).optional(),
       }).optional())
-      .query(async ({ input }) => {
+      .query(async ({ input, ctx }) => {
+        await assertPermission(ctx.user, "documents.view");
         const docs = await getAllDocuments(input);
         const cats = await getAllCategories();
         const stats = await getDocumentStats();
@@ -308,12 +323,13 @@ export const appRouter = router({
       }),
     
     // List archived documents
-    archived: publicProcedure
+    archived: protectedProcedure
       .input(z.object({
-        categoryId: z.number().optional(),
-        search: z.string().optional(),
+        categoryId: z.number().int().positive().optional(),
+        search: z.string().trim().max(200).optional(),
       }).optional())
-      .query(async ({ input }) => {
+      .query(async ({ input, ctx }) => {
+        await assertPermission(ctx.user, "documents.view");
         return getAllDocuments({
           ...input,
           isArchived: 1,
@@ -322,8 +338,9 @@ export const appRouter = router({
     
     // Archive a document
     archive: protectedProcedure
-      .input(z.object({ id: z.number() }))
+      .input(z.object({ id: z.number().int().positive() }))
       .mutation(async ({ input, ctx }) => {
+        await assertPermission(ctx.user, "documents.manage");
         const result = await updateDocument(input.id, {
           isArchived: 1,
           updatedBy: ctx.user.id,
@@ -344,8 +361,9 @@ export const appRouter = router({
     
     // Restore an archived document
     restore: protectedProcedure
-      .input(z.object({ id: z.number() }))
+      .input(z.object({ id: z.number().int().positive() }))
       .mutation(async ({ input, ctx }) => {
+        await assertPermission(ctx.user, "documents.manage");
         const result = await updateDocument(input.id, {
           isArchived: 0,
           updatedBy: ctx.user.id,
@@ -363,16 +381,20 @@ export const appRouter = router({
 
   // ============ NOTES ============
   notes: router({
-    listByDocument: publicProcedure
-      .input(z.object({ documentId: z.number() }))
-      .query(async ({ input }) => getNotesByDocumentId(input.documentId)),
+    listByDocument: protectedProcedure
+      .input(z.object({ documentId: z.number().int().positive() }))
+      .query(async ({ input, ctx }) => {
+        await assertPermission(ctx.user, "documents.view");
+        return getNotesByDocumentId(input.documentId);
+      }),
     
     create: protectedProcedure
       .input(z.object({
-        documentId: z.number(),
-        content: z.string().min(1),
+        documentId: z.number().int().positive(),
+        content: z.string().trim().min(1).max(5000),
       }))
       .mutation(async ({ input, ctx }) => {
+        await assertPermission(ctx.user, "documents.manage");
         const result = await createNote({
           documentId: input.documentId,
           userId: ctx.user.id,
@@ -389,8 +411,9 @@ export const appRouter = router({
       }),
     
     delete: protectedProcedure
-      .input(z.object({ id: z.number() }))
+      .input(z.object({ id: z.number().int().positive() }))
       .mutation(async ({ input, ctx }) => {
+        await assertPermission(ctx.user, "documents.manage");
         await deleteNote(input.id);
         await logActivity({
           userId: ctx.user.id,
@@ -542,7 +565,10 @@ export const appRouter = router({
 
   // ============ MEMBERS ============
   members: router({
-    list: protectedProcedure.query(async () => getAllMembersWithGrades()),
+    list: protectedProcedure.query(async ({ ctx }) => {
+      await assertPermission(ctx.user, "members.view");
+      return getAllMembersWithGrades();
+    }),
 
     directory: protectedProcedure
       .input(z.object({
@@ -627,8 +653,11 @@ export const appRouter = router({
       }),
     
     getById: protectedProcedure
-      .input(z.object({ id: z.number() }))
-      .query(async ({ input }) => getMemberById(input.id)),
+      .input(z.object({ id: z.number().int().positive() }))
+      .query(async ({ input, ctx }) => {
+        await assertPermission(ctx.user, "members.view");
+        return getMemberById(input.id);
+      }),
 
 
     
@@ -649,6 +678,7 @@ export const appRouter = router({
         availability: z.string().optional(),
       }))
       .mutation(async ({ input, ctx }) => {
+        await assertPermission(ctx.user, "members.manage");
         const result = await createMember(input as any);
         await recordMemberStatus({
           memberId: result.id as number,
@@ -687,6 +717,7 @@ export const appRouter = router({
         availability: z.string().optional(),
       }))
       .mutation(async ({ input, ctx }) => {
+        await assertPermission(ctx.user, "members.manage");
         const { id, statusReason, ...data } = input;
         const current = await getMemberById(id);
         if (!current) throw new Error("Membre non trouvé");
@@ -715,8 +746,9 @@ export const appRouter = router({
       }),
     
     delete: protectedProcedure
-      .input(z.object({ id: z.number() }))
+      .input(z.object({ id: z.number().int().positive() }))
       .mutation(async ({ input, ctx }) => {
+        await assertPermission(ctx.user, "members.manage");
         await deleteMember(input.id);
         await logActivity({
           userId: ctx.user.id,
@@ -730,11 +762,12 @@ export const appRouter = router({
     
     uploadPhoto: protectedProcedure
       .input(z.object({
-        memberId: z.number(),
-        photoData: z.string(), // base64 encoded image
-        fileName: z.string(),
+        memberId: z.number().int().positive(),
+        photoData: z.string().min(1).max(12 * 1024 * 1024),
+        fileName: z.string().trim().min(1).max(255),
       }))
       .mutation(async ({ input, ctx }) => {
+        await assertPermission(ctx.user, "members.manage");
         try {
           // Convert base64 to buffer
           const buffer = Buffer.from(input.photoData.split(',')[1] || input.photoData, 'base64');
@@ -768,9 +801,10 @@ export const appRouter = router({
     
     deletePhoto: protectedProcedure
       .input(z.object({
-        memberId: z.number(),
+        memberId: z.number().int().positive(),
       }))
       .mutation(async ({ input, ctx }) => {
+        await assertPermission(ctx.user, "members.manage");
         try {
           const db = await getDb();
           if (db) {
@@ -795,8 +829,9 @@ export const appRouter = router({
       }),
     
     getAdhesionCard: protectedProcedure
-      .input(z.object({ memberId: z.number() }))
-      .query(async ({ input }) => {
+      .input(z.object({ memberId: z.number().int().positive() }))
+      .query(async ({ input, ctx }) => {
+        await assertPermission(ctx.user, "members.view");
         const member = await getMemberById(input.memberId);
         if (!member) throw new Error('Membre non trouvé');
         
@@ -1044,7 +1079,8 @@ export const appRouter = router({
       }),
 
     // Export members list
-    exportList: protectedProcedure.query(async () => {
+    exportList: protectedProcedure.query(async ({ ctx }) => {
+      await assertPermission(ctx.user, "members.view");
       const membersList = await getAllMembers();
       return {
         members: membersList.map(m => ({

@@ -11,7 +11,7 @@ function createAuthContext(): TrpcContext {
     email: "test@example.com",
     name: "Test User",
     loginMethod: "manus",
-    role: "user",
+    role: "admin",
     createdAt: new Date(),
     updatedAt: new Date(),
     lastSignedIn: new Date(),
@@ -70,8 +70,8 @@ describe("Categories Router", () => {
 });
 
 describe("Documents Router", () => {
-  it("should list documents (public)", async () => {
-    const ctx = createPublicContext();
+  it("should list documents (protected)", async () => {
+    const ctx = createAuthContext();
     const caller = appRouter.createCaller(ctx);
 
     const documents = await caller.documents.list({});
@@ -79,8 +79,8 @@ describe("Documents Router", () => {
     expect(Array.isArray(documents)).toBe(true);
   });
 
-  it("should get document stats (public)", async () => {
-    const ctx = createPublicContext();
+  it("should get document stats (protected)", async () => {
+    const ctx = createAuthContext();
     const caller = appRouter.createCaller(ctx);
 
     const stats = await caller.documents.stats();
@@ -93,9 +93,8 @@ describe("Documents Router", () => {
   });
 
   it("should filter documents by status", async () => {
-    const ctx = createPublicContext();
+    const ctx = createAuthContext();
     const caller = appRouter.createCaller(ctx);
-
     const pendingDocs = await caller.documents.list({ status: "pending" });
 
     expect(Array.isArray(pendingDocs)).toBe(true);
@@ -105,9 +104,8 @@ describe("Documents Router", () => {
   });
 
   it("should filter documents by priority", async () => {
-    const ctx = createPublicContext();
+    const ctx = createAuthContext();
     const caller = appRouter.createCaller(ctx);
-
     const urgentDocs = await caller.documents.list({ priority: "urgent" });
 
     expect(Array.isArray(urgentDocs)).toBe(true);
@@ -116,8 +114,8 @@ describe("Documents Router", () => {
     });
   });
 
-  it("should export report data", async () => {
-    const ctx = createPublicContext();
+  it("should export report data (protected)", async () => {
+    const ctx = createAuthContext();
     const caller = appRouter.createCaller(ctx);
 
     const report = await caller.documents.exportReport({});
@@ -172,8 +170,8 @@ describe("Documents Router", () => {
 });
 
 describe("Notes Router", () => {
-  it("should list notes by document (public)", async () => {
-    const ctx = createPublicContext();
+  it("should list notes by document (protected)", async () => {
+    const ctx = createAuthContext();
     const caller = appRouter.createCaller(ctx);
 
     // Get a document first
@@ -255,5 +253,39 @@ describe("Activity Router", () => {
     const activities = await caller.activity.recent({ limit: 10 });
 
     expect(Array.isArray(activities)).toBe(true);
+  });
+});
+
+
+describe("Document access control", () => {
+  it("refuses unauthenticated access to document data and notes", async () => {
+    const caller = appRouter.createCaller(createPublicContext());
+
+    await expect(caller.documents.list()).rejects.toMatchObject({ code: "UNAUTHORIZED" });
+    await expect(caller.documents.getById({ id: 1 })).rejects.toMatchObject({ code: "UNAUTHORIZED" });
+    await expect(caller.documents.stats()).rejects.toMatchObject({ code: "UNAUTHORIZED" });
+    await expect(caller.documents.exportReport({})).rejects.toMatchObject({ code: "UNAUTHORIZED" });
+    await expect(caller.documents.archived({})).rejects.toMatchObject({ code: "UNAUTHORIZED" });
+    await expect(caller.notes.listByDocument({ documentId: 1 })).rejects.toMatchObject({ code: "UNAUTHORIZED" });
+  });
+});
+
+
+function createUnprivilegedContext(): TrpcContext {
+  const ctx = createAuthContext();
+  return {
+    ...ctx,
+    user: { ...ctx.user!, id: 999999, role: "user" },
+  };
+}
+
+describe("Member access control", () => {
+  it("refuses member reads and mutations without the corresponding permission", async () => {
+    const caller = appRouter.createCaller(createUnprivilegedContext());
+
+    await expect(caller.members.list()).rejects.toMatchObject({ code: "FORBIDDEN" });
+    await expect(caller.members.getById({ id: 1 })).rejects.toMatchObject({ code: "FORBIDDEN" });
+    await expect(caller.members.exportList()).rejects.toMatchObject({ code: "FORBIDDEN" });
+    await expect(caller.members.create({ firstName: "Test", lastName: "SansPermission" })).rejects.toMatchObject({ code: "FORBIDDEN" });
   });
 });
