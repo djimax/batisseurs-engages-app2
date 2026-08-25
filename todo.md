@@ -1859,3 +1859,10 @@
 - [x] Mettre à niveau drizzle-orm vers une version corrigée et vérifier les requêtes Drizzle existantes
 - [x] Créer l’écriture locale `dons` lors de la confirmation Stripe d’un don ou d’une campagne et relier son identifiant au paiement
 - [x] Ajouter un test de régression du rapprochement Stripe vers une cotisation, un don et une campagne
+
+## Correctif boucle React Finance
+- [x] Reproduire l’erreur Maximum update depth exceeded sur `/finance`
+- [x] Identifier le composant ou la prop instable qui déclenche la mise à jour récursive
+- [x] Corriger la boucle sans supprimer les fonctionnalités de paiement ou de finance
+- [x] Ajouter un test de non-régression du composant concerné
+- [x] Valider TypeScript, tests, build et rendu Finance

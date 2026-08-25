@@ -52,6 +52,10 @@ interface Depense {
   notes?: string | null;
 }
 
+const EMPTY_COTISATIONS: Cotisation[] = [];
+const EMPTY_DONS: Don[] = [];
+const EMPTY_DEPENSES: Depense[] = [];
+
 const SORT_OPTIONS = [
   { value: "date-newest", label: "Plus recents" },
   { value: "date-oldest", label: "Plus anciens" },
@@ -87,9 +91,9 @@ export default function Finance() {
   const { data: receipts = [], refetch: refetchReceipts } = trpc.finances.receipts.useQuery({ limit: 100 });
   const { data: members = [] } = trpc.members.list.useQuery();
   const { data: feeRules = [] } = trpc.finances.feeRules.useQuery();
-  const { data: storedCotisations = [] } = trpc.finances.cotisations.useQuery();
-  const { data: storedDons = [] } = trpc.finances.dons.useQuery();
-  const { data: storedDepenses = [] } = trpc.finances.depenses.useQuery();
+  const { data: storedCotisations = EMPTY_COTISATIONS } = trpc.finances.cotisations.useQuery();
+  const { data: storedDons = EMPTY_DONS } = trpc.finances.dons.useQuery();
+  const { data: storedDepenses = EMPTY_DEPENSES } = trpc.finances.depenses.useQuery();
   const createCotisationMutation = trpc.finances.createCotisation.useMutation({ onError: (error) => toast.error(error.message) });
   const createFeeRuleMutation = trpc.finances.createFeeRule.useMutation({
     onSuccess: async () => {
