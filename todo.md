@@ -1833,3 +1833,10 @@
 - [x] Imposer `members.view` aux lectures membres, cartes, adhésions et exports
 - [x] Imposer `members.manage` aux créations, modifications, suppressions et photos des membres
 - [x] Ajouter un test de régression garantissant le refus des lectures et mutations membres sans permission
+
+## Cartographie des API de l’application
+- [x] Inventorier les API internes et services déjà utilisés par chaque module
+- [x] Identifier les API indispensables, recommandées, optionnelles et à éviter
+- [x] Vérifier les besoins d’authentification, paiements, notifications, fichiers, cartes et automatisations
+- [x] Documenter les prérequis, données échangées, risques et coûts indicatifs
+- [x] Livrer une matrice priorisée des API nécessaires à l’application
