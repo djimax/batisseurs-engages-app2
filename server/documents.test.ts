@@ -84,6 +84,17 @@ describe("Documents Router", () => {
     expect(source).toContain("UID:document-");
   });
 
+  it("exposes collaborative comment authors and centralizes comment audit", () => {
+    const dbSource = readFileSync(new URL("./db.ts", import.meta.url), "utf8");
+    const routerSource = readFileSync(new URL("./routers.ts", import.meta.url), "utf8");
+    const pageSource = readFileSync(new URL("../client/src/pages/Documents.tsx", import.meta.url), "utf8");
+    expect(dbSource).toContain("authorName");
+    expect(dbSource).toContain("authorRole");
+    expect(routerSource).toContain('entityType: "document_comment"');
+    expect(pageSource).toContain("note.authorName");
+    expect(pageSource).toContain("Ajouter une note");
+  });
+
   it("enforces member-scoped document permissions on sensitive server operations", () => {
     const source = readFileSync(new URL("./routers.ts", import.meta.url), "utf8");
     expect(source).toContain("assertDocumentCapability(ctx.user, input.id, \"canView\")");

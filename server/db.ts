@@ -423,7 +423,15 @@ export async function seedDefaultDocuments() {
 export async function getNotesByDocumentId(documentId: number) {
   const db = await getDb();
   if (!db) return [];
-  return db.select().from(documentNotes).where(eq(documentNotes.documentId, documentId)).orderBy(desc(documentNotes.createdAt));
+  const rows = await db.select({ note: documentNotes, author: users }).from(documentNotes).leftJoin(users, eq(users.id, documentNotes.userId)).where(eq(documentNotes.documentId, documentId)).orderBy(desc(documentNotes.createdAt));
+  return rows.map(({ note, author }) => ({ ...note, authorName: author?.name ?? "Utilisateur", authorRole: author?.role ?? "user" }));
+}
+
+export async function getNoteById(id: number) {
+  const db = await getDb();
+  if (!db) return undefined;
+  const result = await db.select().from(documentNotes).where(eq(documentNotes.id, id)).limit(1);
+  return result[0];
 }
 
 export async function createNote(data: InsertDocumentNote) {

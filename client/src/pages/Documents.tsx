@@ -1053,7 +1053,7 @@ export default function Documents() {
                           </Button>
                         </div>
                         <p className="text-xs text-muted-foreground mt-2">
-                          {new Date(note.createdAt).toLocaleDateString("fr-FR", {
+                          {note.authorName} · {note.authorRole === "admin" ? "Administrateur" : "Membre"} · {new Date(note.createdAt).toLocaleDateString("fr-FR", {
                             day: "numeric",
                             month: "long",
                             year: "numeric",

@@ -78,7 +78,7 @@
 - [x] Système d'approbation de documents
 - [ ] Historique des versions de documents (Renforcement production requis)
 - [ ] Partage de documents avec permissions granulaires (Application serveur requise)
-- [ ] Commentaires collaboratifs sur les documents
+- [x] Commentaires collaboratifs sur les documents
 - [ ] Intégration avec Google Drive ou OneDrive
 - [x] Signature électronique des documents
 - [ ] Audit trail complet des modifications
@@ -2023,3 +2023,6 @@
 - [x] Ajouter des tests prouvant l’application effective des permissions documentaires côté serveur
 - [x] Corriger et régénérer la migration document_versions avec un SQL valide pour MySQL/TiDB
 - [x] Ajouter un test de création et consultation d’une version documentaire après upload
+- [x] Afficher l’auteur, la date et le rôle sur chaque commentaire documentaire
+- [x] Ajouter la traçabilité centralisée des créations et suppressions de commentaires
+- [x] Distinguer explicitement les commentaires collaboratifs des notes simples et tester cette capacité

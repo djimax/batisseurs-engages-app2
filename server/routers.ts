@@ -10,7 +10,7 @@ import { TRPCError } from "@trpc/server";
 import { 
   getAllCategories, getCategoryById, createCategory, seedDefaultCategories,
   getAllDocuments, getDocumentById, createDocument, updateDocument, deleteDocument, getDocumentStats, seedDefaultDocuments, getDocumentVersions, createDocumentVersion, getDocumentPermissions, setDocumentPermission, removeDocumentPermission, getDocumentPermissionForUser, getAccessibleDocumentIds,
-  getNotesByDocumentId, createNote, deleteNote,
+  getNotesByDocumentId, getNoteById, createNote, deleteNote,
   getAllMembers, getAllMembersWithGrades, getMemberById, createMember, updateMember, deleteMember,
   logActivity, getRecentActivity,
   createCotisation, getCotisations, getCotisationsByMember, updateCotisation,
@@ -483,6 +483,7 @@ export const appRouter = router({
       .input(z.object({ documentId: z.number().int().positive() }))
       .query(async ({ input, ctx }) => {
         await assertPermission(ctx.user, "documents.view");
+        await assertDocumentCapability(ctx.user, input.documentId, "canView");
         return getNotesByDocumentId(input.documentId);
       }),
     
@@ -493,6 +494,7 @@ export const appRouter = router({
       }))
       .mutation(async ({ input, ctx }) => {
         await assertPermission(ctx.user, "documents.manage");
+        await assertDocumentCapability(ctx.user, input.documentId, "canEdit");
         const result = await createNote({
           documentId: input.documentId,
           userId: ctx.user.id,
@@ -505,6 +507,7 @@ export const appRouter = router({
           entityId: result.id as number,
           details: `Note ajoutée au document #${input.documentId}`,
         });
+        await logAudit({ userId: ctx.user.id, action: "CREATE", entityType: "document_comment", entityId: result.id as number, description: `Commentaire ajouté au document #${input.documentId}`, newValue: JSON.stringify({ documentId: input.documentId, contentLength: input.content.length }), status: "success" });
         return result;
       }),
     
@@ -512,6 +515,9 @@ export const appRouter = router({
       .input(z.object({ id: z.number().int().positive() }))
       .mutation(async ({ input, ctx }) => {
         await assertPermission(ctx.user, "documents.manage");
+        const note = await getNoteById(input.id);
+        if (!note) throw new TRPCError({ code: "NOT_FOUND", message: "Note introuvable" });
+        await assertDocumentCapability(ctx.user, note.documentId, "canEdit");
         await deleteNote(input.id);
         await logActivity({
           userId: ctx.user.id,
@@ -520,6 +526,7 @@ export const appRouter = router({
           entityId: input.id,
           details: `Note supprimée`,
         });
+        await logAudit({ userId: ctx.user.id, action: "DELETE", entityType: "document_comment", entityId: input.id, description: `Commentaire supprimé du document #${note.documentId}`, status: "success" });
         return { success: true };
       }),
   }),
