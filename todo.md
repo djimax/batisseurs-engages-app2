@@ -2014,3 +2014,4 @@
 - [x] Ajouter la saisie et l’affichage des échéances documentaires dans l’interface
 - [x] Ajouter un endpoint planifié idempotent pour notifier les échéances documentaires proches
 - [x] Journaliser les créations, modifications, suppressions et archivages de documents dans l’audit centralisé
+- [x] Exporter les échéances documentaires au format calendrier ICS

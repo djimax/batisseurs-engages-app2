@@ -61,6 +61,34 @@ import {
   ShieldCheck
 } from "lucide-react";
 
+function escapeIcsText(value: string) {
+  return value.replace(/\\/g, "\\\\").replace(/([,;])/g, "\\$1").replace(/\r?\n/g, "\\n");
+}
+
+function toIcsDate(value: string | Date) {
+  const date = new Date(value);
+  return `${date.getUTCFullYear()}${String(date.getUTCMonth() + 1).padStart(2, "0")}${String(date.getUTCDate()).padStart(2, "0")}`;
+}
+
+function buildDocumentsCalendar(items: Array<{ id: number; title: string; description?: string | null; dueDate?: string | Date | null }>) {
+  const events = items.filter((item) => item.dueDate).map((item) => {
+    const start = toIcsDate(item.dueDate!);
+    const endDate = new Date(item.dueDate!);
+    endDate.setUTCDate(endDate.getUTCDate() + 1);
+    return [
+      "BEGIN:VEVENT",
+      `UID:document-${item.id}@lesbatisseursengages`,
+      `DTSTAMP:${toIcsDate(new Date())}T000000Z`,
+      `DTSTART;VALUE=DATE:${start}`,
+      `DTEND;VALUE=DATE:${toIcsDate(endDate)}`,
+      `SUMMARY:${escapeIcsText(`Échéance documentaire — ${item.title}`)}`,
+      item.description ? `DESCRIPTION:${escapeIcsText(item.description)}` : undefined,
+      "END:VEVENT",
+    ].filter(Boolean).join("\\r\\n");
+  });
+  return ["BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//Les Bâtisseurs Engagés//Documents//FR", "CALSCALE:GREGORIAN", ...events, "END:VCALENDAR"].join("\\r\\n") + "\\r\\n";
+}
+
 const SORT_OPTIONS = [
   { value: "title-asc", label: "Titre (A-Z)" },
   { value: "title-desc", label: "Titre (Z-A)" },
@@ -243,6 +271,22 @@ export default function Documents() {
       status: "pending",
       dueDate: "",
     });
+  };
+
+  const handleExportCalendar = () => {
+    const calendar = buildDocumentsCalendar((documents || []) as Array<{ id: number; title: string; description?: string | null; dueDate?: string | Date | null }>);
+    if (!calendar.includes("BEGIN:VEVENT")) {
+      toast.info("Aucune échéance documentaire à exporter");
+      return;
+    }
+    const blob = new Blob([calendar], { type: "text/calendar;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "echeances-documentaires.ics";
+    link.click();
+    URL.revokeObjectURL(url);
+    toast.success("Calendrier des échéances exporté");
   };
 
   const handleCreateDocument = () => {
@@ -430,6 +474,10 @@ export default function Documents() {
           </p>
         </div>
         <div className="flex gap-2">
+          <Button variant="outline" onClick={handleExportCalendar} className="gap-2" disabled={!documents?.some((doc) => doc.dueDate)}>
+            <Download className="h-4 w-4" />
+            Calendrier
+          </Button>
           {exportData && (
             <ExportPDF 
               title="Rapport des Documents" 

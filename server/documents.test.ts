@@ -71,6 +71,14 @@ describe("Categories Router", () => {
 });
 
 describe("Documents Router", () => {
+  it("exports document due dates as an ICS calendar from the Documents page", () => {
+    const source = readFileSync(new URL("../client/src/pages/Documents.tsx", import.meta.url), "utf8");
+    expect(source).toContain("text/calendar;charset=utf-8");
+    expect(source).toContain("echeances-documentaires.ics");
+    expect(source).toContain("DTSTART;VALUE=DATE");
+    expect(source).toContain("UID:document-");
+  });
+
   it("logs the administrative document lifecycle in the central audit trail", async () => {
     const source = readFileSync(new URL("./routers.ts", import.meta.url), "utf8");
     expect(source).toContain('action: "CREATE", entityType: "document"');
