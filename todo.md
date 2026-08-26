@@ -2047,3 +2047,4 @@
 - [x] Ajouter une trace d’audit à la création des paiements Stripe et valider le contrat Stripe.
 - [ ] Étendre l’audit aux changements d’état reçus via webhook Stripe et vérifier les événements idempotents.
 - [x] Étendre l’audit aux changements d’état reçus via webhook Stripe et vérifier l’idempotence des événements déjà enregistrés.
+- [x] Exposer `pnpm db:validate:fresh` pour rejouer la validation MySQL vierge de façon reproductible.
