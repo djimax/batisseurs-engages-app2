@@ -9,7 +9,7 @@ import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import { 
   getAllCategories, getCategoryById, createCategory, seedDefaultCategories,
-  getAllDocuments, getDocumentById, createDocument, updateDocument, deleteDocument, getDocumentStats, seedDefaultDocuments,
+  getAllDocuments, getDocumentById, createDocument, updateDocument, deleteDocument, getDocumentStats, seedDefaultDocuments, getDocumentVersions, createDocumentVersion,
   getNotesByDocumentId, createNote, deleteNote,
   getAllMembers, getAllMembersWithGrades, getMemberById, createMember, updateMember, deleteMember,
   logActivity, getRecentActivity,
@@ -46,6 +46,7 @@ import { assertPermission, ensureDefaultPermissions } from "./authorization";
 import { storagePut } from "./storage";
 import { notifyOwner } from "./_core/notification";
 import { nanoid } from "nanoid";
+import { createHash } from "node:crypto";
 import { membersAdhesionsRouter } from "./members-adhesions-router";
 import { buildDonationDocumentHtml, convertFinancialAmount, createTaxReceipt, FINANCIAL_CURRENCIES, formatFinancialAmount, listTaxReceipts, parseFinancialAmount } from "./financial";
 import { antennasRouter, groupesRouter } from "./antennes-groupes-router";
@@ -138,11 +139,16 @@ export const appRouter = router({
     
     getById: protectedProcedure
       .input(z.object({ id: z.number().int().positive() }))
-      .query(async ({ input, ctx }) => {
+            .query(async ({ input, ctx }) => {
         await assertPermission(ctx.user, "documents.view");
         return getDocumentById(input.id);
       }),
-    
+    versions: protectedProcedure
+      .input(z.object({ documentId: z.number().int().positive() }))
+      .query(async ({ input, ctx }) => {
+        await assertPermission(ctx.user, "documents.view");
+        return getDocumentVersions(input.documentId);
+      }),
     stats: protectedProcedure.query(async ({ ctx }) => {
       await assertPermission(ctx.user, "documents.view");
       await seedDefaultCategories();
@@ -280,10 +286,14 @@ export const appRouter = router({
         const safeFileName = fileName.replace(/[^a-zA-Z0-9._-]/g, "_");
         const fileKey = `documents/${documentId}/${nanoid()}-${safeFileName}`;
         
-        // Upload to S3
+                // Upload to S3
         const { url } = await storagePut(fileKey, fileBuffer, fileType);
-        
+        const previousVersions = await getDocumentVersions(documentId);
+        const versionNumber = (previousVersions[0]?.versionNumber ?? 0) + 1;
+        const contentHash = createHash("sha256").update(fileBuffer).digest("hex");
+        await createDocumentVersion({ documentId, versionNumber, fileUrl: url, fileKey, fileName, fileType, fileSize, contentHash, uploadedBy: ctx.user.id });
         // Update document with file info
+
         await updateDocument(documentId, {
           fileUrl: url,
           fileKey,
@@ -293,14 +303,14 @@ export const appRouter = router({
           updatedBy: ctx.user.id,
         });
         
-        await logActivity({
+                await logActivity({
           userId: ctx.user.id,
           action: "upload",
           entityType: "document",
           entityId: documentId,
           details: `Fichier "${fileName}" uploadé`,
         });
-        
+        await logAudit({ userId: ctx.user.id, action: "UPLOAD_VERSION", entityType: "document", entityId: documentId, entityName: fileName, description: `Version ${versionNumber} du fichier "${fileName}" enregistrée`, newValue: JSON.stringify({ versionNumber, contentHash, fileSize }), status: "success" });
         await notifyOwner({
           title: "Fichier uploadé",
           content: `Le fichier "${fileName}" a été uploadé par ${ctx.user.name || "un utilisateur"}.`,

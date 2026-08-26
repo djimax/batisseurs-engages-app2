@@ -2016,3 +2016,4 @@
 - [x] Journaliser les créations, modifications, suppressions et archivages de documents dans l’audit centralisé
 - [x] Exporter les échéances documentaires au format calendrier ICS
 - [x] Ajouter un circuit d’approbation documentaire explicite avec statut, approbateur et date d’approbation
+- [x] Ajouter un historique versionné des fichiers documentaires avec métadonnées et consultation

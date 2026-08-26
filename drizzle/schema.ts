@@ -413,6 +413,23 @@ export const documents = mysqlTable("documents", {
 	isArchived: int().default(0),
 });
 
+export const documentVersions = mysqlTable("document_versions", {
+  id: int().autoincrement().notNull(),
+  documentId: int().notNull(),
+  versionNumber: int().notNull(),
+  fileUrl: text().notNull(),
+  fileKey: varchar({ length: 500 }).notNull(),
+  fileName: varchar({ length: 255 }).notNull(),
+  fileType: varchar({ length: 100 }).notNull(),
+  fileSize: int().notNull(),
+  contentHash: varchar({ length: 128 }).notNull(),
+  uploadedBy: int().notNull(),
+  createdAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
+}, (table) => ({
+  documentIdx: index("document_versions_document_idx").on(table.documentId),
+  documentVersionIdx: index("document_versions_document_version_idx").on(table.documentId, table.versionNumber),
+}));
+
 export const signatureRequests = mysqlTable("signature_requests", {
   id: int().autoincrement().notNull(),
   documentId: int().notNull(),

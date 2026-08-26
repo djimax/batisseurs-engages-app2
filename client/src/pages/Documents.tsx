@@ -149,6 +149,10 @@ export default function Documents() {
     { documentId: selectedDocument?.id || 0 },
     { enabled: !!selectedDocument }
   );
+  const { data: documentVersions = [] } = trpc.documents.versions.useQuery(
+    { documentId: selectedDocument?.id || 0 },
+    { enabled: !!selectedDocument }
+  );
   const { data: notes, refetch: refetchNotes } = trpc.notes.listByDocument.useQuery(
     { documentId: selectedDocument?.id || 0 },
     { enabled: !!selectedDocument }
@@ -204,6 +208,7 @@ export default function Documents() {
   const uploadFile = trpc.documents.uploadFile.useMutation({
     onSuccess: () => {
       utils.documents.list.invalidate();
+      utils.documents.versions.invalidate();
       setIsUploadingFile(false);
       toast.success("Fichier uploadé avec succès");
     },
@@ -955,6 +960,14 @@ export default function Documents() {
                   accept=".doc,.docx,.xls,.xlsx,.pdf,.png,.jpg,.jpeg"
                   onChange={handleFileUpload}
                 />
+              </div>
+
+              <Separator />
+
+              {/* Version history */}
+              <div>
+                <h4 className="text-sm font-medium mb-3">Historique des versions</h4>
+                {documentVersions.length === 0 ? <p className="text-sm text-muted-foreground">Aucune version enregistrée.</p> : <div className="space-y-2">{documentVersions.map((version) => <div key={version.id} className="flex flex-wrap items-center justify-between gap-3 rounded-lg border p-3"><div className="min-w-0"><p className="font-medium">Version {version.versionNumber} · {version.fileName}</p><p className="text-xs text-muted-foreground">{new Date(version.createdAt).toLocaleString("fr-FR")} · {(version.fileSize / 1024).toFixed(1)} Ko</p><p className="break-all text-[11px] text-muted-foreground">SHA-256 : {version.contentHash}</p></div><Button size="sm" variant="outline" onClick={() => window.open(version.fileUrl, "_blank")}><Download className="mr-1 h-4 w-4" />Ouvrir</Button></div>)}</div>}
               </div>
 
               <Separator />

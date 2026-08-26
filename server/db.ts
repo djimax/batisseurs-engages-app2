@@ -49,6 +49,7 @@ import {
   announcements,
   news,
   newsComments,
+  documentVersions,
  	membershipFeeRules,
 	memberEvaluations,
 	memberGrades,
@@ -66,6 +67,7 @@ const schema = {
   users,
   categories,
   documents,
+  documentVersions,
   documentNotes,
   members,
   adhesions,
@@ -307,6 +309,19 @@ export async function deleteDocument(id: number) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
   await db.delete(documents).where(eq(documents.id, id));
+}
+
+export async function getDocumentVersions(documentId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(documentVersions).where(eq(documentVersions.documentId, documentId)).orderBy(desc(documentVersions.versionNumber));
+}
+
+export async function createDocumentVersion(data: typeof documentVersions.$inferInsert) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const result = await db.insert(documentVersions).values(data);
+  return { id: result[0].insertId, ...data };
 }
 
 export async function getDocumentStats() {
