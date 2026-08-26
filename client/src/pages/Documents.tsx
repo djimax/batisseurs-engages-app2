@@ -3,6 +3,7 @@ import { ExportPDF } from "@/components/ExportPDF";
 import { HeroSection } from "@/components/HeroSection";
 import { Pagination } from "@/components/Pagination";
 import { trpc } from "@/lib/trpc";
+import { exportSignedDocumentPdf } from "@/lib/signedPdf";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -88,6 +89,7 @@ export default function Documents() {
   const [signatureSubject, setSignatureSubject] = useState("");
   const [typedSignature, setTypedSignature] = useState("");
   const [signatureConsent, setSignatureConsent] = useState(false);
+  const [exportingSignatureId, setExportingSignatureId] = useState<number | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Form state for create/edit
@@ -272,6 +274,20 @@ export default function Documents() {
       });
     };
     reader.readAsDataURL(file);
+  };
+
+  const handleSignedPdfExport = async (requestId: number, title: string) => {
+    setExportingSignatureId(requestId);
+    try {
+      const data = await utils.signatures.exportData.fetch({ id: requestId });
+      const safeTitle = title.toLowerCase().replace(/[^a-z0-9]+/gi, "-").replace(/^-|-$/g, "");
+      await exportSignedDocumentPdf(data, `document-signe-${requestId}-${safeTitle || "document"}.pdf`);
+      toast.success("PDF signé exporté avec son journal d’audit");
+    } catch (error) {
+      toast.error("Export PDF impossible: " + (error instanceof Error ? error.message : "Erreur inconnue"));
+    } finally {
+      setExportingSignatureId(null);
+    }
   };
 
   const handleDownload = (doc: any) => {
@@ -879,7 +895,7 @@ export default function Documents() {
                   </Select>
                   <Button disabled={!signatureMemberId || !signatureSubject.trim() || createSignatureRequest.isPending} onClick={() => { const member = members.find((item) => String(item.id) === signatureMemberId); if (!member || !selectedDocument) return; createSignatureRequest.mutate({ documentId: selectedDocument.id, memberId: member.id, subject: signatureSubject.trim() }); }} className="gap-2"><UserPen className="h-4 w-4" />{createSignatureRequest.isPending ? "Création…" : "Demander une signature"}</Button>
                 </div>
-                <div className="space-y-3">{signatureRequests.length === 0 ? <p className="text-sm text-muted-foreground">Aucune demande de signature pour ce document.</p> : signatureRequests.map((request) => { const signer = request.signers[0]; return <div key={request.id} className="rounded-lg border p-4"><div className="flex flex-wrap items-start justify-between gap-3"><div><p className="font-medium">{request.subject}</p><p className="text-xs text-muted-foreground">{signer?.signerName} · {signer?.signerEmail}</p></div><Badge variant={request.status === "completed" ? "default" : request.status === "cancelled" ? "destructive" : "secondary"}>{request.status === "completed" ? "Signé" : request.status === "cancelled" ? "Annulé" : request.status === "partially-signed" ? "Partiellement signé" : "En attente"}</Badge></div>{signer?.status === "pending" && request.status !== "cancelled" ? <div className="mt-3 space-y-2"><Input value={typedSignature} onChange={(event) => setTypedSignature(event.target.value)} placeholder="Votre nom complet comme signature" aria-label="Signature saisie" /><label className="flex items-start gap-2 text-xs text-muted-foreground"><input type="checkbox" checked={signatureConsent} onChange={(event) => setSignatureConsent(event.target.checked)} className="mt-0.5" />Je confirme avoir lu le document et consentir à l’enregistrement de cette signature électronique.</label><Button size="sm" disabled={!signatureConsent || typedSignature.trim().length < 2 || signRequest.isPending} onClick={() => signRequest.mutate({ requestId: request.id, signerId: signer.id, typedSignature: typedSignature.trim(), consent: true })} className="gap-2"><ShieldCheck className="h-4 w-4" />Signer ce document</Button></div> : signer?.evidenceHash ? <p className="mt-3 break-all text-[11px] text-muted-foreground">Preuve : {signer.evidenceHash}</p> : null}{request.status !== "completed" && request.status !== "cancelled" ? <Button variant="ghost" size="sm" className="mt-2 text-destructive" disabled={cancelSignatureRequest.isPending} onClick={() => cancelSignatureRequest.mutate({ id: request.id })}>Annuler la demande</Button> : null}</div>; })}</div>
+                <div className="space-y-3">{signatureRequests.length === 0 ? <p className="text-sm text-muted-foreground">Aucune demande de signature pour ce document.</p> : signatureRequests.map((request) => { const signer = request.signers[0]; return <div key={request.id} className="rounded-lg border p-4"><div className="flex flex-wrap items-start justify-between gap-3"><div><p className="font-medium">{request.subject}</p><p className="text-xs text-muted-foreground">{signer?.signerName} · {signer?.signerEmail}</p></div><Badge variant={request.status === "completed" ? "default" : request.status === "cancelled" ? "destructive" : "secondary"}>{request.status === "completed" ? "Signé" : request.status === "cancelled" ? "Annulé" : request.status === "partially-signed" ? "Partiellement signé" : "En attente"}</Badge></div>{signer?.status === "pending" && request.status !== "cancelled" ? <div className="mt-3 space-y-2"><Input value={typedSignature} onChange={(event) => setTypedSignature(event.target.value)} placeholder="Votre nom complet comme signature" aria-label="Signature saisie" /><label className="flex items-start gap-2 text-xs text-muted-foreground"><input type="checkbox" checked={signatureConsent} onChange={(event) => setSignatureConsent(event.target.checked)} className="mt-0.5" />Je confirme avoir lu le document et consentir à l’enregistrement de cette signature électronique.</label><Button size="sm" disabled={!signatureConsent || typedSignature.trim().length < 2 || signRequest.isPending} onClick={() => signRequest.mutate({ requestId: request.id, signerId: signer.id, typedSignature: typedSignature.trim(), consent: true })} className="gap-2"><ShieldCheck className="h-4 w-4" />Signer ce document</Button></div> : signer?.evidenceHash ? <div className="mt-3 space-y-2"><p className="break-all text-[11px] text-muted-foreground">Preuve : {signer.evidenceHash}</p>{request.status === "completed" ? <Button size="sm" variant="outline" className="gap-2" disabled={exportingSignatureId === request.id} onClick={() => void handleSignedPdfExport(request.id, selectedDocument?.title ?? "document")}>{exportingSignatureId === request.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}{exportingSignatureId === request.id ? "Génération…" : "Exporter le PDF signé"}</Button> : null}</div> : null}{request.status !== "completed" && request.status !== "cancelled" ? <Button variant="ghost" size="sm" className="mt-2 text-destructive" disabled={cancelSignatureRequest.isPending} onClick={() => cancelSignatureRequest.mutate({ id: request.id })}>Annuler la demande</Button> : null}</div>; })}</div>
               </div>
 
               <Separator />

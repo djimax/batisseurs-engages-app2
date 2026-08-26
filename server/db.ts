@@ -738,6 +738,17 @@ export async function signSignatureRequest(input: { requestId: number; signerId:
   return getSignatureRequestById(input.requestId);
 }
 
+export async function getSignatureExportData(id: number) {
+  const db = await getDb();
+  if (!db) return undefined;
+  const request = await getSignatureRequestById(id);
+  if (!request || request.status !== "completed") return undefined;
+  const document = await getDocumentById(request.documentId);
+  if (!document) return undefined;
+  const audit = await db.select({ action: auditLogs.action, description: auditLogs.description, status: auditLogs.status, createdAt: auditLogs.createdAt, entityId: auditLogs.entityId }).from(auditLogs).where(and(eq(auditLogs.entityType, "signature_request"), eq(auditLogs.entityId, id))).orderBy(desc(auditLogs.createdAt));
+  return { request, document: { id: document.id, title: document.title, description: document.description, fileName: document.fileName, fileType: document.fileType, fileSize: document.fileSize, fileUrl: document.fileUrl }, audit };
+}
+
 export async function cancelSignatureRequest(id: number) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");

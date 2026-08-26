@@ -1950,3 +1950,12 @@
 - [x] Ajouter le journal d’audit, l’empreinte du document et la prévention des doublons
 - [x] Ajouter les tests de permissions, d’idempotence, de preuve et de non-régression
 - [x] Valider TypeScript, tests, build et sauvegarder le jalon
+
+## Export PDF du document signé
+- [x] Auditer le document signé, les preuves et les journaux disponibles
+- [x] Définir le contenu PDF, la confidentialité et les mentions de preuve
+- [x] Générer un PDF avec document, signataires, horodatages, journal et empreinte
+- [x] Protéger l’export par permission et refuser les demandes non terminées
+- [x] Ajouter l’action d’export dans le détail documentaire
+- [x] Ajouter les tests de génération, permissions, intégrité et régression
+- [x] Valider TypeScript, tests, build et sauvegarder le jalon

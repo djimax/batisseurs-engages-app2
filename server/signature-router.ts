@@ -4,7 +4,7 @@ import { eq } from "drizzle-orm";
 import { router, protectedProcedure } from "./_core/trpc";
 import { assertPermission } from "./authorization";
 import { logAudit } from "./audit";
-import { getDb, getDocumentById, getMemberById, getSignatureRequestById, getSignatureRequestsForDocument, createSignatureRequest, signSignatureRequest, cancelSignatureRequest, buildDocumentIntegrityHash } from "./db";
+import { getDb, getDocumentById, getMemberById, getSignatureRequestById, getSignatureRequestsForDocument, createSignatureRequest, signSignatureRequest, cancelSignatureRequest, buildDocumentIntegrityHash, getSignatureExportData } from "./db";
 import { members } from "../drizzle/schema";
 
 const signatureInput = z.object({
@@ -71,6 +71,16 @@ export const signatureRouter = router({
       const result = await signSignatureRequest({ requestId: request.id, signerId: signer.id, typedSignature: input.typedSignature, signedAt, evidenceHash });
       await logAudit({ userId: ctx.user.id, action: "UPDATE", entityType: "signature_request", entityId: request.id, entityName: request.subject, description: `Signature électronique enregistrée pour ${signer.signerName}`, newValue: JSON.stringify({ signerId: signer.id, evidenceHash, signedAt, documentHash: request.documentHash }), status: "success" });
       return result;
+    }),
+
+  exportData: protectedProcedure
+    .input(z.object({ id: z.number().int().positive() }))
+    .query(async ({ input, ctx }) => {
+      await assertPermission(ctx.user, "signatures.view");
+      const data = await getSignatureExportData(input.id);
+      if (!data) throw new Error("Seules les demandes entièrement signées peuvent être exportées");
+      await logAudit({ userId: ctx.user.id, action: "EXPORT", entityType: "signature_request", entityId: input.id, entityName: data.request.subject, description: "Export PDF de la preuve de signature", newValue: JSON.stringify({ documentHash: data.request.documentHash }), status: "success" });
+      return data;
     }),
 
   cancel: protectedProcedure
