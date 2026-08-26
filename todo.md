@@ -2001,3 +2001,7 @@
 - [x] Corriger les assertions du test achats pour refléter les statuts validés par le schéma Zod
 - [x] Ajouter l’export CSV des demandes et l’onglet de consultation des devis
 - [x] Relier le formulaire d’achat aux projets et appliquer le contrôle de budget à la soumission
+- [x] Ajouter le dépôt sécurisé des pièces de devis et la sélection exclusive d’une offre par demande
+- [x] Ajouter l’interface de comparaison des devis avec ouverture de pièce jointe et états explicites
+- [x] Couvrir le dépôt et la sélection de devis par des tests de contrat
+- [x] Valider TypeScript, 351 tests et le build de production pour le flux de devis

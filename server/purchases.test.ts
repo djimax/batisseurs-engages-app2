@@ -28,6 +28,18 @@ describe("purchases and suppliers module", () => {
     expect(router).toContain('code: "CONFLICT"');
   });
 
+  it("supports secure quote attachments and exclusive quote selection", () => {
+    const router = readFileSync(new URL("./purchases-router.ts", import.meta.url), "utf8");
+    const db = readFileSync(new URL("./db.ts", import.meta.url), "utf8");
+    expect(router).toContain("storagePut");
+    expect(router).toContain("fileSize");
+    expect(router).toContain("purchase-quotes/");
+    expect(router).toContain("selectQuote");
+    expect(db).toContain("selectPurchaseQuote");
+    expect(db).toContain('status: "rejected"');
+    expect(db).toContain('status: "selected"');
+  });
+
   it("exposes a permission-protected budget status query", () => {
     const router = readFileSync(new URL("./purchases-router.ts", import.meta.url), "utf8");
     expect(router).toContain("budgetStatus");

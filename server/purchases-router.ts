@@ -1,9 +1,11 @@
 import { z } from "zod";
 import { router, protectedProcedure } from "./_core/trpc";
 import { TRPCError } from "@trpc/server";
+import { nanoid } from "nanoid";
+import { storagePut } from "./storage";
 import { assertPermission } from "./authorization";
 import { logAudit } from "./audit";
-import { createPurchaseQuote, createPurchaseRequest, createSupplier, getPurchaseBudgetStatus, getPurchaseQuotes, getPurchaseRequests, getSuppliers, updatePurchaseRequest, updateSupplier } from "./db";
+import { createPurchaseQuote, createPurchaseRequest, createSupplier, getPurchaseBudgetStatus, getPurchaseQuotes, getPurchaseRequests, getSuppliers, selectPurchaseQuote, updatePurchaseRequest, updateSupplier } from "./db";
 
 const amountSchema = z.string().trim().regex(/^\d+(\.\d{1,2})?$/, "Montant invalide").refine((value) => Number(value) > 0, "Le montant doit être positif");
 
@@ -55,10 +57,26 @@ export const purchasesRouter = router({
     await assertPermission(ctx.user, "purchases.view");
     return getPurchaseQuotes(input?.purchaseRequestId);
   }),
-  createQuote: protectedProcedure.input(z.object({ purchaseRequestId: z.number().int().positive(), supplierId: z.number().int().positive(), quoteNumber: z.string().max(100).nullable().optional(), amount: amountSchema, currency: z.enum(["EUR", "XOF"]), documentUrl: z.string().url().nullable().optional(), validUntil: z.string().datetime().nullable().optional() })).mutation(async ({ input, ctx }) => {
+  createQuote: protectedProcedure.input(z.object({ purchaseRequestId: z.number().int().positive(), supplierId: z.number().int().positive(), quoteNumber: z.string().max(100).nullable().optional(), amount: amountSchema, currency: z.enum(["EUR", "XOF"]), documentUrl: z.string().url().nullable().optional(), validUntil: z.string().datetime().nullable().optional(), document: z.object({ fileName: z.string().trim().min(1).max(255).refine((name) => !name.includes("/") && !name.includes("\\") && !name.includes("\0"), "Nom de fichier invalide"), fileType: z.enum(["application/pdf", "image/jpeg", "image/png"]), fileSize: z.number().int().positive().max(10 * 1024 * 1024), fileBase64: z.string().regex(/^[A-Za-z0-9+/]*={0,2}$/, "Contenu Base64 invalide").max(15 * 1024 * 1024) }).nullable().optional() })).mutation(async ({ input, ctx }) => {
     await assertPermission(ctx.user, "purchases.manage");
-    const quote = await createPurchaseQuote({ ...input, createdBy: ctx.user.id });
+    let documentUrl = input.documentUrl ?? null;
+    if (input.document) {
+      const fileBuffer = Buffer.from(input.document.fileBase64, "base64");
+      if (fileBuffer.length !== input.document.fileSize) throw new TRPCError({ code: "BAD_REQUEST", message: "La taille de la pièce jointe est incohérente" });
+      const safeFileName = input.document.fileName.replace(/[^a-zA-Z0-9._-]/g, "_");
+      const { url } = await storagePut(`purchase-quotes/${input.purchaseRequestId}/${nanoid()}-${safeFileName}`, fileBuffer, input.document.fileType);
+      documentUrl = url;
+    }
+    const { document, ...quoteInput } = input;
+    const quote = await createPurchaseQuote({ ...quoteInput, documentUrl, createdBy: ctx.user.id });
     await logAudit({ userId: ctx.user.id, action: "CREATE", entityType: "purchase_quote", entityId: quote?.id, description: `Devis ajouté à la demande ${input.purchaseRequestId}`, status: "success" });
+    return quote;
+  }),
+  selectQuote: protectedProcedure.input(z.object({ id: z.number().int().positive() })).mutation(async ({ input, ctx }) => {
+    await assertPermission(ctx.user, "purchases.manage");
+    const quote = await selectPurchaseQuote(input.id);
+    if (!quote) throw new TRPCError({ code: "NOT_FOUND", message: "Devis introuvable" });
+    await logAudit({ userId: ctx.user.id, action: "UPDATE", entityType: "purchase_quote", entityId: input.id, description: `Devis retenu pour la demande ${quote.purchaseRequestId}`, newValue: JSON.stringify({ status: "selected", purchaseRequestId: quote.purchaseRequestId }), status: "success" });
     return quote;
   }),
 });

@@ -876,6 +876,17 @@ export async function createPurchaseQuote(data: typeof purchaseQuotes.$inferInse
   const result = await db.insert(purchaseQuotes).values(data);
   return db.select().from(purchaseQuotes).where(eq(purchaseQuotes.id, Number(result[0].insertId))).limit(1).then((rows) => rows[0]);
 }
+export async function selectPurchaseQuote(id: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const quote = await db.select().from(purchaseQuotes).where(eq(purchaseQuotes.id, id)).limit(1).then((rows) => rows[0]);
+  if (!quote) return undefined;
+  await db.transaction(async (tx) => {
+    await tx.update(purchaseQuotes).set({ status: "rejected" }).where(eq(purchaseQuotes.purchaseRequestId, quote.purchaseRequestId));
+    await tx.update(purchaseQuotes).set({ status: "selected" }).where(eq(purchaseQuotes.id, id));
+  });
+  return db.select().from(purchaseQuotes).where(eq(purchaseQuotes.id, id)).limit(1).then((rows) => rows[0]);
+}
 
 // ============ EMAIL HISTORY ============
 
