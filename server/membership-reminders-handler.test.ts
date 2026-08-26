@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({
@@ -25,6 +26,14 @@ function responseMock() {
 describe("membershipRemindersHandler", () => {
   beforeEach(() => {
     vi.resetAllMocks();
+  });
+
+  it("branche les rappels créés sur Brevo sans ignorer la préférence e-mail", () => {
+    const source = readFileSync(new URL("./membership-reminders-handler.ts", import.meta.url), "utf8");
+    expect(source).toContain("sendTransactionalEmail");
+    expect(source).toContain("emailEnabled === 0");
+    expect(source).toContain("generateMembershipReminderNotifications(new Date(), async");
+    expect(source).toContain("Rappel Brevo envoyé");
   });
 
   it("refuse les appels qui ne proviennent pas d’un cron authentifié", async () => {

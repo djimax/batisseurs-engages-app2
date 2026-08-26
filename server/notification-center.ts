@@ -117,7 +117,10 @@ export function getMembershipReminderKind(input: { expiration: string; status: "
   return null;
 }
 
-export async function generateMembershipReminderNotifications(now = new Date()) {
+export async function generateMembershipReminderNotifications(
+  now = new Date(),
+  onCreated?: (input: { member: typeof members.$inferSelect; adhesion: typeof adhesions.$inferSelect; kind: "overdue" | "expiring_soon" }) => Promise<void>,
+) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
   const rows = await db.select({ adhesion: adhesions, member: members })
@@ -143,8 +146,10 @@ export async function generateMembershipReminderNotifications(now = new Date()) 
       entityId: row.adhesion.id,
       dedupeKey: `membership:${row.adhesion.id}:${kind}:${dayKey}`,
     });
-    if (result.created) created += 1;
-    else skipped += 1;
+    if (result.created) {
+      created += 1;
+      if (onCreated) await onCreated({ member: row.member, adhesion: row.adhesion, kind });
+    } else skipped += 1;
   }
   return { created, skipped, scanned: rows.length };
 }

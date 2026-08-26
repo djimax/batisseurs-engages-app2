@@ -1910,3 +1910,7 @@
 
 - [x] Envoyer une confirmation Brevo après paiement Stripe confirmé sans faire échouer le webhook
 - [x] Auditer la confirmation de paiement Stripe et couvrir son comportement par un test
+
+- [x] Raccorder le handler périodique existant aux rappels Brevo idempotents
+- [x] Respecter le consentement emailEnabled et auditer les rappels automatiques
+- [x] Valider le handler périodique par 324 tests, TypeScript et build
