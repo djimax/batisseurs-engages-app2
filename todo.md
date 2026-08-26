@@ -2042,3 +2042,5 @@
 - [x] Couvrir l’audit CRM : contacts, activités, pipeline d’adhésion, rapports et historique email.
 - [x] Ajouter des tests d’assertion dédiés aux nouvelles entrées d’audit finances, adhésions et CRM.
 - [ ] Finaliser la couverture d’audit globale des modules critiques non encore vérifiés.
+- [x] Étendre l’audit de gouvernance aux assemblées, changements de statut, participants et présences.
+- [x] Compléter l’audit de gouvernance pour résolutions, procurations et votes, puis ajouter les tests associés.

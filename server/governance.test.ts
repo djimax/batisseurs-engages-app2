@@ -1,7 +1,16 @@
 import { describe, expect, it } from "vitest";
+import { readFileSync } from "node:fs";
 import { assemblyCreateSchema, calculateQuorum } from "./governance-router";
 
 describe("governance", () => {
+  it("centralise l’audit des décisions de gouvernance", () => {
+    const source = readFileSync(new URL("./governance-router.ts", import.meta.url), "utf8");
+    expect(source).toContain('entityType: "assembly"');
+    expect(source).toContain('entityType: "assembly_resolution"');
+    expect(source).toContain('entityType: "assembly_proxy"');
+    expect(source).toContain('entityType: "assembly_vote"');
+  });
+
   describe("calculateQuorum", () => {
     it("atteint le quorum quand la présence dépasse le seuil", () => {
       expect(calculateQuorum(10, 6, 50)).toMatchObject({

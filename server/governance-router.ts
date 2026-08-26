@@ -12,6 +12,7 @@ import {
 import { getDb } from "./db";
 import { assertPermission } from "./authorization";
 import { protectedProcedure, router } from "./_core/trpc";
+import { logAudit } from "./audit";
 
 export const assemblyCreateSchema = z.object({
   title: z.string().trim().min(3).max(255),
@@ -141,6 +142,7 @@ export const governanceRouter = router({
         quorumPercentage: input.quorumPercentage,
         createdBy: ctx.user.id,
       });
+      await logAudit({ userId: ctx.user.id, action: "CREATE", entityType: "assembly", entityId: Number(result[0].insertId), entityName: input.title, description: "Assemblée créée", status: "success" });
       return getAssemblyOrThrow(Number(result[0].insertId));
     }),
 
@@ -161,6 +163,7 @@ export const governanceRouter = router({
       if (input.status === "closed") {
         await db.update(assemblyResolutions).set({ status: "closed", closedAt: new Date().toISOString() }).where(and(eq(assemblyResolutions.assemblyId, input.assemblyId), eq(assemblyResolutions.status, "open")));
       }
+      await logAudit({ userId: ctx.user.id, action: "UPDATE", entityType: "assembly", entityId: input.assemblyId, description: `Statut d’assemblée mis à jour : ${input.status}`, newValue: JSON.stringify({ status: input.status }), status: "success" });
       return getAssemblyOrThrow(input.assemblyId);
     }),
 
@@ -176,6 +179,7 @@ export const governanceRouter = router({
       const existing = await db.select({ id: assemblyParticipants.id }).from(assemblyParticipants).where(and(eq(assemblyParticipants.assemblyId, input.assemblyId), eq(assemblyParticipants.memberId, input.memberId))).limit(1);
       if (existing[0]) return existing[0];
       const result = await db.insert(assemblyParticipants).values(input);
+      await logAudit({ userId: ctx.user.id, action: "CREATE", entityType: "assembly_participant", entityId: Number(result[0].insertId), description: `Participant ajouté à l’assemblée #${input.assemblyId}`, status: "success" });
       return { id: Number(result[0].insertId), ...input };
     }),
 
@@ -187,9 +191,11 @@ export const governanceRouter = router({
       const existing = await db.select({ id: assemblyParticipants.id }).from(assemblyParticipants).where(and(eq(assemblyParticipants.assemblyId, input.assemblyId), eq(assemblyParticipants.memberId, input.memberId))).limit(1);
       if (!existing[0]) {
         const result = await db.insert(assemblyParticipants).values({ ...input, checkedInAt: input.attendance === "present" ? new Date().toISOString() : undefined });
+        await logAudit({ userId: ctx.user.id, action: "UPDATE", entityType: "assembly_attendance", entityId: Number(result[0].insertId), description: `Présence enregistrée pour l’assemblée #${input.assemblyId}`, newValue: JSON.stringify({ memberId: input.memberId, attendance: input.attendance }), status: "success" });
         return { id: Number(result[0].insertId), ...input };
       }
       await db.update(assemblyParticipants).set({ attendance: input.attendance, checkedInAt: input.attendance === "present" ? new Date().toISOString() : null }).where(eq(assemblyParticipants.id, existing[0].id));
+      await logAudit({ userId: ctx.user.id, action: "UPDATE", entityType: "assembly_attendance", entityId: existing[0].id, description: `Présence mise à jour pour l’assemblée #${input.assemblyId}`, newValue: JSON.stringify({ memberId: input.memberId, attendance: input.attendance }), status: "success" });
       return { id: existing[0].id, ...input };
     }),
 
@@ -200,6 +206,7 @@ export const governanceRouter = router({
       await getAssemblyOrThrow(input.assemblyId);
       const db = await requireDb();
       const result = await db.insert(assemblyResolutions).values(input);
+      await logAudit({ userId: ctx.user.id, action: "CREATE", entityType: "assembly_resolution", entityId: Number(result[0].insertId), description: `Résolution créée pour l’assemblée #${input.assemblyId}`, status: "success" });
       return { id: Number(result[0].insertId), ...input, status: "draft" as const };
     }),
 
@@ -213,6 +220,7 @@ export const governanceRouter = router({
       if (resolution.status === "closed" && input.status !== "closed") throw new TRPCError({ code: "CONFLICT", message: "Une résolution clôturée est immuable." });
       const db = await requireDb();
       await db.update(assemblyResolutions).set({ status: input.status, closedAt: input.status === "closed" ? new Date().toISOString() : resolution.closedAt }).where(eq(assemblyResolutions.id, input.resolutionId));
+      await logAudit({ userId: ctx.user.id, action: "UPDATE", entityType: "assembly_resolution", entityId: input.resolutionId, description: `Statut de résolution mis à jour : ${input.status}`, newValue: JSON.stringify({ status: input.status }), status: "success" });
       return getResolutionOrThrow(input.resolutionId);
     }),
 
@@ -223,6 +231,7 @@ export const governanceRouter = router({
       if (input.representedMemberId === input.proxyMemberId) throw new TRPCError({ code: "BAD_REQUEST", message: "Un membre ne peut pas être son propre mandataire." });
       const db = await requireDb();
       const result = await db.insert(assemblyProxies).values(input);
+      await logAudit({ userId: ctx.user.id, action: "CREATE", entityType: "assembly_proxy", entityId: Number(result[0].insertId), description: "Procuration soumise", status: "success" });
       return { id: Number(result[0].insertId), ...input, status: "pending" as const };
     }),
 
@@ -235,6 +244,7 @@ export const governanceRouter = router({
       if (!proxy[0]) throw new TRPCError({ code: "NOT_FOUND", message: "Procuration introuvable." });
       await db.update(assemblyProxies).set({ status: input.status }).where(eq(assemblyProxies.id, input.proxyId));
       await db.update(assemblyParticipants).set({ attendance: input.status === "approved" ? "represented" : "invited" }).where(and(eq(assemblyParticipants.assemblyId, proxy[0].assemblyId), eq(assemblyParticipants.memberId, proxy[0].representedMemberId)));
+      await logAudit({ userId: ctx.user.id, action: "UPDATE", entityType: "assembly_proxy", entityId: input.proxyId, description: `Procuration ${input.status}`, newValue: JSON.stringify({ status: input.status }), status: "success" });
       return { ...proxy[0], status: input.status };
     }),
 
@@ -252,6 +262,7 @@ export const governanceRouter = router({
       const previous = await db.select({ id: assemblyVotes.id }).from(assemblyVotes).where(and(eq(assemblyVotes.resolutionId, input.resolutionId), eq(assemblyVotes.memberId, memberId))).limit(1);
       if (previous[0]) throw new TRPCError({ code: "CONFLICT", message: "Vous avez déjà voté sur cette résolution." });
       const result = await db.insert(assemblyVotes).values({ resolutionId: input.resolutionId, memberId, choice: input.choice });
+      await logAudit({ userId: ctx.user.id, action: "CREATE", entityType: "assembly_vote", entityId: Number(result[0].insertId), description: `Vote enregistré sur la résolution #${input.resolutionId}`, newValue: JSON.stringify({ choice: input.choice, memberId }), status: "success" });
       return { id: Number(result[0].insertId), resolutionId: input.resolutionId, memberId, choice: input.choice };
     }),
 });
