@@ -43,6 +43,7 @@ export default function EmailComposer() {
   const [successMessage, setSuccessMessage] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
   const [previewOpen, setPreviewOpen] = useState(false);
+  const [previewMemberId, setPreviewMemberId] = useState("example");
   
   // Filtres
   const [selectedRoles, setSelectedRoles] = useState<string[]>([]);
@@ -59,8 +60,19 @@ export default function EmailComposer() {
   }), [selectedRoles, selectedStatuses, excludeNoEmail, excludedMemberIds]);
   const { data: filteredRecipients = [], isFetching: recipientsLoading } = trpc.email.getFilteredRecipients.useQuery(recipientFilter);
   const sendEmailMutation = trpc.email.sendMassEmail.useMutation();
-  const previewDocument = useMemo(() => buildEmailPreviewDocument(subject, content), [subject, content]);
-  const previewSubject = replaceEmailPreviewVariables(subject);
+  const { data: previewMembers = [], isLoading: previewMembersLoading } = trpc.email.previewMembers.useQuery(undefined, { enabled: previewOpen });
+  const selectedPreviewMember = previewMembers.find((member) => member.id.toString() === previewMemberId);
+  const previewVariables = useMemo(() => selectedPreviewMember ? {
+    ...EMAIL_PREVIEW_VARIABLES,
+    memberName: `${selectedPreviewMember.firstName} ${selectedPreviewMember.lastName}`.trim(),
+    firstName: selectedPreviewMember.firstName,
+    lastName: selectedPreviewMember.lastName,
+    memberEmail: selectedPreviewMember.email || EMAIL_PREVIEW_VARIABLES.memberEmail,
+    memberRole: selectedPreviewMember.role || EMAIL_PREVIEW_VARIABLES.memberRole,
+    memberStatus: selectedPreviewMember.status || EMAIL_PREVIEW_VARIABLES.memberStatus,
+  } : EMAIL_PREVIEW_VARIABLES, [selectedPreviewMember]);
+  const previewDocument = useMemo(() => buildEmailPreviewDocument(subject, content, previewVariables), [subject, content, previewVariables]);
+  const previewSubject = replaceEmailPreviewVariables(subject, previewVariables);
 
   const handleLoadTemplate = (id: string) => {
     if (id === "new") {
@@ -309,6 +321,10 @@ export default function EmailComposer() {
                 <DialogDescription>Exemple rendu pour Marie Martin · {EMAIL_PREVIEW_VARIABLES.memberEmail}</DialogDescription>
               </DialogHeader>
               <div className="bg-muted/40 p-4 sm:p-6">
+                <div className="mb-4 grid gap-3 rounded-lg border bg-background p-4 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-end">
+                  <div className="space-y-2"><label htmlFor="preview-member" className="text-sm font-medium">Membre utilisé pour l’aperçu</label><Select value={previewMemberId} onValueChange={setPreviewMemberId}><SelectTrigger id="preview-member"><SelectValue placeholder="Choisir un membre" /></SelectTrigger><SelectContent><SelectItem value="example">Données d’exemple</SelectItem>{previewMembers.map((member) => <SelectItem key={member.id} value={member.id.toString()}>{member.firstName} {member.lastName}{member.email ? ` · ${member.email}` : ""}</SelectItem>)}</SelectContent></Select></div>
+                  <p className="text-xs text-muted-foreground sm:max-w-[230px]">{previewMembersLoading ? "Chargement des membres autorisés…" : selectedPreviewMember ? `Données réelles de ${selectedPreviewMember.firstName} ${selectedPreviewMember.lastName}` : "Aucune donnée réelle sélectionnée"}</p>
+                </div>
                 <div className="mb-3 rounded-lg border bg-background px-4 py-3 text-sm"><span className="font-medium">Objet :</span> {previewSubject || "Sans objet"}</div>
                 <iframe title="Prévisualisation de l’e-mail" sandbox="" srcDoc={previewDocument} className="h-[min(60vh,560px)] w-full rounded-xl border bg-white shadow-sm" />
               </div>

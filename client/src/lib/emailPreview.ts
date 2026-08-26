@@ -32,9 +32,9 @@ function sanitizeEmailMarkup(value: string) {
     .replace(/&(?!#\d+;|#x[\da-f]+;|[a-z][\da-z]+;)/gi, "&amp;");
 }
 
-export function buildEmailPreviewDocument(subject: string, content: string) {
-  const renderedSubject = escapeEmailPreviewHtml(replaceEmailPreviewVariables(subject));
-  const renderedContent = replaceEmailPreviewVariables(content);
+export function buildEmailPreviewDocument(subject: string, content: string, variables = EMAIL_PREVIEW_VARIABLES) {
+  const renderedSubject = escapeEmailPreviewHtml(replaceEmailPreviewVariables(subject, variables));
+  const renderedContent = replaceEmailPreviewVariables(content, variables);
   const looksLikeMarkup = /<\/?[a-z][\s\S]*>/i.test(renderedContent);
   const body = looksLikeMarkup
     ? sanitizeEmailMarkup(renderedContent)

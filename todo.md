@@ -1923,3 +1923,11 @@
 - [x] Ajouter les tests de rendu, d’échappement et de régression
 - [x] Valider TypeScript, tests, build et sauvegarder le jalon
 - [x] Déplacer le test de prévisualisation dans le périmètre Vitest configuré et le faire passer
+
+## Membre réel dans la prévisualisation
+- [x] Auditer la procédure membres et la permission `members.view`
+- [x] Exposer une liste minimale et sécurisée de membres pour l’aperçu
+- [x] Ajouter le sélecteur de membre et ses informations réelles aux variables du rendu
+- [x] Garantir qu’un aperçu ne déclenche aucun envoi et ne divulgue pas de données inutiles
+- [x] Ajouter les tests de permissions, de remplacement et de non-régression
+- [x] Valider TypeScript, tests, build et sauvegarder le jalon

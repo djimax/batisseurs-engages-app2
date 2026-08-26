@@ -97,6 +97,20 @@ export const emailRouter = router({
       }),
   }),
 
+  // Member selector for local campaign previews
+  previewMembers: protectedProcedure.query(async ({ ctx }) => {
+    await assertPermission(ctx.user, "members.view");
+    const members = await getAllMembers();
+    return members.map((member) => ({
+      id: member.id,
+      firstName: member.firstName,
+      lastName: member.lastName,
+      email: member.email,
+      role: member.role,
+      status: member.status,
+    }));
+  }),
+
   // Recipient targeting
   getFilteredRecipients: protectedProcedure
     .input(z.object({
