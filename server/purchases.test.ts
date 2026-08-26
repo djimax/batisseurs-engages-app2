@@ -47,6 +47,13 @@ describe("purchases and suppliers module", () => {
     expect(router).toContain('assertPermission(ctx.user, "purchases.view")');
   });
 
+  it("normalizes EUR commitments into the XOF budget reference", () => {
+    const db = readFileSync(new URL("./db.ts", import.meta.url), "utf8");
+    expect(db).toContain('row.currency === "EUR" ? 655.957 : 1');
+    expect(db).toContain('requestedCurrency === "EUR" ? 655.957 : 1');
+    expect(db).toContain('budgetCurrency: "XOF"');
+  });
+
   it("rejects orphan quotes and inactive suppliers", () => {
     const router = readFileSync(new URL("./purchases-router.ts", import.meta.url), "utf8");
     expect(router).toContain("Demande d’achat introuvable");

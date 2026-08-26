@@ -856,15 +856,17 @@ export async function getPurchaseRequestById(id: number) {
   return db.select().from(purchaseRequests).where(eq(purchaseRequests.id, id)).limit(1).then((rows) => rows[0]);
 }
 
-export async function getPurchaseBudgetStatus(projectId: number, category: string, requestedAmount: number) {
+export async function getPurchaseBudgetStatus(projectId: number, category: string, requestedAmount: number, requestedCurrency: "EUR" | "XOF" = "XOF") {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
   const budgetRows = await db.select({ allocated: sql<number>`coalesce(sum(cast(${projectBudgetItems.amount} as decimal(15,2))), 0)`, spent: sql<number>`coalesce(sum(cast(${projectBudgetItems.spent} as decimal(15,2))), 0)` }).from(projectBudgetItems).where(and(eq(projectBudgetItems.projectId, projectId), eq(projectBudgetItems.category, category)));
-  const committedRows = await db.select({ committed: sql<number>`coalesce(sum(cast(${purchaseRequests.amount} as decimal(15,2))), 0)` }).from(purchaseRequests).where(and(eq(purchaseRequests.projectId, projectId), eq(purchaseRequests.category, category), inArray(purchaseRequests.status, ["submitted", "approved", "ordered", "received"])));
+  const committedRows = await db.select({ amount: purchaseRequests.amount, currency: purchaseRequests.currency }).from(purchaseRequests).where(and(eq(purchaseRequests.projectId, projectId), eq(purchaseRequests.category, category), inArray(purchaseRequests.status, ["submitted", "approved", "ordered", "received"])));
   const allocated = Number(budgetRows[0]?.allocated ?? 0);
   const spent = Number(budgetRows[0]?.spent ?? 0);
-  const committed = Number(committedRows[0]?.committed ?? 0);
-  return { allocated, spent, committed, remaining: allocated - spent - committed, requestedAmount, withinBudget: allocated <= 0 || allocated - spent - committed >= requestedAmount };
+  const committed = committedRows.reduce((sum, row) => sum + Number(row.amount) * (row.currency === "EUR" ? 655.957 : 1), 0);
+  const requestedAmountInBudgetCurrency = requestedAmount * (requestedCurrency === "EUR" ? 655.957 : 1);
+  const remaining = allocated - spent - committed;
+  return { allocated, spent, committed, remaining, requestedAmount, requestedCurrency, requestedAmountInBudgetCurrency, budgetCurrency: "XOF" as const, withinBudget: allocated <= 0 || remaining >= requestedAmountInBudgetCurrency };
 }
 
 export async function updatePurchaseRequest(id: number, data: Partial<typeof purchaseRequests.$inferInsert>) {

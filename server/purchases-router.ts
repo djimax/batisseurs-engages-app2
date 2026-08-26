@@ -33,12 +33,12 @@ export const purchasesRouter = router({
   }),
   budgetStatus: protectedProcedure.input(z.object({ projectId: z.number().int().positive(), category: z.string().trim().min(2).max(100), requestedAmount: amountSchema })).query(async ({ input, ctx }) => {
     await assertPermission(ctx.user, "purchases.view");
-    return getPurchaseBudgetStatus(input.projectId, input.category, Number(input.requestedAmount));
+    return getPurchaseBudgetStatus(input.projectId, input.category, Number(input.requestedAmount), "XOF");
   }),
   createRequest: protectedProcedure.input(z.object({ supplierId: z.number().int().positive().nullable().optional(), projectId: z.number().int().positive().nullable().optional(), description: z.string().trim().min(3).max(500), category: z.string().trim().min(2).max(100), amount: amountSchema, currency: z.enum(["EUR", "XOF"]), neededBy: z.string().datetime().nullable().optional(), justification: z.string().max(5000).nullable().optional(), status: z.enum(["draft", "submitted"]).default("draft") })).mutation(async ({ input, ctx }) => {
     await assertPermission(ctx.user, "purchases.manage");
     if (input.status === "submitted" && input.projectId) {
-      const budget = await getPurchaseBudgetStatus(input.projectId, input.category, Number(input.amount));
+      const budget = await getPurchaseBudgetStatus(input.projectId, input.category, Number(input.amount), input.currency);
       if (!budget.withinBudget) throw new TRPCError({ code: "CONFLICT", message: `Budget projet insuffisant : ${budget.remaining.toFixed(2)} disponible(s)` });
     }
     const request = await createPurchaseRequest({ ...input, requestedBy: ctx.user.id });
@@ -50,7 +50,7 @@ export const purchasesRouter = router({
     await assertPermission(ctx.user, approvalStatuses.includes(input.status) ? "purchases.approve" : "purchases.manage");
     const existingRequest = input.status === "approved" ? await getPurchaseRequestById(input.id) : undefined;
     if (input.status === "approved" && existingRequest?.projectId) {
-      const budget = await getPurchaseBudgetStatus(existingRequest.projectId, existingRequest.category, 0);
+      const budget = await getPurchaseBudgetStatus(existingRequest.projectId, existingRequest.category, 0, existingRequest.currency);
       if (budget.remaining < 0) throw new TRPCError({ code: "CONFLICT", message: `Approbation refusée : budget projet dépassé de ${Math.abs(budget.remaining).toFixed(2)}` });
     }
     const changes = approvalStatuses.includes(input.status) ? { status: input.status, approvedBy: ctx.user.id, approvedAt: new Date().toISOString() } : { status: input.status };
