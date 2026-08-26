@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
+import { readFileSync } from "node:fs";
 import {
   createCrmContact,
   getCrmContact,
@@ -18,6 +19,15 @@ import {
 } from "./db";
 
 describe("CRM System", () => {
+  it("centralizes audit coverage for every CRM write family", () => {
+    const source = readFileSync(new URL("./crm-router.ts", import.meta.url), "utf8");
+    expect(source).toContain('entityType: "crm_contact"');
+    expect(source).toContain('entityType: "crm_activity"');
+    expect(source).toContain('entityType: "crm_adhesion_pipeline"');
+    expect(source).toContain('entityType: "crm_report"');
+    expect(source).toContain('entityType: "crm_email"');
+  });
+
   let contactId: number = 1;
   let activityId: number = 1;
   let pipelineId: number = 1;
