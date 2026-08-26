@@ -211,6 +211,36 @@ export const appRouter = router({
         await logAudit({ userId: ctx.user.id, action: "UPDATE", entityType: "document", entityId: id, description: "Document mis à jour", newValue: JSON.stringify({ ...data, dueDate: data.dueDate?.toISOString() ?? null }), status: "success" });
         return result;
       }),
+    approve: protectedProcedure
+      .input(z.object({
+        id: z.number().int().positive(),
+        status: z.enum(["pending", "approved", "rejected"]),
+        comment: z.string().trim().max(2000).optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        await assertPermission(ctx.user, "documents.manage");
+        const existing = await getDocumentById(input.id);
+        if (!existing) throw new TRPCError({ code: "NOT_FOUND", message: "Document introuvable" });
+        const approved = input.status === "approved";
+        await updateDocument(input.id, {
+          approvalStatus: input.status,
+          approvedBy: approved ? ctx.user.id : null,
+          approvedAt: approved ? new Date().toISOString() : null,
+          approvalComment: input.comment ?? null,
+          updatedBy: ctx.user.id,
+        } as any);
+        await logAudit({
+          userId: ctx.user.id,
+          action: input.status === "approved" ? "APPROVE" : input.status === "rejected" ? "REJECT" : "RESET_APPROVAL",
+          entityType: "document",
+          entityId: input.id,
+          entityName: existing.title,
+          description: `Approbation documentaire : ${input.status}`,
+          newValue: JSON.stringify({ approvalStatus: input.status, comment: input.comment ?? null }),
+          status: "success",
+        });
+        return getDocumentById(input.id);
+      }),
     
     delete: protectedProcedure
       .input(z.object({ id: z.number().int().positive() }))

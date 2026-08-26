@@ -406,6 +406,10 @@ export const documents = mysqlTable("documents", {
 	createdAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
 	updatedAt: timestamp({ mode: 'string' }).defaultNow().onUpdateNow().notNull(),
 	dueDate: timestamp({ mode: 'string' }),
+	approvalStatus: mysqlEnum(['pending','approved','rejected']).default('pending').notNull(),
+	approvedBy: int(),
+	approvedAt: timestamp({ mode: 'string' }),
+	approvalComment: text(),
 	isArchived: int().default(0),
 });
 

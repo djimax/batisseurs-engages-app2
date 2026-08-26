@@ -281,6 +281,13 @@
       "when": 1787773836347,
       "tag": "0039_outgoing_shard",
       "breakpoints": true
+    },
+    {
+      "idx": 40,
+      "version": "5",
+      "when": 1787777149096,
+      "tag": "0040_stiff_killer_shrike",
+      "breakpoints": true
     }
   ]
 }

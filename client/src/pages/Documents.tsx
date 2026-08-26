@@ -117,6 +117,7 @@ export default function Documents() {
   const [signatureSubject, setSignatureSubject] = useState("");
   const [typedSignature, setTypedSignature] = useState("");
   const [signatureConsent, setSignatureConsent] = useState(false);
+  const [approvalComment, setApprovalComment] = useState("");
   const [exportingSignatureId, setExportingSignatureId] = useState<number | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -175,6 +176,16 @@ export default function Documents() {
     onError: (error) => {
       toast.error("Erreur: " + error.message);
     },
+  });
+
+  const approveDocument = trpc.documents.approve.useMutation({
+    onSuccess: (document) => {
+      utils.documents.list.invalidate();
+      if (document) setSelectedDocument(document);
+      setApprovalComment("");
+      toast.success("Décision d’approbation enregistrée");
+    },
+    onError: (error) => toast.error("Erreur d’approbation : " + error.message),
   });
 
   const deleteDocument = trpc.documents.delete.useMutation({
@@ -836,6 +847,7 @@ export default function Documents() {
               <div className="flex gap-2">
                 {getStatusBadge(selectedDocument?.status || "pending")}
                 {getPriorityBadge(selectedDocument?.priority || "medium")}
+                <Badge variant="outline">{selectedDocument?.approvalStatus === "approved" ? "Approuvé" : selectedDocument?.approvalStatus === "rejected" ? "Rejeté" : "À approuver"}</Badge>
               </div>
             </div>
           </DialogHeader>
@@ -875,6 +887,21 @@ export default function Documents() {
                     </Button>
                   ))}
                 </div>
+              </div>
+
+              <Separator />
+
+              {/* Approval */}
+              <div>
+                <h4 className="text-sm font-medium mb-3">Approbation documentaire</h4>
+                <p className="text-xs text-muted-foreground mb-3">Décision réservée aux utilisateurs disposant de la permission de gestion documentaire.</p>
+                <Textarea value={approvalComment} onChange={(e) => setApprovalComment(e.target.value)} placeholder="Commentaire facultatif" rows={2} className="mb-3" />
+                <div className="flex flex-wrap gap-2">
+                  <Button size="sm" onClick={() => approveDocument.mutate({ id: selectedDocument.id, status: "approved", comment: approvalComment || undefined })} disabled={approveDocument.isPending || selectedDocument?.approvalStatus === "approved"}><ShieldCheck className="mr-1 h-4 w-4" />Approuver</Button>
+                  <Button size="sm" variant="outline" onClick={() => approveDocument.mutate({ id: selectedDocument.id, status: "rejected", comment: approvalComment || undefined })} disabled={approveDocument.isPending || selectedDocument?.approvalStatus === "rejected"}>Rejeter</Button>
+                  {selectedDocument?.approvalStatus !== "pending" ? <Button size="sm" variant="ghost" onClick={() => approveDocument.mutate({ id: selectedDocument.id, status: "pending", comment: approvalComment || undefined })} disabled={approveDocument.isPending}>Réinitialiser</Button> : null}
+                </div>
+                {selectedDocument?.approvalComment ? <p className="mt-2 text-xs text-muted-foreground">Dernier commentaire : {selectedDocument.approvalComment}</p> : null}
               </div>
 
               <Separator />
