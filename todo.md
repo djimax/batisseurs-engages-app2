@@ -2005,3 +2005,4 @@
 - [x] Ajouter l’interface de comparaison des devis avec ouverture de pièce jointe et états explicites
 - [x] Couvrir le dépôt et la sélection de devis par des tests de contrat
 - [x] Valider TypeScript, 351 tests et le build de production pour le flux de devis
+- [x] Vérifier à nouveau le budget projet lors de l’approbation d’une demande d’achat

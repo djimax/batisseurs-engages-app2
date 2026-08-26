@@ -46,6 +46,13 @@ describe("purchases and suppliers module", () => {
     expect(router).toContain('assertPermission(ctx.user, "purchases.view")');
   });
 
+  it("rechecks the budget before approval", () => {
+    const router = readFileSync(new URL("./purchases-router.ts", import.meta.url), "utf8");
+    expect(router).toContain("getPurchaseRequestById");
+    expect(router).toContain('input.status === "approved"');
+    expect(router).toContain("Approbation refusée");
+  });
+
   it("keeps an auditable approval lifecycle", () => {
     const schema = readFileSync(new URL("../drizzle/schema.ts", import.meta.url), "utf8");
     const router = readFileSync(new URL("./purchases-router.ts", import.meta.url), "utf8");

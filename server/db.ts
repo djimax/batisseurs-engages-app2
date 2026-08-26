@@ -845,6 +845,11 @@ export async function createPurchaseRequest(data: typeof purchaseRequests.$infer
   const result = await db.insert(purchaseRequests).values(data);
   return db.select().from(purchaseRequests).where(eq(purchaseRequests.id, Number(result[0].insertId))).limit(1).then((rows) => rows[0]);
 }
+export async function getPurchaseRequestById(id: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  return db.select().from(purchaseRequests).where(eq(purchaseRequests.id, id)).limit(1).then((rows) => rows[0]);
+}
 
 export async function getPurchaseBudgetStatus(projectId: number, category: string, requestedAmount: number) {
   const db = await getDb();

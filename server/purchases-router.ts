@@ -5,7 +5,7 @@ import { nanoid } from "nanoid";
 import { storagePut } from "./storage";
 import { assertPermission } from "./authorization";
 import { logAudit } from "./audit";
-import { createPurchaseQuote, createPurchaseRequest, createSupplier, getPurchaseBudgetStatus, getPurchaseQuotes, getPurchaseRequests, getSuppliers, selectPurchaseQuote, updatePurchaseRequest, updateSupplier } from "./db";
+import { createPurchaseQuote, createPurchaseRequest, createSupplier, getPurchaseBudgetStatus, getPurchaseQuotes, getPurchaseRequestById, getPurchaseRequests, getSuppliers, selectPurchaseQuote, updatePurchaseRequest, updateSupplier } from "./db";
 
 const amountSchema = z.string().trim().regex(/^\d+(\.\d{1,2})?$/, "Montant invalide").refine((value) => Number(value) > 0, "Le montant doit être positif");
 
@@ -48,6 +48,11 @@ export const purchasesRouter = router({
   updateStatus: protectedProcedure.input(z.object({ id: z.number().int().positive(), status: z.enum(["draft", "submitted", "approved", "rejected", "ordered", "received", "paid", "cancelled"]) })).mutation(async ({ input, ctx }) => {
     const approvalStatuses = ["approved", "rejected"];
     await assertPermission(ctx.user, approvalStatuses.includes(input.status) ? "purchases.approve" : "purchases.manage");
+    const existingRequest = input.status === "approved" ? await getPurchaseRequestById(input.id) : undefined;
+    if (input.status === "approved" && existingRequest?.projectId) {
+      const budget = await getPurchaseBudgetStatus(existingRequest.projectId, existingRequest.category, 0);
+      if (budget.remaining < 0) throw new TRPCError({ code: "CONFLICT", message: `Approbation refusée : budget projet dépassé de ${Math.abs(budget.remaining).toFixed(2)}` });
+    }
     const changes = approvalStatuses.includes(input.status) ? { status: input.status, approvedBy: ctx.user.id, approvedAt: new Date().toISOString() } : { status: input.status };
     const request = await updatePurchaseRequest(input.id, changes);
     await logAudit({ userId: ctx.user.id, action: "UPDATE", entityType: "purchase_request", entityId: input.id, description: `Demande d’achat ${input.id} : ${input.status}`, newValue: JSON.stringify({ status: input.status }), status: "success" });
