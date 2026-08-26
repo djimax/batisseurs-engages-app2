@@ -38,6 +38,7 @@ describe("purchases and suppliers module", () => {
     expect(db).toContain("selectPurchaseQuote");
     expect(db).toContain('status: "rejected"');
     expect(db).toContain('status: "selected"');
+    expect(db).toContain('throw new Error("Devis expiré")');
   });
 
   it("exposes a permission-protected budget status query", () => {

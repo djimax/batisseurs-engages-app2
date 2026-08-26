@@ -886,6 +886,7 @@ export async function selectPurchaseQuote(id: number) {
   if (!db) throw new Error("Database not available");
   const quote = await db.select().from(purchaseQuotes).where(eq(purchaseQuotes.id, id)).limit(1).then((rows) => rows[0]);
   if (!quote) return undefined;
+  if (quote.validUntil && new Date(quote.validUntil).getTime() < Date.now()) throw new Error("Devis expiré");
   await db.transaction(async (tx) => {
     await tx.update(purchaseQuotes).set({ status: "rejected" }).where(eq(purchaseQuotes.purchaseRequestId, quote.purchaseRequestId));
     await tx.update(purchaseQuotes).set({ status: "selected" }).where(eq(purchaseQuotes.id, id));
