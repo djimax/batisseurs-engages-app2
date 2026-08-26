@@ -1,5 +1,5 @@
 import type { Request, Response } from "express";
-import { and, eq, gte, isNotNull, lte } from "drizzle-orm";
+import { and, eq, gte, isNotNull, lte, or } from "drizzle-orm";
 import { auditLogs, documents, notificationSchedules, users } from "../drizzle/schema";
 import { getDb } from "./db";
 import { logAudit } from "./audit";
@@ -29,10 +29,11 @@ export async function documentRemindersHandler(req: Request, res: Response) {
       .from(documents)
       .leftJoin(users, eq(documents.createdBy, users.id))
       .where(and(
-        isNotNull(documents.dueDate),
-        gte(documents.dueDate, now.toISOString()),
-        lte(documents.dueDate, horizon.toISOString()),
         eq(documents.isArchived, 0),
+        or(
+          and(isNotNull(documents.dueDate), gte(documents.dueDate, now.toISOString()), lte(documents.dueDate, horizon.toISOString())),
+          eq(documents.priority, "urgent"),
+        ),
       ));
 
     let sent = 0;
@@ -40,7 +41,7 @@ export async function documentRemindersHandler(req: Request, res: Response) {
     for (const candidate of candidates) {
       const document = candidate.document;
       const recipient = candidate.recipient;
-      if (!document.dueDate || !recipient?.email) { skipped++; continue; }
+      if (!recipient?.email) { skipped++; continue; }
       const recent = await db.select({ id: auditLogs.id }).from(auditLogs).where(and(
         eq(auditLogs.entityType, "document"),
         eq(auditLogs.entityId, document.id),
@@ -53,7 +54,7 @@ export async function documentRemindersHandler(req: Request, res: Response) {
         await sendTransactionalEmail({
           to: { email: recipient.email, name: recipient.name ?? undefined },
           subject: `Échéance documentaire — ${document.title}`,
-          textContent: `Bonjour${recipient.name ? ` ${recipient.name}` : ""},\n\nLe document « ${document.title} » arrive à échéance le ${new Date(document.dueDate).toLocaleDateString("fr-FR")}. Merci de vérifier son renouvellement ou sa finalisation.\n\nLes Bâtisseurs Engagés`,
+          textContent: `Bonjour${recipient.name ? ` ${recipient.name}` : ""},\n\n${document.dueDate ? `Le document « ${document.title} » arrive à échéance le ${new Date(document.dueDate).toLocaleDateString("fr-FR")}.` : `Le document « ${document.title} » est classé urgent.`} Merci de vérifier son renouvellement ou sa finalisation.\n\nLes Bâtisseurs Engagés`,
         });
         await logAudit({ entityType: "document", entityId: document.id, entityName: "document_due_date", action: "REMINDER", description: `Rappel d’échéance envoyé à ${recipient.email}`, newValue: JSON.stringify({ dueDate: document.dueDate, windowDays: REMINDER_WINDOW_DAYS }), status: "success" });
         sent++;

@@ -73,7 +73,7 @@
 
 ## Fonctionnalités Futures (Non Implémentées)
 - [x] Système de dates d'échéance avec rappels automatiques
-- [ ] Notifications par email pour les documents urgents
+- [x] Notifications par email pour les documents urgents
 - [ ] Intégration calendrier pour les échéances
 - [ ] Système d'approbation de documents
 - [ ] Historique des versions de documents

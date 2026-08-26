@@ -21,9 +21,11 @@ describe("document reminders handler", () => {
   it("limits reminders to active documents with a due date in the horizon", () => {
     const source = readFileSync(new URL("./document-reminders-handler.ts", import.meta.url), "utf8");
     expect(source).toContain("documents.dueDate");
+    expect(source).toContain('eq(documents.priority, "urgent")');
     expect(source).toContain("documents.isArchived");
     expect(source).toContain("REMINDER_WINDOW_DAYS");
     expect(source).toContain("sendTransactionalEmail");
     expect(source).toContain('action: "REMINDER"');
+    expect(source).toContain("est classé urgent");
   });
 });
