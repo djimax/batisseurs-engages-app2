@@ -76,12 +76,12 @@
 - [x] Notifications par email pour les documents urgents
 - [x] Intégration calendrier pour les échéances
 - [x] Système d'approbation de documents
-- [ ] Historique des versions de documents (Renforcement production requis)
-- [ ] Partage de documents avec permissions granulaires (Application serveur requise)
+- [ ] Historique des versions de documents (chaîne Drizzle cohérente et tests de contrat validés ; exécution sur base MySQL vierge à finaliser)
+- [x] Partage de documents avec permissions granulaires (flux tRPC non-admin lié à members.userId validé)
 - [x] Commentaires collaboratifs sur les documents
 - [ ] Intégration avec Google Drive ou OneDrive
 - [x] Signature électronique des documents
-- [ ] Audit trail complet des modifications
+- [x] Audit documentaire et commentaires centralisés (CREATE, UPDATE, DELETE, ARCHIVE, RESTORE et commentaires)
 
 
 ## Phase 3 - Mode Hors Ligne (Sans Internet)
@@ -314,7 +314,7 @@
 
 ### Sécurité et Conformité
 - [ ] Chiffrement des données sensibles
-- [ ] Audit trail complet des modifications
+- [x] Audit documentaire et commentaires centralisés (CREATE, UPDATE, DELETE, ARCHIVE, RESTORE et commentaires)
 - [ ] Conformité RGPD (export de données, suppression)
 - [ ] Sauvegarde automatique des données
 - [ ] Historique des accès utilisateurs
@@ -2026,3 +2026,16 @@
 - [x] Afficher l’auteur, la date et le rôle sur chaque commentaire documentaire
 - [x] Ajouter la traçabilité centralisée des créations et suppressions de commentaires
 - [x] Distinguer explicitement les commentaires collaboratifs des notes simples et tester cette capacité
+- [x] Exécuter un test d’intégration réel upload puis consultation d’une version documentaire avec empreinte SHA-256
+- [ ] Vérifier la chaîne complète des migrations document_versions sur une base vierge
+- [x] Appliquer et tester les permissions granulaires sur archivage et restauration documentaire
+- [x] Ajouter des tests d’autorisation par membre pour canView, canEdit et canDelete
+- [x] Garantir automatiquement l’accès du créateur ou propriétaire non administrateur à ses documents
+- [x] Ajouter de vrais tests serveur d’autorisation par membre lié pour canView, canEdit et canDelete
+- [ ] Valider la chaîne complète des migrations documentaires sur une base vierge après correction
+- [ ] Exécuter et documenter une validation réelle de toutes les migrations documentaires sur une base vierge
+- [x] Exécuter un flux d’autorisation non-admin lié à members.userId couvrant canView, canEdit, canDelete et archivage/restauration
+
+- [x] Étendre l’audit centralisé à la restauration des documents et ajouter un test de non-régression RESTORE.
+- [ ] Couvrir les modifications critiques des membres, finances, achats, signatures et paramètres par l’audit centralisé.
+- [x] Conserver l’audit documentaire/commentaires comme périmètre distinct tant que la couverture globale de l’application n’est pas démontrée.

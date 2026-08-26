@@ -2,6 +2,14 @@ import { describe, expect, it, vi, beforeEach } from "vitest";
 import { readFileSync } from "node:fs";
 import { appRouter } from "./routers";
 import type { TrpcContext } from "./_core/context";
+import { getDb, getDocumentPermissionForUser } from "./db";
+import { users, members, documentPermissions, roles, permissions, rolePermissions, userRoles, auditLogs } from "../drizzle/schema";
+import { and, eq } from "drizzle-orm";
+import { ensureDefaultPermissions } from "./authorization";
+
+vi.mock("./storage", () => ({
+  storagePut: vi.fn(async (key: string) => ({ key, url: `https://storage.test/${key}` })),
+}));
 
 type AuthenticatedUser = NonNullable<TrpcContext["user"]>;
 
@@ -74,6 +82,7 @@ describe("Documents Router", () => {
   it("keeps the document version migration valid for a clean MySQL/TiDB setup", () => {
     const migration = readFileSync(new URL("../drizzle/0041_boring_lizard.sql", import.meta.url), "utf8");
     expect(migration).not.toContain("DEFAULT 'CURRENT_TIMESTAMP'");
+    expect(migration).toContain("PRIMARY KEY (`id`)");
   });
 
   it("exports document due dates as an ICS calendar from the Documents page", () => {
@@ -95,13 +104,79 @@ describe("Documents Router", () => {
     expect(pageSource).toContain("Ajouter une note");
   });
 
+  it("evaluates document permissions through a linked non-admin tRPC flow", async () => {
+    const db = await getDb();
+    if (!db) return;
+    const suffix = `${Date.now()}-${Math.floor(Math.random() * 10000)}`;
+    await ensureDefaultPermissions();
+    const userInsert = await db.insert(users).values({ openId: `permission-test-${suffix}`, name: "Permission Test", email: `permission-${suffix}@example.test`, role: "user" });
+    const userId = Number(userInsert[0].insertId);
+    const memberInsert = await db.insert(members).values({ userId, firstName: "Permission", lastName: "Test", status: "active", memberRole: "member" });
+    const memberId = Number(memberInsert[0].insertId);
+    const roleInsert = await db.insert(roles).values({ name: `document-test-${suffix}`, description: "test", isSystem: 0 });
+    const roleId = Number(roleInsert[0].insertId);
+    const permissionRows = await db.select().from(permissions);
+    const requiredPermissions = permissionRows.filter((item) => item.name === "documents.view" || item.name === "documents.manage");
+    await db.insert(rolePermissions).values(requiredPermissions.map((item) => ({ roleId, permissionId: item.id })));
+    await db.insert(userRoles).values({ userId, roleId });
+    const adminCaller = appRouter.createCaller(createAuthContext());
+    const categories = await adminCaller.categories.list();
+    const document = await adminCaller.documents.create({ title: `Permission document ${suffix}`, categoryId: categories[0].id });
+    const nonAdminContext = { ...createAuthContext(), user: { ...createAuthContext().user, id: userId, role: "user" as const } };
+    const caller = appRouter.createCaller(nonAdminContext);
+    try {
+      await db.insert(documentPermissions).values({ documentId: document.id, memberId, canView: 1, canEdit: 0, canDelete: 0 });
+      expect((await caller.documents.getById({ id: document.id }))?.id).toBe(document.id);
+      expect((await caller.documents.list({})).some((item) => item.id === document.id)).toBe(true);
+      await expect(caller.documents.update({ id: document.id, title: "Interdit" })).rejects.toMatchObject({ code: "FORBIDDEN" });
+      await expect(caller.documents.archive({ id: document.id })).rejects.toMatchObject({ code: "FORBIDDEN" });
+      await db.update(documentPermissions).set({ canEdit: 1, canDelete: 1 }).where(and(eq(documentPermissions.documentId, document.id), eq(documentPermissions.memberId, memberId)));
+      await caller.documents.update({ id: document.id, title: "Autorisé" });
+      await caller.documents.archive({ id: document.id });
+      await caller.documents.restore({ id: document.id });
+      const restoreAudits = await db.select().from(auditLogs).where(and(eq(auditLogs.action, "RESTORE"), eq(auditLogs.entityType, "document"), eq(auditLogs.entityId, document.id)));
+      expect(restoreAudits.length).toBeGreaterThan(0);
+      await caller.documents.delete({ id: document.id });
+    } finally {
+      await db.delete(documentPermissions).where(and(eq(documentPermissions.documentId, document.id), eq(documentPermissions.memberId, memberId)));
+      await db.delete(userRoles).where(and(eq(userRoles.userId, userId), eq(userRoles.roleId, roleId)));
+      await db.delete(rolePermissions).where(eq(rolePermissions.roleId, roleId));
+      await db.delete(roles).where(eq(roles.id, roleId));
+      await db.delete(members).where(eq(members.id, memberId));
+      await db.delete(users).where(eq(users.id, userId));
+      const remaining = await adminCaller.documents.getById({ id: document.id });
+      if (remaining) await adminCaller.documents.delete({ id: document.id });
+    }
+  });
+
   it("enforces member-scoped document permissions on sensitive server operations", () => {
     const source = readFileSync(new URL("./routers.ts", import.meta.url), "utf8");
     expect(source).toContain("assertDocumentCapability(ctx.user, input.id, \"canView\")");
     expect(source).toContain("assertDocumentCapability(ctx.user, input.id, \"canEdit\")");
     expect(source).toContain("assertDocumentCapability(ctx.user, input.id, \"canDelete\")");
     expect(source).toContain("getAccessibleDocumentIds(ctx.user.id, \"canView\")");
+    expect(source).toContain('action: "archive"');
+    expect(source).toContain('action: "restore"');
+    expect(source).toContain('assertDocumentCapability(ctx.user, input.id, "canEdit")');
     expect(source).toContain("members.userId");
+  });
+
+  it("creates and reads a version through the upload flow with a SHA-256 hash", async () => {
+    const caller = appRouter.createCaller(createAuthContext());
+    const categories = await caller.categories.list();
+    const categoryId = categories[0]?.id;
+    if (!categoryId) return;
+    const document = await caller.documents.create({ title: `Test version ${Date.now()}`, categoryId });
+    try {
+      const uploaded = await caller.documents.uploadFile({ documentId: document.id, fileName: "preuve.txt", fileType: "text/plain", fileSize: 5, fileBase64: "aGVsbG8=" });
+      const versions = await caller.documents.versions({ documentId: document.id });
+      const version = versions.find((item) => item.fileName === "preuve.txt");
+      expect(uploaded.success).toBe(true);
+      expect(version?.contentHash).toBe("2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824");
+      expect(version?.fileSize).toBe(5);
+    } finally {
+      await caller.documents.delete({ id: document.id });
+    }
   });
 
   it("records uploaded document versions with a stable content hash", () => {

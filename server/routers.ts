@@ -427,10 +427,13 @@ export const appRouter = router({
       }).optional())
       .query(async ({ input, ctx }) => {
         await assertPermission(ctx.user, "documents.view");
-        return getAllDocuments({
+        const archivedDocuments = await getAllDocuments({
           ...input,
           isArchived: 1,
         });
+        if (ctx.user.role === "admin") return archivedDocuments;
+        const accessibleIds = await getAccessibleDocumentIds(ctx.user.id, "canView");
+        return archivedDocuments.filter((document) => accessibleIds.includes(document.id));
       }),
     
     // Archive a document
@@ -438,6 +441,7 @@ export const appRouter = router({
       .input(z.object({ id: z.number().int().positive() }))
       .mutation(async ({ input, ctx }) => {
         await assertPermission(ctx.user, "documents.manage");
+        await assertDocumentCapability(ctx.user, input.id, "canEdit");
         const result = await updateDocument(input.id, {
           isArchived: 1,
           updatedBy: ctx.user.id,
@@ -462,6 +466,7 @@ export const appRouter = router({
       .input(z.object({ id: z.number().int().positive() }))
       .mutation(async ({ input, ctx }) => {
         await assertPermission(ctx.user, "documents.manage");
+        await assertDocumentCapability(ctx.user, input.id, "canEdit");
         const result = await updateDocument(input.id, {
           isArchived: 0,
           updatedBy: ctx.user.id,
@@ -473,6 +478,7 @@ export const appRouter = router({
           entityId: input.id,
           details: "Document restauré",
         });
+        await logAudit({ userId: ctx.user.id, action: "RESTORE", entityType: "document", entityId: input.id, description: "Document restauré", newValue: JSON.stringify({ isArchived: 0 }), status: "success" });
         return result;
       }),
   }),

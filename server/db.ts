@@ -314,6 +314,8 @@ export async function deleteDocument(id: number) {
 export async function getDocumentPermissionForUser(documentId: number, userId: number) {
   const db = await getDb();
   if (!db) return undefined;
+  const owned = await db.select({ id: documents.id }).from(documents).where(and(eq(documents.id, documentId), eq(documents.createdBy, userId))).limit(1);
+  if (owned.length > 0) return { id: 0, documentId, memberId: 0, canView: 1, canEdit: 1, canDelete: 1, createdAt: new Date().toISOString() };
   const rows = await db.select({ permission: documentPermissions }).from(documentPermissions).innerJoin(members, eq(members.id, documentPermissions.memberId)).where(and(eq(documentPermissions.documentId, documentId), eq(members.userId, userId), eq(members.status, "active"))).limit(1);
   return rows[0]?.permission;
 }
@@ -322,7 +324,8 @@ export async function getAccessibleDocumentIds(userId: number, capability: "canV
   const db = await getDb();
   if (!db) return [];
   const rows = await db.select({ documentId: documentPermissions.documentId }).from(documentPermissions).innerJoin(members, eq(members.id, documentPermissions.memberId)).where(and(eq(members.userId, userId), eq(members.status, "active"), eq(documentPermissions[capability], 1)));
-  return rows.map((row) => row.documentId);
+  const owned = await db.select({ documentId: documents.id }).from(documents).where(eq(documents.createdBy, userId));
+  return Array.from(new Set([...rows.map((row) => row.documentId), ...owned.map((row) => row.documentId)]));
 }
 
 export async function getDocumentPermissions(documentId: number) {
