@@ -1,62 +1,24 @@
 import { useState, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Plus, Calendar, MapPin, Users, Clock, Trash2, Edit2 } from "lucide-react";
 import { toast } from "sonner";
+import { trpc } from "@/lib/trpc";
 
 interface Event {
   id: number;
   title: string;
-  description?: string;
-  location?: string;
+  description?: string | null;
+  location?: string | null;
   eventType: string;
   startDate: Date;
   endDate: Date;
   color: string;
-  organizer?: string;
-  attendees?: number;
+  organizer?: string | null;
+  attendees?: number | null;
 }
-
-// Données d'exemple
-const SAMPLE_EVENTS: Event[] = [
-  {
-    id: 1,
-    title: "Réunion mensuelle",
-    description: "Réunion du bureau de l'association",
-    location: "Salle de réunion",
-    eventType: "reunion",
-    startDate: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
-    endDate: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000 + 2 * 60 * 60 * 1000),
-    color: "#3b82f6",
-    organizer: "Admin",
-    attendees: 12,
-  },
-  {
-    id: 2,
-    title: "Formation Excel",
-    description: "Formation sur les bases d'Excel",
-    location: "Salle informatique",
-    eventType: "formation",
-    startDate: new Date(),
-    endDate: new Date(Date.now() + 3 * 60 * 60 * 1000),
-    color: "#10b981",
-    organizer: "Secrétaire",
-    attendees: 8,
-  },
-  {
-    id: 3,
-    title: "Événement de collecte",
-    description: "Collecte de fonds pour le projet 2025",
-    location: "Parc central",
-    eventType: "evenement",
-    startDate: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000),
-    endDate: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000 + 4 * 60 * 60 * 1000),
-    color: "#f59e0b",
-    organizer: "Trésorier",
-    attendees: 25,
-  },
-];
 
 type FilterType = "all" | "past" | "present" | "future";
 
@@ -70,10 +32,32 @@ const SORT_OPTIONS = [
 ];
 
 export default function Events() {
-  const [events, setEvents] = useState<Event[]>(SAMPLE_EVENTS);
+  const { data: storedEvents, isLoading } = trpc.events.list.useQuery();
+  const utils = trpc.useUtils();
+  const createEvent = trpc.events.create.useMutation({
+    onSuccess: async () => { await utils.events.list.invalidate(); toast.success("Événement créé"); setIsOpen(false); },
+    onError: (error) => toast.error(error.message),
+  });
+  const updateEvent = trpc.events.update.useMutation({
+    onSuccess: async () => { await utils.events.list.invalidate(); toast.success("Événement mis à jour"); setIsOpen(false); },
+    onError: (error) => toast.error(error.message),
+  });
+  const deleteEvent = trpc.events.delete.useMutation({
+    onSuccess: async () => { await utils.events.list.invalidate(); toast.success("Événement supprimé"); },
+    onError: (error) => toast.error(error.message),
+  });
+  const events = useMemo<Event[]>(() => (storedEvents ?? []).map((event) => ({
+    ...event,
+    startDate: new Date(event.startDate),
+    endDate: new Date(event.endDate),
+    color: event.color ?? "#1a4d2e",
+  })), [storedEvents]);
   const [filter, setFilter] = useState<FilterType>("all");
   const [searchTerm, setSearchTerm] = useState("");
   const [sortBy, setSortBy] = useState<string>("date-asc");
+  const [isOpen, setIsOpen] = useState(false);
+  const [editingId, setEditingId] = useState<number | null>(null);
+  const [formData, setFormData] = useState({ title: "", description: "", location: "", startDate: "", endDate: "", organizer: "", attendees: 0 });
 
   // Stabilize `now` reference to prevent infinite useMemo recalculations
   const now = useMemo(() => new Date(), []);
@@ -121,8 +105,8 @@ export default function Events() {
   }, [events, filter, searchTerm, sortBy]);
 
   const handleDelete = (id: number) => {
-    setEvents(events.filter(e => e.id !== id));
-    toast.success("Événement supprimé");
+    if (!window.confirm("Supprimer définitivement cet événement ?")) return;
+    deleteEvent.mutate({ id });
   };
 
   const getEventStatus = (event: Event) => {
@@ -148,6 +132,28 @@ export default function Events() {
     });
   };
 
+  const handleSubmit = () => {
+    const startDate = new Date(formData.startDate);
+    const endDate = new Date(formData.endDate);
+    if (!formData.title.trim() || !formData.startDate || !formData.endDate || Number.isNaN(startDate.getTime()) || Number.isNaN(endDate.getTime()) || endDate <= startDate) {
+      toast.error("Renseignez un titre et une période valide");
+      return;
+    }
+    const input = {
+      title: formData.title.trim(),
+      description: formData.description.trim() || undefined,
+      location: formData.location.trim() || undefined,
+      eventType: "autre" as const,
+      startDate: startDate.toISOString(),
+      endDate: endDate.toISOString(),
+      color: "#1a4d2e",
+      organizer: formData.organizer.trim() || undefined,
+      attendees: Number(formData.attendees) || 0,
+    };
+    if (editingId) updateEvent.mutate({ id: editingId, ...input });
+    else createEvent.mutate(input);
+  };
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -158,7 +164,7 @@ export default function Events() {
             Gérez les événements passés, présents et futurs de l'association
           </p>
         </div>
-        <Button className="gap-2">
+        <Button className="gap-2" onClick={() => { setEditingId(null); setFormData({ title: "", description: "", location: "", startDate: "", endDate: "", organizer: "", attendees: 0 }); setIsOpen(true); }}>
           <Plus className="h-4 w-4" />
           Nouvel événement
         </Button>
@@ -207,7 +213,9 @@ export default function Events() {
       </div>
 
       {/* Events Grid */}
-      {filteredEvents.length === 0 ? (
+      {isLoading ? (
+        <Card><CardContent className="py-12 text-center text-muted-foreground">Chargement des événements…</CardContent></Card>
+      ) : filteredEvents.length === 0 ? (
         <Card>
           <CardContent className="flex flex-col items-center justify-center py-12">
             <Calendar className="h-12 w-12 text-muted-foreground mb-4" />
@@ -270,6 +278,7 @@ export default function Events() {
                     variant="ghost"
                     size="sm"
                     className="flex-1 gap-2"
+                    onClick={() => { const current = events.find((item) => item.id === event.id); if (!current) return; setEditingId(current.id); setFormData({ title: current.title, description: current.description ?? "", location: current.location ?? "", startDate: current.startDate.toISOString().slice(0, 16), endDate: current.endDate.toISOString().slice(0, 16), organizer: current.organizer ?? "", attendees: current.attendees ?? 0 }); setIsOpen(true); }}
                   >
                     <Edit2 className="h-4 w-4" />
                     Modifier
@@ -288,6 +297,31 @@ export default function Events() {
           ))}
         </div>
       )}
+
+      <Dialog open={isOpen} onOpenChange={setIsOpen}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>{editingId ? "Modifier l’événement" : "Nouvel événement"}</DialogTitle>
+            <DialogDescription>Planifiez une activité associative avec une période valide.</DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4">
+            <Input placeholder="Titre de l’événement" value={formData.title} onChange={(event) => setFormData({ ...formData, title: event.target.value })} />
+            <Input placeholder="Description" value={formData.description} onChange={(event) => setFormData({ ...formData, description: event.target.value })} />
+            <div className="grid gap-3 sm:grid-cols-2">
+              <Input placeholder="Lieu" value={formData.location} onChange={(event) => setFormData({ ...formData, location: event.target.value })} />
+              <Input type="number" min="0" placeholder="Participants" value={formData.attendees || ""} onChange={(event) => setFormData({ ...formData, attendees: Number(event.target.value) || 0 })} />
+            </div>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <Input aria-label="Début" type="datetime-local" value={formData.startDate} onChange={(event) => setFormData({ ...formData, startDate: event.target.value })} />
+              <Input aria-label="Fin" type="datetime-local" value={formData.endDate} onChange={(event) => setFormData({ ...formData, endDate: event.target.value })} />
+            </div>
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" onClick={() => setIsOpen(false)}>Annuler</Button>
+              <Button onClick={handleSubmit} disabled={createEvent.isPending || updateEvent.isPending}>{editingId ? "Mettre à jour" : "Créer"}</Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Stats */}
       <div className="grid gap-4 md:grid-cols-3">

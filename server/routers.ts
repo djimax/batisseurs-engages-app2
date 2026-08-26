@@ -53,6 +53,7 @@ import { canAssignMemberGrade, MEMBER_GRADE_LEVELS } from "../shared/memberProgr
 import { governanceRouter } from "./governance-router";
 import { stripeRouter } from "./stripe-router";
 import { campaignsRouter } from "./campaigns-router";
+import { eventsRouter } from "./events-router";
 
 // Note: Email procedures are now in email-router.ts and imported above
 
@@ -67,6 +68,7 @@ export const appRouter = router({
   governance: governanceRouter,
   stripe: stripeRouter,
   campaigns: campaignsRouter,
+  events: eventsRouter,
   
   auth: router({
     me: publicProcedure.query(opts => opts.ctx.user),

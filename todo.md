@@ -1882,3 +1882,18 @@
 - [x] Gérer les objectifs atteints, dépassés et les états sans objectif
 - [x] Ajouter les attributs d’accessibilité et les tests de non-régression
 - [x] Valider TypeScript, tests, build et rendu responsive
+
+## Tranche prioritaire suivante
+- [x] Auditer les modules déjà présents et les fonctionnalités associatives encore incomplètes
+- [x] Identifier les flux critiques manquants : adhésions, reçus, trésorerie, gouvernance, communication et sauvegarde
+- [x] Prioriser une amélioration métier à fort impact avant d’ajouter une nouvelle API externe
+- [x] Vérifier les API déjà disponibles et les connecteurs activés avant toute configuration
+- [x] Implémenter la prochaine tranche retenue avec contrôles d’accès et traçabilité
+- [x] Ajouter les tests, documenter les prérequis et valider la build
+
+## Module Événements prioritaire
+- [x] Remplacer les événements statiques par un modèle persisté et une API tRPC protégée
+- [x] Ajouter les opérations de création, modification, suppression et changement de statut avec audit
+- [x] Conserver recherche, filtres, tri, chargement et états vides dans l’interface Événements
+- [x] Préparer une intégration calendrier externe sans rendre Google Calendar obligatoire
+- [x] Ajouter les tests de permissions, validation et non-régression du module Événements
