@@ -322,6 +322,54 @@ export const depenses = mysqlTable("depenses", {
 	updatedAt: timestamp({ mode: 'string' }).defaultNow().onUpdateNow().notNull(),
 });
 
+export const suppliers = mysqlTable("suppliers", {
+	id: int().autoincrement().notNull(),
+	name: varchar({ length: 255 }).notNull(),
+	email: varchar({ length: 255 }),
+	phone: varchar({ length: 50 }),
+	address: text(),
+	taxId: varchar({ length: 100 }),
+	status: mysqlEnum(['active', 'inactive']).default('active').notNull(),
+	notes: text(),
+	createdBy: int().notNull(),
+	createdAt: timestamp({ mode: 'string' }).defaultNow().notNull(),
+	updatedAt: timestamp({ mode: 'string' }).defaultNow().onUpdateNow().notNull(),
+});
+
+export const purchaseRequests = mysqlTable("purchase_requests", {
+	id: int().autoincrement().notNull(),
+	supplierId: int(),
+	projectId: int(),
+	requestedBy: int().notNull(),
+	description: varchar({ length: 500 }).notNull(),
+	category: varchar({ length: 100 }).notNull(),
+	amount: varchar({ length: 20 }).notNull(),
+	currency: mysqlEnum(['EUR', 'XOF']).default('EUR').notNull(),
+	status: mysqlEnum(['draft', 'submitted', 'approved', 'rejected', 'ordered', 'received', 'paid', 'cancelled']).default('draft').notNull(),
+	neededBy: timestamp({ mode: 'string' }),
+	justification: text(),
+	approvedBy: int(),
+	approvedAt: timestamp({ mode: 'string' }),
+	expenseId: int(),
+	createdAt: timestamp({ mode: 'string' }).defaultNow().notNull(),
+	updatedAt: timestamp({ mode: 'string' }).defaultNow().onUpdateNow().notNull(),
+});
+
+export const purchaseQuotes = mysqlTable("purchase_quotes", {
+	id: int().autoincrement().notNull(),
+	purchaseRequestId: int().notNull(),
+	supplierId: int().notNull(),
+	quoteNumber: varchar({ length: 100 }),
+	amount: varchar({ length: 20 }).notNull(),
+	currency: mysqlEnum(['EUR', 'XOF']).default('EUR').notNull(),
+	documentUrl: text(),
+	validUntil: timestamp({ mode: 'string' }),
+	status: mysqlEnum(['pending', 'selected', 'rejected']).default('pending').notNull(),
+	createdBy: int().notNull(),
+	createdAt: timestamp({ mode: 'string' }).defaultNow().notNull(),
+	updatedAt: timestamp({ mode: 'string' }).defaultNow().onUpdateNow().notNull(),
+});
+
 export const documentNotes = mysqlTable("document_notes", {
 	id: int().autoincrement().notNull(),
 	documentId: int().notNull(),

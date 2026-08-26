@@ -44,6 +44,7 @@ import CRMReports from "./pages/CRMReports";
 import GlobalSettings from "./pages/GlobalSettings";
 import { AdminPasswordResets } from "./pages/AdminPasswordResets";
 import { Projects } from "./pages/Projects";
+import Purchases from "./pages/Purchases";
 import { ProjectDetail } from "./pages/ProjectDetail";
 import Dashboard from "./pages/Dashboard";
 import AdhesionsList from "./pages/AdhesionsList";
@@ -78,6 +79,7 @@ function OnlineRouter({ isAuthenticated, error, onLogin, onLogout, onForgotPassw
         <Route path="/activity" component={Activity} />
         <Route path="/archives" component={Archives} />
         <Route path="/finance" component={Finance} />
+        <Route path="/purchases" component={Purchases} />
         <Route path="/campaigns" component={Campaigns} />
         <Route path="/adhesions" component={Adhesions} />
         <Route path="/events" component={Events} />

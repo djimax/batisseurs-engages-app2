@@ -53,8 +53,11 @@ import {
 	memberEvaluations,
 	memberGrades,
 	stripePayments,
-	stripeEvents
-} from "../drizzle/schema";
+		stripeEvents,
+		suppliers,
+		purchaseRequests,
+		purchaseQuotes
+	} from "../drizzle/schema";
 import { ENV } from './_core/env';
 
 let _db: ReturnType<typeof drizzle> | null = null;
@@ -106,6 +109,9 @@ const schema = {
   membershipFeeRules,
   memberEvaluations,
   memberGrades,
+  suppliers,
+  purchaseRequests,
+  purchaseQuotes,
 };
 
 export async function getDb() {
@@ -801,6 +807,63 @@ export async function cancelSignatureRequest(id: number) {
   if (!db) throw new Error("Database not available");
   await db.update(signatureRequests).set({ status: "cancelled" }).where(and(eq(signatureRequests.id, id), ne(signatureRequests.status, "completed")));
   return getSignatureRequestById(id);
+}
+
+// ============ PURCHASES & SUPPLIERS ============
+export async function getSuppliers() {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(suppliers).orderBy(asc(suppliers.name));
+}
+
+export async function createSupplier(data: typeof suppliers.$inferInsert) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const result = await db.insert(suppliers).values(data);
+  return db.select().from(suppliers).where(eq(suppliers.id, Number(result[0].insertId))).limit(1).then((rows) => rows[0]);
+}
+
+export async function updateSupplier(id: number, data: Partial<typeof suppliers.$inferInsert>) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.update(suppliers).set(data).where(eq(suppliers.id, id));
+  return db.select().from(suppliers).where(eq(suppliers.id, id)).limit(1).then((rows) => rows[0]);
+}
+
+export async function getPurchaseRequests() {
+  const db = await getDb();
+  if (!db) return [];
+  const requests = await db.select().from(purchaseRequests).orderBy(desc(purchaseRequests.createdAt));
+  const supplierRows = await db.select({ id: suppliers.id, name: suppliers.name }).from(suppliers);
+  const supplierNames = new Map(supplierRows.map((supplier) => [supplier.id, supplier.name]));
+  return requests.map((request) => ({ ...request, supplierName: request.supplierId ? supplierNames.get(request.supplierId) ?? null : null }));
+}
+
+export async function createPurchaseRequest(data: typeof purchaseRequests.$inferInsert) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const result = await db.insert(purchaseRequests).values(data);
+  return db.select().from(purchaseRequests).where(eq(purchaseRequests.id, Number(result[0].insertId))).limit(1).then((rows) => rows[0]);
+}
+
+export async function updatePurchaseRequest(id: number, data: Partial<typeof purchaseRequests.$inferInsert>) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.update(purchaseRequests).set(data).where(eq(purchaseRequests.id, id));
+  return db.select().from(purchaseRequests).where(eq(purchaseRequests.id, id)).limit(1).then((rows) => rows[0]);
+}
+
+export async function getPurchaseQuotes(purchaseRequestId?: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return purchaseRequestId ? db.select().from(purchaseQuotes).where(eq(purchaseQuotes.purchaseRequestId, purchaseRequestId)) : db.select().from(purchaseQuotes).orderBy(desc(purchaseQuotes.createdAt));
+}
+
+export async function createPurchaseQuote(data: typeof purchaseQuotes.$inferInsert) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const result = await db.insert(purchaseQuotes).values(data);
+  return db.select().from(purchaseQuotes).where(eq(purchaseQuotes.id, Number(result[0].insertId))).limit(1).then((rows) => rows[0]);
 }
 
 // ============ EMAIL HISTORY ============

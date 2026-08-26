@@ -1986,3 +1986,15 @@
 - [x] Journaliser chaque relance et isoler les erreurs Brevo
 - [x] Ajouter les tests de permission, idempotence et non-régression
 - [x] Valider TypeScript, tests, build et sauvegarder le jalon
+
+## Achats et fournisseurs
+- [x] Auditer les dépenses, projets, permissions et navigation existants
+- [x] Concevoir les fournisseurs, demandes d’achat, devis et validations
+- [x] Ajouter le schéma et la migration non destructive
+- [x] Ajouter helpers et procédures tRPC sécurisées avec audit
+- [x] Créer l’interface fournisseurs et achats avec états de validation
+- [ ] Ajouter contrôles budgétaires, exports et traçabilité
+- [x] Ajouter tests de calculs, permissions et non-régression
+- [x] Valider TypeScript, tests, build et sauvegarder le jalon
+- [x] Corriger les références tRPC `signatures` incohérentes révélées par la validation du module achats
+- [x] Corriger les assertions du test achats pour refléter les statuts validés par le schéma Zod

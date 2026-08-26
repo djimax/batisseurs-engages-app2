@@ -1,0 +1,55 @@
+import { z } from "zod";
+import { router, protectedProcedure } from "./_core/trpc";
+import { assertPermission } from "./authorization";
+import { logAudit } from "./audit";
+import { createPurchaseQuote, createPurchaseRequest, createSupplier, getPurchaseQuotes, getPurchaseRequests, getSuppliers, updatePurchaseRequest, updateSupplier } from "./db";
+
+const amountSchema = z.string().trim().regex(/^\d+(\.\d{1,2})?$/, "Montant invalide").refine((value) => Number(value) > 0, "Le montant doit être positif");
+
+export const purchasesRouter = router({
+  suppliers: protectedProcedure.query(async ({ ctx }) => {
+    await assertPermission(ctx.user, "suppliers.view");
+    return getSuppliers();
+  }),
+  createSupplier: protectedProcedure.input(z.object({ name: z.string().trim().min(2).max(255), email: z.string().email().optional(), phone: z.string().max(50).optional(), address: z.string().max(2000).optional(), taxId: z.string().max(100).optional(), notes: z.string().max(5000).optional() })).mutation(async ({ input, ctx }) => {
+    await assertPermission(ctx.user, "suppliers.manage");
+    const supplier = await createSupplier({ ...input, createdBy: ctx.user.id });
+    await logAudit({ userId: ctx.user.id, action: "CREATE", entityType: "supplier", entityId: supplier?.id, entityName: supplier?.name, description: `Fournisseur créé : ${supplier?.name}`, status: "success" });
+    return supplier;
+  }),
+  updateSupplier: protectedProcedure.input(z.object({ id: z.number().int().positive(), name: z.string().trim().min(2).max(255).optional(), email: z.string().email().nullable().optional(), phone: z.string().max(50).nullable().optional(), address: z.string().max(2000).nullable().optional(), taxId: z.string().max(100).nullable().optional(), status: z.enum(["active", "inactive"]).optional(), notes: z.string().max(5000).nullable().optional() })).mutation(async ({ input, ctx }) => {
+    await assertPermission(ctx.user, "suppliers.manage");
+    const { id, ...changes } = input;
+    const supplier = await updateSupplier(id, changes);
+    await logAudit({ userId: ctx.user.id, action: "UPDATE", entityType: "supplier", entityId: id, description: `Fournisseur mis à jour : ${id}`, status: "success" });
+    return supplier;
+  }),
+  requests: protectedProcedure.query(async ({ ctx }) => {
+    await assertPermission(ctx.user, "purchases.view");
+    return getPurchaseRequests();
+  }),
+  createRequest: protectedProcedure.input(z.object({ supplierId: z.number().int().positive().nullable().optional(), projectId: z.number().int().positive().nullable().optional(), description: z.string().trim().min(3).max(500), category: z.string().trim().min(2).max(100), amount: amountSchema, currency: z.enum(["EUR", "XOF"]), neededBy: z.string().datetime().nullable().optional(), justification: z.string().max(5000).nullable().optional(), status: z.enum(["draft", "submitted"]).default("draft") })).mutation(async ({ input, ctx }) => {
+    await assertPermission(ctx.user, "purchases.manage");
+    const request = await createPurchaseRequest({ ...input, requestedBy: ctx.user.id });
+    await logAudit({ userId: ctx.user.id, action: "CREATE", entityType: "purchase_request", entityId: request?.id, description: `Demande d’achat créée : ${input.description}`, status: "success" });
+    return request;
+  }),
+  updateStatus: protectedProcedure.input(z.object({ id: z.number().int().positive(), status: z.enum(["draft", "submitted", "approved", "rejected", "ordered", "received", "paid", "cancelled"]) })).mutation(async ({ input, ctx }) => {
+    const approvalStatuses = ["approved", "rejected"];
+    await assertPermission(ctx.user, approvalStatuses.includes(input.status) ? "purchases.approve" : "purchases.manage");
+    const changes = approvalStatuses.includes(input.status) ? { status: input.status, approvedBy: ctx.user.id, approvedAt: new Date().toISOString() } : { status: input.status };
+    const request = await updatePurchaseRequest(input.id, changes);
+    await logAudit({ userId: ctx.user.id, action: "UPDATE", entityType: "purchase_request", entityId: input.id, description: `Demande d’achat ${input.id} : ${input.status}`, newValue: JSON.stringify({ status: input.status }), status: "success" });
+    return request;
+  }),
+  quotes: protectedProcedure.input(z.object({ purchaseRequestId: z.number().int().positive().optional() }).optional()).query(async ({ input, ctx }) => {
+    await assertPermission(ctx.user, "purchases.view");
+    return getPurchaseQuotes(input?.purchaseRequestId);
+  }),
+  createQuote: protectedProcedure.input(z.object({ purchaseRequestId: z.number().int().positive(), supplierId: z.number().int().positive(), quoteNumber: z.string().max(100).nullable().optional(), amount: amountSchema, currency: z.enum(["EUR", "XOF"]), documentUrl: z.string().url().nullable().optional(), validUntil: z.string().datetime().nullable().optional() })).mutation(async ({ input, ctx }) => {
+    await assertPermission(ctx.user, "purchases.manage");
+    const quote = await createPurchaseQuote({ ...input, createdBy: ctx.user.id });
+    await logAudit({ userId: ctx.user.id, action: "CREATE", entityType: "purchase_quote", entityId: quote?.id, description: `Devis ajouté à la demande ${input.purchaseRequestId}`, status: "success" });
+    return quote;
+  }),
+});

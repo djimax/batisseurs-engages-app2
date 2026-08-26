@@ -32,6 +32,7 @@ import {
   Building2,
   Archive,
   DollarSign,
+  ShoppingCart,
   Megaphone,
   Bell,
   UserCheck,
@@ -108,6 +109,7 @@ const menuItems: MenuItem[] = [
   // Finances
   { icon: DollarSign, label: "Finances", isGroup: true, items: [
     { icon: DollarSign, label: "Finance", path: "/finance" },
+    { icon: ShoppingCart, label: "Achats et fournisseurs", path: "/purchases" },
   ]},
   
   // CRM

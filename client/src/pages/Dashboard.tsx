@@ -65,7 +65,7 @@ export default function Dashboard() {
   const [transitioningGrade, setTransitioningGrade] = useState<string | null>(null);
   const [retryingSignerId, setRetryingSignerId] = useState<number | null>(null);
   const utils = trpc.useUtils();
-  const retryProofEmail = trpc.signatures.retryProofEmail.useMutation({
+  const retryProofEmail = trpc.signature.retryProofEmail.useMutation({
     onSuccess: async () => {
       toast.success("Relance envoyée");
       await utils.dashboard.signatureDelivery.invalidate();

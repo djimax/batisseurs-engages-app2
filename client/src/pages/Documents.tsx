@@ -115,7 +115,7 @@ export default function Documents() {
     isArchived: showArchived,
   });
   const { data: members = [] } = trpc.members.list.useQuery();
-  const { data: signatureRequests = [], refetch: refetchSignatures } = trpc.signatures.listForDocument.useQuery(
+  const { data: signatureRequests = [], refetch: refetchSignatures } = trpc.signature.listForDocument.useQuery(
     { documentId: selectedDocument?.id || 0 },
     { enabled: !!selectedDocument }
   );
@@ -184,7 +184,7 @@ export default function Documents() {
     },
   });
 
-  const createSignatureRequest = trpc.signatures.createRequest.useMutation({
+  const createSignatureRequest = trpc.signature.createRequest.useMutation({
     onSuccess: () => {
       refetchSignatures();
       setSignatureMemberId("");
@@ -194,7 +194,7 @@ export default function Documents() {
     onError: (error) => toast.error("Erreur de signature: " + error.message),
   });
 
-  const signRequest = trpc.signatures.sign.useMutation({
+  const signRequest = trpc.signature.sign.useMutation({
     onSuccess: () => {
       refetchSignatures();
       setTypedSignature("");
@@ -204,7 +204,7 @@ export default function Documents() {
     onError: (error) => toast.error("Signature refusée: " + error.message),
   });
 
-  const cancelSignatureRequest = trpc.signatures.cancel.useMutation({
+  const cancelSignatureRequest = trpc.signature.cancel.useMutation({
     onSuccess: () => {
       refetchSignatures();
       toast.success("Demande annulée");
@@ -279,7 +279,7 @@ export default function Documents() {
   const handleSignedPdfExport = async (requestId: number, title: string) => {
     setExportingSignatureId(requestId);
     try {
-      const data = await utils.signatures.exportData.fetch({ id: requestId });
+      const data = await utils.signature.exportData.fetch({ id: requestId });
       const safeTitle = title.toLowerCase().replace(/[^a-z0-9]+/gi, "-").replace(/^-|-$/g, "");
       await exportSignedDocumentPdf(data, `document-signe-${requestId}-${safeTitle || "document"}.pdf`);
       toast.success("PDF signé exporté avec son journal d’audit");
