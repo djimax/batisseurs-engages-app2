@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+import { buildEmailPreviewDocument, replaceEmailPreviewVariables, EMAIL_PREVIEW_VARIABLES } from "@/lib/emailPreview";
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,11 +12,12 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Loader2, Send, CheckCircle2, AlertCircle, Users, Filter } from "lucide-react";
+import { Loader2, Send, CheckCircle2, AlertCircle, Users, Filter, Eye } from "lucide-react";
 
 const MEMBER_ROLES = [
   { value: "admin", label: "Admin" },
@@ -40,6 +42,7 @@ export default function EmailComposer() {
   const [isLoading, setIsLoading] = useState(false);
   const [successMessage, setSuccessMessage] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
+  const [previewOpen, setPreviewOpen] = useState(false);
   
   // Filtres
   const [selectedRoles, setSelectedRoles] = useState<string[]>([]);
@@ -56,6 +59,8 @@ export default function EmailComposer() {
   }), [selectedRoles, selectedStatuses, excludeNoEmail, excludedMemberIds]);
   const { data: filteredRecipients = [], isFetching: recipientsLoading } = trpc.email.getFilteredRecipients.useQuery(recipientFilter);
   const sendEmailMutation = trpc.email.sendMassEmail.useMutation();
+  const previewDocument = useMemo(() => buildEmailPreviewDocument(subject, content), [subject, content]);
+  const previewSubject = replaceEmailPreviewVariables(subject);
 
   const handleLoadTemplate = (id: string) => {
     if (id === "new") {
@@ -288,18 +293,27 @@ export default function EmailComposer() {
                 </p>
               </div>
 
-              {/* Preview */}
               {subject || content ? (
-                <div className="bg-muted p-4 rounded-lg">
-                  <h3 className="font-semibold mb-2">Aperçu</h3>
-                  <div className="bg-background p-3 rounded border">
-                    {subject && <p className="font-bold mb-2">{subject}</p>}
-                    <p className="text-sm whitespace-pre-wrap">{content}</p>
-                  </div>
+                <div className="flex items-center justify-between gap-4 rounded-lg border border-primary/20 bg-primary/5 p-4">
+                  <div><h3 className="font-semibold">Aperçu avant envoi</h3><p className="mt-1 text-xs text-muted-foreground">Rendu local sécurisé · aucune requête réseau ni aucun e-mail n’est envoyé.</p></div>
+                  <Button type="button" variant="outline" className="shrink-0 gap-2" onClick={() => setPreviewOpen(true)}><Eye className="h-4 w-4" />Prévisualiser</Button>
                 </div>
               ) : null}
             </CardContent>
           </Card>
+
+          <Dialog open={previewOpen} onOpenChange={setPreviewOpen}>
+            <DialogContent className="max-w-4xl overflow-hidden p-0">
+              <DialogHeader className="border-b px-6 py-5">
+                <DialogTitle>Prévisualisation du modèle</DialogTitle>
+                <DialogDescription>Exemple rendu pour Marie Martin · {EMAIL_PREVIEW_VARIABLES.memberEmail}</DialogDescription>
+              </DialogHeader>
+              <div className="bg-muted/40 p-4 sm:p-6">
+                <div className="mb-3 rounded-lg border bg-background px-4 py-3 text-sm"><span className="font-medium">Objet :</span> {previewSubject || "Sans objet"}</div>
+                <iframe title="Prévisualisation de l’e-mail" sandbox="" srcDoc={previewDocument} className="h-[min(60vh,560px)] w-full rounded-xl border bg-white shadow-sm" />
+              </div>
+            </DialogContent>
+          </Dialog>
 
           {/* Liste des destinataires */}
           {filteredRecipients.length > 0 && (
@@ -361,6 +375,7 @@ export default function EmailComposer() {
           {/* Send Button */}
           <div className="flex gap-2">
             <Button
+              type="button"
               onClick={handleSendEmail}
               disabled={isLoading || recipientsLoading || !subject.trim() || !content.trim() || filteredRecipients.length === 0}
               className="w-full sm:w-auto"

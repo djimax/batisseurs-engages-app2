@@ -1914,3 +1914,12 @@
 - [x] Raccorder le handler périodique existant aux rappels Brevo idempotents
 - [x] Respecter le consentement emailEnabled et auditer les rappels automatiques
 - [x] Valider le handler périodique par 324 tests, TypeScript et build
+
+## Prévisualisation des modèles d’e-mails
+- [x] Auditer le panneau d’administration et le formulaire de campagnes massives
+- [x] Ajouter un rendu local sécurisé avec remplacement contrôlé des variables
+- [x] Afficher sujet, contenu et destinataire d’exemple dans une boîte de prévisualisation responsive
+- [x] Empêcher toute émission réseau depuis l’aperçu
+- [x] Ajouter les tests de rendu, d’échappement et de régression
+- [x] Valider TypeScript, tests, build et sauvegarder le jalon
+- [x] Déplacer le test de prévisualisation dans le périmètre Vitest configuré et le faire passer
