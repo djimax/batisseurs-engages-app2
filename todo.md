@@ -2010,3 +2010,4 @@
 - [x] Refuser les devis liés à une demande inexistante ou à un fournisseur inactif
 - [x] Permettre de renseigner la date de validité d’un devis depuis le formulaire achats
 - [x] Convertir explicitement les demandes EUR en XOF avant les contrôles budgétaires de référence
+- [x] Indiquer dans le formulaire achats que le contrôle budgétaire est référencé en XOF
