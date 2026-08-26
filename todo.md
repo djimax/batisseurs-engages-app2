@@ -2017,3 +2017,4 @@
 - [x] Exporter les échéances documentaires au format calendrier ICS
 - [x] Ajouter un circuit d’approbation documentaire explicite avec statut, approbateur et date d’approbation
 - [x] Ajouter un historique versionné des fichiers documentaires avec métadonnées et consultation
+- [x] Ajouter le partage documentaire par membre avec droits de consultation, modification et suppression

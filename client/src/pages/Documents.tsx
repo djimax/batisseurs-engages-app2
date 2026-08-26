@@ -118,6 +118,9 @@ export default function Documents() {
   const [typedSignature, setTypedSignature] = useState("");
   const [signatureConsent, setSignatureConsent] = useState(false);
   const [approvalComment, setApprovalComment] = useState("");
+  const [shareMemberId, setShareMemberId] = useState("");
+  const [shareCanEdit, setShareCanEdit] = useState(false);
+  const [shareCanDelete, setShareCanDelete] = useState(false);
   const [exportingSignatureId, setExportingSignatureId] = useState<number | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -146,6 +149,10 @@ export default function Documents() {
   });
   const { data: members = [] } = trpc.members.list.useQuery();
   const { data: signatureRequests = [], refetch: refetchSignatures } = trpc.signature.listForDocument.useQuery(
+    { documentId: selectedDocument?.id || 0 },
+    { enabled: !!selectedDocument }
+  );
+  const { data: documentPermissions = [], refetch: refetchDocumentPermissions } = trpc.documents.permissions.useQuery(
     { documentId: selectedDocument?.id || 0 },
     { enabled: !!selectedDocument }
   );
@@ -180,6 +187,21 @@ export default function Documents() {
     onError: (error) => {
       toast.error("Erreur: " + error.message);
     },
+  });
+
+  const shareDocument = trpc.documents.share.useMutation({
+    onSuccess: () => {
+      refetchDocumentPermissions();
+      setShareMemberId("");
+      setShareCanEdit(false);
+      setShareCanDelete(false);
+      toast.success("Document partagé");
+    },
+    onError: (error) => toast.error("Partage impossible : " + error.message),
+  });
+  const revokeDocumentShare = trpc.documents.revokeShare.useMutation({
+    onSuccess: () => { refetchDocumentPermissions(); toast.success("Accès révoqué"); },
+    onError: (error) => toast.error("Révocation impossible : " + error.message),
   });
 
   const approveDocument = trpc.documents.approve.useMutation({
@@ -968,6 +990,19 @@ export default function Documents() {
               <div>
                 <h4 className="text-sm font-medium mb-3">Historique des versions</h4>
                 {documentVersions.length === 0 ? <p className="text-sm text-muted-foreground">Aucune version enregistrée.</p> : <div className="space-y-2">{documentVersions.map((version) => <div key={version.id} className="flex flex-wrap items-center justify-between gap-3 rounded-lg border p-3"><div className="min-w-0"><p className="font-medium">Version {version.versionNumber} · {version.fileName}</p><p className="text-xs text-muted-foreground">{new Date(version.createdAt).toLocaleString("fr-FR")} · {(version.fileSize / 1024).toFixed(1)} Ko</p><p className="break-all text-[11px] text-muted-foreground">SHA-256 : {version.contentHash}</p></div><Button size="sm" variant="outline" onClick={() => window.open(version.fileUrl, "_blank")}><Download className="mr-1 h-4 w-4" />Ouvrir</Button></div>)}</div>}
+              </div>
+
+              <Separator />
+
+              {/* Granular sharing */}
+              <div>
+                <h4 className="text-sm font-medium mb-3">Partage avec les membres</h4>
+                <div className="grid gap-3 rounded-lg border bg-muted/30 p-4">
+                  <Select value={shareMemberId} onValueChange={setShareMemberId}><SelectTrigger><SelectValue placeholder="Choisir un membre actif" /></SelectTrigger><SelectContent>{members.filter((member) => member.status === "active").map((member) => <SelectItem key={member.id} value={String(member.id)}>{member.firstName} {member.lastName}</SelectItem>)}</SelectContent></Select>
+                  <div className="flex flex-wrap gap-4 text-xs"><label className="flex items-center gap-2"><input type="checkbox" checked={true} readOnly />Consultation</label><label className="flex items-center gap-2"><input type="checkbox" checked={shareCanEdit} onChange={(e) => setShareCanEdit(e.target.checked)} />Modification</label><label className="flex items-center gap-2"><input type="checkbox" checked={shareCanDelete} onChange={(e) => setShareCanDelete(e.target.checked)} />Suppression</label></div>
+                  <Button size="sm" disabled={!shareMemberId || shareDocument.isPending} onClick={() => shareDocument.mutate({ documentId: selectedDocument.id, memberId: Number(shareMemberId), canView: true, canEdit: shareCanEdit, canDelete: shareCanDelete })}>Partager</Button>
+                </div>
+                <div className="mt-3 space-y-2">{documentPermissions.length === 0 ? <p className="text-sm text-muted-foreground">Aucun partage spécifique.</p> : documentPermissions.map((permission) => { const member = members.find((item) => item.id === permission.memberId); return <div key={permission.id} className="flex flex-wrap items-center justify-between gap-2 rounded-lg border p-3 text-sm"><div><p className="font-medium">{member ? `${member.firstName} ${member.lastName}` : `Membre #${permission.memberId}`}</p><p className="text-xs text-muted-foreground">Consultation{permission.canEdit ? " · Modification" : ""}{permission.canDelete ? " · Suppression" : ""}</p></div><Button size="sm" variant="ghost" className="text-destructive" disabled={revokeDocumentShare.isPending} onClick={() => revokeDocumentShare.mutate({ documentId: selectedDocument.id, memberId: permission.memberId })}>Révoquer</Button></div>; })}</div>
               </div>
 
               <Separator />

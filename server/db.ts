@@ -311,6 +311,26 @@ export async function deleteDocument(id: number) {
   await db.delete(documents).where(eq(documents.id, id));
 }
 
+export async function getDocumentPermissions(documentId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(documentPermissions).where(eq(documentPermissions.documentId, documentId)).orderBy(asc(documentPermissions.memberId));
+}
+
+export async function setDocumentPermission(data: typeof documentPermissions.$inferInsert) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.delete(documentPermissions).where(and(eq(documentPermissions.documentId, data.documentId), eq(documentPermissions.memberId, data.memberId)));
+  const result = await db.insert(documentPermissions).values(data);
+  return { id: result[0].insertId, ...data };
+}
+
+export async function removeDocumentPermission(documentId: number, memberId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.delete(documentPermissions).where(and(eq(documentPermissions.documentId, documentId), eq(documentPermissions.memberId, memberId)));
+}
+
 export async function getDocumentVersions(documentId: number) {
   const db = await getDb();
   if (!db) return [];

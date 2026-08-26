@@ -9,7 +9,7 @@ import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import { 
   getAllCategories, getCategoryById, createCategory, seedDefaultCategories,
-  getAllDocuments, getDocumentById, createDocument, updateDocument, deleteDocument, getDocumentStats, seedDefaultDocuments, getDocumentVersions, createDocumentVersion,
+  getAllDocuments, getDocumentById, createDocument, updateDocument, deleteDocument, getDocumentStats, seedDefaultDocuments, getDocumentVersions, createDocumentVersion, getDocumentPermissions, setDocumentPermission, removeDocumentPermission,
   getNotesByDocumentId, createNote, deleteNote,
   getAllMembers, getAllMembersWithGrades, getMemberById, createMember, updateMember, deleteMember,
   logActivity, getRecentActivity,
@@ -148,6 +148,34 @@ export const appRouter = router({
       .query(async ({ input, ctx }) => {
         await assertPermission(ctx.user, "documents.view");
         return getDocumentVersions(input.documentId);
+      }),
+    permissions: protectedProcedure
+      .input(z.object({ documentId: z.number().int().positive() }))
+      .query(async ({ input, ctx }) => {
+        await assertPermission(ctx.user, "documents.view");
+        return getDocumentPermissions(input.documentId);
+      }),
+    share: protectedProcedure
+      .input(z.object({ documentId: z.number().int().positive(), memberId: z.number().int().positive(), canView: z.boolean().default(true), canEdit: z.boolean().default(false), canDelete: z.boolean().default(false) }))
+      .mutation(async ({ input, ctx }) => {
+        await assertPermission(ctx.user, "documents.manage");
+        const document = await getDocumentById(input.documentId);
+        if (!document) throw new TRPCError({ code: "NOT_FOUND", message: "Document introuvable" });
+        const member = await getMemberById(input.memberId);
+        if (!member || member.status !== "active") throw new TRPCError({ code: "BAD_REQUEST", message: "Le partage est réservé aux membres actifs" });
+        const permission = await setDocumentPermission({ documentId: input.documentId, memberId: input.memberId, canView: input.canView ? 1 : 0, canEdit: input.canEdit ? 1 : 0, canDelete: input.canDelete ? 1 : 0 });
+        await logAudit({ userId: ctx.user.id, action: "SHARE", entityType: "document", entityId: input.documentId, entityName: document.title, description: `Document partagé avec ${member.firstName} ${member.lastName}`, newValue: JSON.stringify({ memberId: input.memberId, canView: input.canView, canEdit: input.canEdit, canDelete: input.canDelete }), status: "success" });
+        return permission;
+      }),
+    revokeShare: protectedProcedure
+      .input(z.object({ documentId: z.number().int().positive(), memberId: z.number().int().positive() }))
+      .mutation(async ({ input, ctx }) => {
+        await assertPermission(ctx.user, "documents.manage");
+        const document = await getDocumentById(input.documentId);
+        if (!document) throw new TRPCError({ code: "NOT_FOUND", message: "Document introuvable" });
+        await removeDocumentPermission(input.documentId, input.memberId);
+        await logAudit({ userId: ctx.user.id, action: "REVOKE_SHARE", entityType: "document", entityId: input.documentId, entityName: document.title, description: `Accès révoqué pour le membre ${input.memberId}`, status: "success" });
+        return { success: true as const };
       }),
     stats: protectedProcedure.query(async ({ ctx }) => {
       await assertPermission(ctx.user, "documents.view");
