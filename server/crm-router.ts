@@ -19,6 +19,7 @@ import {
   createCrmEmailIntegration,
   listCrmEmailIntegration,
 } from "./db";
+import { logAudit } from "./audit";
 
 export const crmRouter = router({
   // ============ CONTACTS ============
@@ -63,7 +64,9 @@ export const crmRouter = router({
         if (ctx.user?.role !== "admin") {
           throw new Error("Unauthorized: Admin only");
         }
-        return createCrmContact(input as any);
+        const result = await createCrmContact(input as any);
+        await logAudit({ userId: ctx.user.id, action: "CREATE", entityType: "crm_contact", entityId: result.id, entityName: `${input.firstName} ${input.lastName}`, description: "Contact CRM créé", status: "success" });
+        return result;
       }),
 
     update: protectedProcedure
@@ -93,7 +96,9 @@ export const crmRouter = router({
         if (ctx.user?.role !== "admin") {
           throw new Error("Unauthorized: Admin only");
         }
-        return updateCrmContact(input.id, input.data as any);
+        const result = await updateCrmContact(input.id, input.data as any);
+        await logAudit({ userId: ctx.user.id, action: "UPDATE", entityType: "crm_contact", entityId: input.id, description: "Contact CRM mis à jour", newValue: JSON.stringify(input.data), status: "success" });
+        return result;
       }),
 
     delete: protectedProcedure
@@ -103,6 +108,7 @@ export const crmRouter = router({
           throw new Error("Unauthorized: Admin only");
         }
         await deleteCrmContact(input);
+        await logAudit({ userId: ctx.user.id, action: "DELETE", entityType: "crm_contact", entityId: input, description: "Contact CRM supprimé", status: "success" });
         return { success: true };
       }),
   }),
@@ -131,7 +137,9 @@ export const crmRouter = router({
         if (ctx.user?.role !== "admin") {
           throw new Error("Unauthorized: Admin only");
         }
-        return createCrmActivity(input as any);
+        const result = await createCrmActivity(input as any);
+        await logAudit({ userId: ctx.user.id, action: "CREATE", entityType: "crm_activity", entityId: result.id, description: `Activité CRM créée pour le contact #${input.contactId}`, status: "success" });
+        return result;
       }),
 
     update: protectedProcedure
@@ -149,7 +157,9 @@ export const crmRouter = router({
         if (ctx.user?.role !== "admin") {
           throw new Error("Unauthorized: Admin only");
         }
-        return updateCrmActivity(input.id, input.data as any);
+        const result = await updateCrmActivity(input.id, input.data as any);
+        await logAudit({ userId: ctx.user.id, action: "UPDATE", entityType: "crm_activity", entityId: input.id, description: "Activité CRM mise à jour", newValue: JSON.stringify(input.data), status: "success" });
+        return result;
       }),
 
     delete: protectedProcedure
@@ -159,6 +169,7 @@ export const crmRouter = router({
           throw new Error("Unauthorized: Admin only");
         }
         await deleteCrmActivity(input);
+        await logAudit({ userId: ctx.user.id, action: "DELETE", entityType: "crm_activity", entityId: input, description: "Activité CRM supprimée", status: "success" });
         return { success: true };
       }),
   }),
