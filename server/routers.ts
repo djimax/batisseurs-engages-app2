@@ -633,6 +633,7 @@ export const appRouter = router({
             await recordMemberHistory({ memberId: input.memberId, fieldName, oldValue, newValue, changedBy: ctx.user.id });
           }
         }
+        await logAudit({ userId: ctx.user.id, action: "UPDATE", entityType: "member_profile", entityId: input.memberId, description: `Profil du membre #${input.memberId} mis à jour`, newValue: JSON.stringify({ skills: input.skills, availability: input.availability }), status: "success" });
 
         return { success: true };
       }),
@@ -661,6 +662,7 @@ export const appRouter = router({
           if (existing[0]) throw new TRPCError({ code: "CONFLICT", message: "Le bénévole est déjà affecté à ce projet." });
           await db.insert(projectMembers).values({ projectId: input.projectId, memberId: input.memberId, role: input.projectRole });
           await logActivity({ userId: ctx.user.id, action: "assign", entityType: "volunteer_project", entityId: input.memberId, details: `Affectation au projet ${project[0].name}` });
+          await logAudit({ userId: ctx.user.id, action: "ASSIGN", entityType: "volunteer_project", entityId: input.memberId, description: `Membre affecté au projet ${project[0].name}`, newValue: JSON.stringify({ projectId: input.projectId, role: input.projectRole }), status: "success" });
           return { success: true, scope: "project", name: project[0].name };
         }
 
@@ -670,6 +672,7 @@ export const appRouter = router({
         if (existing[0]) throw new TRPCError({ code: "CONFLICT", message: "Le bénévole est déjà affecté à ce groupe." });
         await db.insert(groupeMembers).values({ groupeId: input.groupId!, memberId: input.memberId, role: input.groupRole });
         await logActivity({ userId: ctx.user.id, action: "assign", entityType: "volunteer_group", entityId: input.memberId, details: `Affectation au groupe d’antenne ${group[0].name}` });
+        await logAudit({ userId: ctx.user.id, action: "ASSIGN", entityType: "volunteer_group", entityId: input.memberId, description: `Membre affecté au groupe ${group[0].name}`, newValue: JSON.stringify({ groupId: input.groupId, role: input.groupRole }), status: "success" });
         return { success: true, scope: "group", name: group[0].name };
       }),
   }),
@@ -1311,7 +1314,7 @@ export const appRouter = router({
       .mutation(async ({ input, ctx }) => {
         await assertPermission(ctx.user, "finances.manage");
         const amount = parseFinancialAmount(input.amount);
-        return createMembershipFeeRule({
+        const result = await createMembershipFeeRule({
           category: input.category,
           currency: input.currency,
           amount: amount.toFixed(2),
@@ -1319,6 +1322,8 @@ export const appRouter = router({
           validFrom: input.validFrom ?? new Date().toISOString().slice(0, 10),
           createdBy: ctx.user.id,
         });
+        await logAudit({ userId: ctx.user.id, action: "CREATE", entityType: "membership_fee_rule", entityId: result.id, description: `Tarif d’adhésion ${input.category} créé`, newValue: JSON.stringify({ category: input.category, currency: input.currency, amount: amount.toFixed(2) }), status: "success" });
+        return result;
       }),
 
     createCotisation: protectedProcedure
@@ -1341,7 +1346,8 @@ export const appRouter = router({
         }
         const amount = parseFinancialAmount(input.montant ?? rule!.amount);
         const { montant: _montant, ...cotisationData } = input;
-        await createCotisation({ ...cotisationData, montant: amount.toFixed(2) });
+        const result = await createCotisation({ ...cotisationData, montant: amount.toFixed(2) });
+        await logAudit({ userId: ctx.user.id, action: "CREATE", entityType: "cotisation", entityId: Number(result[0].insertId), description: `Cotisation créée pour le membre #${input.memberId}`, newValue: JSON.stringify({ amount: amount.toFixed(2), currency: input.currency, memberId: input.memberId }), status: "success" });
         return { success: true as const, amount, currency: input.currency, category, appliedFeeRuleId: rule?.id ?? null };
       }),
 
@@ -1358,7 +1364,8 @@ export const appRouter = router({
       .mutation(async ({ input, ctx }) => {
         await assertPermission(ctx.user, "finances.manage");
         const amount = parseFinancialAmount(input.montant);
-        await createDon({ ...input, montant: amount.toFixed(2), date: input.date ?? new Date().toISOString() });
+        const result = await createDon({ ...input, montant: amount.toFixed(2), date: input.date ?? new Date().toISOString() });
+        await logAudit({ userId: ctx.user.id, action: "CREATE", entityType: "don", entityId: Number(result[0].insertId), description: `Don enregistré de ${input.donateur}`, newValue: JSON.stringify({ amount: amount.toFixed(2), currency: input.currency }), status: "success" });
         return { success: true as const, amount, currency: input.currency };
       }),
 
@@ -1374,7 +1381,8 @@ export const appRouter = router({
       .mutation(async ({ input, ctx }) => {
         await assertPermission(ctx.user, "finances.manage");
         const amount = parseFinancialAmount(input.montant);
-        await createDepense({ ...input, montant: amount.toFixed(2), date: input.date ?? new Date().toISOString() });
+        const result = await createDepense({ ...input, montant: amount.toFixed(2), date: input.date ?? new Date().toISOString() });
+        await logAudit({ userId: ctx.user.id, action: "CREATE", entityType: "depense", entityId: Number(result[0].insertId), description: `Dépense enregistrée : ${input.description}`, newValue: JSON.stringify({ amount: amount.toFixed(2), currency: input.currency, categorie: input.categorie }), status: "success" });
         return { success: true as const, amount, currency: input.currency };
       }),
 

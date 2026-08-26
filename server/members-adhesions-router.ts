@@ -3,6 +3,7 @@ import { z } from "zod";
 import { getDb } from "./db";
 import { members, cotisations, adhesions } from "../drizzle/schema";
 import { eq, and } from "drizzle-orm";
+import { logAudit } from "./audit";
 
 /**
  * Procédures tRPC pour gérer les membres avec leurs adhésions
@@ -120,7 +121,7 @@ export const membersAdhesionsRouter = router({
         annee: z.number().optional(),
       })
     )
-    .mutation(async ({ input }) => {
+    .mutation(async ({ input, ctx }) => {
       const db = await getDb();
       if (!db) throw new Error("Database not available");
 
@@ -136,6 +137,7 @@ export const membersAdhesionsRouter = router({
         dateExpiration: dateExpiration.toISOString(),
         status: "pending",
       });
+      await logAudit({ userId: ctx.user.id, action: "CREATE", entityType: "adhesion", entityId: Number(result[0].insertId), description: `Adhésion ${input.annee || now.getFullYear()} créée pour le membre #${input.memberId}`, newValue: JSON.stringify({ memberId: input.memberId, montant: input.montant }), status: "success" });
 
       return result;
     }),
@@ -151,7 +153,7 @@ export const membersAdhesionsRouter = router({
         annee: z.number().optional(),
       })
     )
-    .mutation(async ({ input }) => {
+    .mutation(async ({ input, ctx }) => {
       const db = await getDb();
       if (!db) throw new Error("Database not available");
 
@@ -167,6 +169,7 @@ export const membersAdhesionsRouter = router({
         dateExpiration: dateExpiration.toISOString(),
         status: "pending",
       });
+      await logAudit({ userId: ctx.user.id, action: "RENEW", entityType: "adhesion", entityId: Number(result[0].insertId), description: `Adhésion ${input.annee || now.getFullYear()} renouvelée pour le membre #${input.memberId}`, newValue: JSON.stringify({ memberId: input.memberId, montant: input.montant }), status: "success" });
 
       return result;
     }),
