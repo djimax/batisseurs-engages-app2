@@ -19,6 +19,16 @@ describe("electronic signature workflow", () => {
     expect(source).toContain("evidenceHash");
   });
 
+  it("sends the final PDF to each eligible signer and isolates Brevo failures", () => {
+    const source = readFileSync(new URL("./signature-router.ts", import.meta.url), "utf8");
+    expect(source).toContain("sendFinalizedSignatureEmails");
+    expect(source).toContain('action: "EMAIL_SENT"');
+    expect(source).toContain('action: "EMAIL_SKIPPED"');
+    expect(source).toContain('action: "EMAIL_FAILED"');
+    expect(source).toContain("emailEnabled");
+    expect(source).toContain("if (result?.status === \"completed\")");
+  });
+
   it("records only an integrity proof and typed signature, not raw secrets", () => {
     const source = readFileSync(new URL("../drizzle/schema.ts", import.meta.url), "utf8");
     expect(source).toContain("evidenceHash: varchar({ length: 128 })");

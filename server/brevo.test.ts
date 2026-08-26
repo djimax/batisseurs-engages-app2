@@ -36,6 +36,17 @@ describe("Brevo transactional email client", () => {
     expect(options.body).not.toContain("test-brevo-key");
   });
 
+  it("serializes a PDF attachment as base64 without exposing the API key", async () => {
+    vi.stubEnv("BREVO_API_KEY", "test-brevo-key");
+    const fetchMock = vi.fn().mockResolvedValue(new Response(JSON.stringify({ messageId: "<pdf-id>" }), { status: 201 }));
+    vi.stubGlobal("fetch", fetchMock);
+    const content = Buffer.from("pdf-proof").toString("base64");
+    await sendTransactionalEmail({ to: { email: "member@example.com" }, subject: "Document signé", textContent: "Preuve jointe", attachment: [{ name: "document-signe.pdf", content }] });
+    const [, options] = fetchMock.mock.calls[0] as [string, RequestInit];
+    expect(JSON.parse(options.body as string)).toMatchObject({ attachment: [{ name: "document-signe.pdf", content }] });
+    expect(options.body).not.toContain("test-brevo-key");
+  });
+
   it("rejects a Brevo API error without leaking provider details", async () => {
     vi.stubEnv("BREVO_API_KEY", "test-brevo-key");
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response("secret provider detail", { status: 401 })));

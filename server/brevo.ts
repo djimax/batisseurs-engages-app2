@@ -3,11 +3,13 @@ import { TRPCError } from "@trpc/server";
 const BREVO_ENDPOINT = "https://api.brevo.com/v3/smtp/email";
 const DEFAULT_SENDER_EMAIL = "contact.lesbatisseursengages@gmail.com";
 
+export type TransactionalEmailAttachment = { name: string; content: string };
 export type TransactionalEmailInput = {
   to: { email: string; name?: string };
   subject: string;
   textContent: string;
   htmlContent?: string;
+  attachment?: TransactionalEmailAttachment[];
 };
 
 function escapeHtml(value: string) {
@@ -42,6 +44,7 @@ export async function sendTransactionalEmail(input: TransactionalEmailInput) {
         subject: input.subject.trim().slice(0, 255),
         textContent: input.textContent,
         htmlContent: input.htmlContent ?? textToHtml(input.textContent),
+        ...(input.attachment?.length ? { attachment: input.attachment } : {}),
       }),
       signal: controller.signal,
     });

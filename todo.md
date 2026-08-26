@@ -1959,3 +1959,12 @@
 - [x] Ajouter l’action d’export dans le détail documentaire
 - [x] Ajouter les tests de génération, permissions, intégrité et régression
 - [x] Valider TypeScript, tests, build et sauvegarder le jalon
+
+## Envoi automatique du PDF signé par e-mail
+- [x] Auditer le client Brevo, le rendu PDF et la finalisation de signature
+- [x] Définir l’idempotence, le consentement et les règles de destinataires
+- [x] Ajouter la génération serveur du PDF et sa pièce jointe Brevo
+- [x] Envoyer le PDF à tous les signataires après finalisation complète
+- [x] Journaliser les envois, refus de consentement et erreurs sans annuler la signature
+- [x] Ajouter les tests de pièce jointe, consentement, doublon et panne Brevo
+- [x] Valider TypeScript, tests, build et sauvegarder le jalon

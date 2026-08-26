@@ -4,8 +4,39 @@ import { eq } from "drizzle-orm";
 import { router, protectedProcedure } from "./_core/trpc";
 import { assertPermission } from "./authorization";
 import { logAudit } from "./audit";
+import { sendTransactionalEmail } from "./brevo";
+import { getOrCreateNotificationPreferences } from "./notification-center";
+import { buildSignedDocumentPdf } from "./signed-pdf";
 import { getDb, getDocumentById, getMemberById, getSignatureRequestById, getSignatureRequestsForDocument, createSignatureRequest, signSignatureRequest, cancelSignatureRequest, buildDocumentIntegrityHash, getSignatureExportData } from "./db";
 import { members } from "../drizzle/schema";
+
+async function sendFinalizedSignatureEmails(requestId: number, actorUserId: number): Promise<void> {
+  const data = await getSignatureExportData(requestId);
+  if (!data) return;
+  const pdf = buildSignedDocumentPdf(data);
+  if (pdf.byteLength > 9 * 1024 * 1024) throw new Error("Le PDF de preuve dépasse la taille maximale d’envoi");
+  const attachment = [{ name: `document-signe-${requestId}.pdf`, content: pdf.toString("base64") }];
+  for (const signer of data.request.signers) {
+    const alreadySent = data.audit.some((entry) => entry.action === "EMAIL_SENT" && entry.description?.includes(signer.signerEmail));
+    if (alreadySent) continue;
+    const member = await getMemberById(signer.memberId);
+    if (!signer.signerEmail || (member?.userId && (await getOrCreateNotificationPreferences(member.userId))?.emailEnabled === 0)) {
+      await logAudit({ userId: actorUserId, action: "EMAIL_SKIPPED", entityType: "signature_request", entityId: requestId, entityName: data.request.subject, description: `PDF non envoyé à ${signer.signerEmail || "un signataire sans e-mail"}`, status: "success" });
+      continue;
+    }
+    try {
+      const result = await sendTransactionalEmail({
+        to: { email: signer.signerEmail, name: signer.signerName },
+        subject: `Document signé — ${data.request.subject}`,
+        textContent: `Bonjour ${signer.signerName},\\n\\nLe document « ${data.document.title} » a été entièrement signé. La preuve PDF est jointe à cet e-mail.\\n\\nEmpreinte du document : ${data.request.documentHash}`,
+        attachment,
+      });
+      await logAudit({ userId: actorUserId, action: "EMAIL_SENT", entityType: "signature_request", entityId: requestId, entityName: data.request.subject, description: `PDF signé envoyé à ${signer.signerEmail}`, newValue: JSON.stringify({ messageId: result.messageId, documentHash: data.request.documentHash }), status: "success" });
+    } catch (error) {
+      await logAudit({ userId: actorUserId, action: "EMAIL_FAILED", entityType: "signature_request", entityId: requestId, entityName: data.request.subject, description: `Échec d’envoi du PDF à ${signer.signerEmail}`, newValue: JSON.stringify({ error: error instanceof Error ? error.message : "Erreur inconnue" }), status: "failed" });
+    }
+  }
+}
 
 const signatureInput = z.object({
   documentId: z.number().int().positive(),
@@ -70,6 +101,13 @@ export const signatureRouter = router({
       const evidenceHash = createHash("sha256").update(JSON.stringify({ requestId: request.id, signerId: signer.id, documentHash: request.documentHash, signerName: signer.signerName, typedSignature: input.typedSignature, consent: input.consent, signedAt })).digest("hex");
       const result = await signSignatureRequest({ requestId: request.id, signerId: signer.id, typedSignature: input.typedSignature, signedAt, evidenceHash });
       await logAudit({ userId: ctx.user.id, action: "UPDATE", entityType: "signature_request", entityId: request.id, entityName: request.subject, description: `Signature électronique enregistrée pour ${signer.signerName}`, newValue: JSON.stringify({ signerId: signer.id, evidenceHash, signedAt, documentHash: request.documentHash }), status: "success" });
+      if (result?.status === "completed") {
+        try {
+          await sendFinalizedSignatureEmails(request.id, ctx.user.id);
+        } catch (error) {
+          await logAudit({ userId: ctx.user.id, action: "EMAIL_FAILED", entityType: "signature_request", entityId: request.id, entityName: request.subject, description: "Échec global de génération ou d’envoi du PDF signé", newValue: JSON.stringify({ error: error instanceof Error ? error.message : "Erreur inconnue" }), status: "failed" });
+        }
+      }
       return result;
     }),
 
