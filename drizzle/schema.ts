@@ -361,6 +361,41 @@ export const documents = mysqlTable("documents", {
 	isArchived: int().default(0),
 });
 
+export const signatureRequests = mysqlTable("signature_requests", {
+  id: int().autoincrement().notNull(),
+  documentId: int().notNull(),
+  createdBy: int().notNull(),
+  subject: varchar({ length: 255 }).notNull(),
+  documentHash: varchar({ length: 128 }).notNull(),
+  status: mysqlEnum(['pending','partially-signed','completed','cancelled','expired']).default('pending').notNull(),
+  expiresAt: timestamp({ mode: 'string' }),
+  completedAt: timestamp({ mode: 'string' }),
+  createdAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
+  updatedAt: timestamp({ mode: 'string' }).defaultNow().onUpdateNow().notNull(),
+}, (table) => ({
+  documentIdx: index("signature_requests_document_idx").on(table.documentId),
+  statusIdx: index("signature_requests_status_idx").on(table.status),
+}));
+
+export const signatureSigners = mysqlTable("signature_signers", {
+  id: int().autoincrement().notNull(),
+  requestId: int().notNull(),
+  memberId: int().notNull(),
+  signerName: varchar({ length: 255 }).notNull(),
+  signerEmail: varchar({ length: 320 }).notNull(),
+  orderIndex: int().default(0).notNull(),
+  status: mysqlEnum(['pending','signed','declined']).default('pending').notNull(),
+  typedSignature: varchar({ length: 255 }),
+  signedAt: timestamp({ mode: 'string' }),
+  consentAt: timestamp({ mode: 'string' }),
+  evidenceHash: varchar({ length: 128 }),
+  createdAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
+  updatedAt: timestamp({ mode: 'string' }).defaultNow().onUpdateNow().notNull(),
+}, (table) => ({
+  requestIdx: index("signature_signers_request_idx").on(table.requestId),
+  memberIdx: index("signature_signers_member_idx").on(table.memberId),
+}));
+
 export const dons = mysqlTable("dons", {
 	id: int().autoincrement().notNull(),
 	donateur: varchar({ length: 255 }).notNull(),

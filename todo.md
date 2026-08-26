@@ -1940,3 +1940,13 @@
 - [x] Ajouter tests de calculs, permissions et non-régression
 - [x] Valider TypeScript, tests, build et sauvegarder le jalon
 - [x] Rendre le test de credentials Brevo déterministe sans dépendre d’un délai réseau externe
+
+## Signature électronique des documents
+- [x] Auditer les documents, permissions et parcours de gouvernance existants
+- [x] Définir la demande de signature, les signataires, les statuts et les preuves horodatées
+- [x] Ajouter le schéma et la migration non destructive des demandes de signature
+- [x] Ajouter les helpers et procédures sécurisées de création, signature, annulation et consultation
+- [x] Ajouter le parcours UI dans les détails documentaires avec consentement explicite
+- [x] Ajouter le journal d’audit, l’empreinte du document et la prévention des doublons
+- [x] Ajouter les tests de permissions, d’idempotence, de preuve et de non-régression
+- [x] Valider TypeScript, tests, build et sauvegarder le jalon

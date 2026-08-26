@@ -1,5 +1,6 @@
 import { eq, and, like, desc, asc, sql, or, inArray, lt, lte, gte, ne, count } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
+import { createHash } from "node:crypto";
 import { 
   users,
   categories,
@@ -9,6 +10,8 @@ import {
   memberCertificates,
   adhesions,
   documentPermissions,
+  signatureRequests,
+  signatureSigners,
   activityLogs,
   cotisations,
   dons,
@@ -64,6 +67,8 @@ const schema = {
   members,
   adhesions,
   documentPermissions,
+  signatureRequests,
+  signatureSigners,
   activityLogs,
   cotisations,
   dons,
@@ -683,6 +688,61 @@ export async function deleteEmailTemplate(id: number) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
   await db.delete(emailTemplates).where(eq(emailTemplates.id, id));
+}
+
+// ============ ELECTRONIC SIGNATURES ============
+
+export function buildDocumentIntegrityHash(document: { id: number; title: string; fileKey?: string | null; updatedAt?: string | null }) {
+  return createHash("sha256").update(JSON.stringify({ id: document.id, title: document.title, fileKey: document.fileKey ?? null, updatedAt: document.updatedAt ?? null })).digest("hex");
+}
+
+export async function createSignatureRequest(data: { documentId: number; createdBy: number; subject: string; documentHash: string; expiresAt?: string | null; signer: { memberId: number; signerName: string; signerEmail: string } }) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const existing = await db.select({ id: signatureRequests.id }).from(signatureRequests).where(and(eq(signatureRequests.documentId, data.documentId), eq(signatureRequests.status, "pending"))).limit(1);
+  if (existing.length > 0) throw new Error("Une demande de signature active existe déjà pour ce document");
+  const requestResult = await db.insert(signatureRequests).values({ documentId: data.documentId, createdBy: data.createdBy, subject: data.subject, documentHash: data.documentHash, expiresAt: data.expiresAt ?? null });
+  const requestId = Number(requestResult[0].insertId);
+  await db.insert(signatureSigners).values({ requestId, memberId: data.signer.memberId, signerName: data.signer.signerName, signerEmail: data.signer.signerEmail });
+  return getSignatureRequestById(requestId);
+}
+
+export async function getSignatureRequestsForDocument(documentId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  const requests = await db.select().from(signatureRequests).where(eq(signatureRequests.documentId, documentId)).orderBy(desc(signatureRequests.createdAt));
+  return Promise.all(requests.map(async (request) => ({ ...request, signers: await db.select().from(signatureSigners).where(eq(signatureSigners.requestId, request.id)).orderBy(asc(signatureSigners.orderIndex)) })));
+}
+
+export async function getSignatureRequestById(id: number) {
+  const db = await getDb();
+  if (!db) return undefined;
+  const request = await db.select().from(signatureRequests).where(eq(signatureRequests.id, id)).limit(1);
+  if (!request[0]) return undefined;
+  const signers = await db.select().from(signatureSigners).where(eq(signatureSigners.requestId, id)).orderBy(asc(signatureSigners.orderIndex));
+  return { ...request[0], signers };
+}
+
+export async function getPendingSignatureForMember(memberId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(signatureSigners).where(and(eq(signatureSigners.memberId, memberId), eq(signatureSigners.status, "pending"))).orderBy(desc(signatureSigners.createdAt));
+}
+
+export async function signSignatureRequest(input: { requestId: number; signerId: number; typedSignature: string; signedAt: string; evidenceHash: string }) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.update(signatureSigners).set({ status: "signed", typedSignature: input.typedSignature, signedAt: input.signedAt, consentAt: input.signedAt, evidenceHash: input.evidenceHash }).where(and(eq(signatureSigners.id, input.signerId), eq(signatureSigners.requestId, input.requestId), eq(signatureSigners.status, "pending")));
+  const remaining = await db.select({ id: signatureSigners.id }).from(signatureSigners).where(and(eq(signatureSigners.requestId, input.requestId), eq(signatureSigners.status, "pending"))).limit(1);
+  await db.update(signatureRequests).set({ status: remaining.length === 0 ? "completed" : "partially-signed", completedAt: remaining.length === 0 ? input.signedAt : null }).where(eq(signatureRequests.id, input.requestId));
+  return getSignatureRequestById(input.requestId);
+}
+
+export async function cancelSignatureRequest(id: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.update(signatureRequests).set({ status: "cancelled" }).where(and(eq(signatureRequests.id, id), ne(signatureRequests.status, "completed")));
+  return getSignatureRequestById(id);
 }
 
 // ============ EMAIL HISTORY ============
@@ -1693,6 +1753,8 @@ export type InsertDocument = typeof documents.$inferInsert;
 export type InsertDocumentNote = typeof documentNotes.$inferInsert;
 export type InsertMember = typeof members.$inferInsert;
 export type InsertDocumentPermission = typeof documentPermissions.$inferInsert;
+export type InsertSignatureRequest = typeof signatureRequests.$inferInsert;
+export type InsertSignatureSigner = typeof signatureSigners.$inferInsert;
 export type InsertActivityLog = typeof activityLogs.$inferInsert;
 export type InsertCotisation = typeof cotisations.$inferInsert;
 export type InsertMembershipFeeRule = typeof membershipFeeRules.$inferInsert;
@@ -1734,6 +1796,8 @@ export type Document = typeof documents.$inferSelect;
 export type DocumentNote = typeof documentNotes.$inferSelect;
 export type Member = typeof members.$inferSelect;
 export type DocumentPermission = typeof documentPermissions.$inferSelect;
+export type SignatureRequest = typeof signatureRequests.$inferSelect;
+export type SignatureSigner = typeof signatureSigners.$inferSelect;
 export type ActivityLog = typeof activityLogs.$inferSelect;
 export type Cotisation = typeof cotisations.$inferSelect;
 export type Don = typeof dons.$inferSelect;

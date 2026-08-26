@@ -55,7 +55,9 @@ import {
   FileSpreadsheet,
   FileImage,
   Loader2,
-  Archive
+  Archive,
+  UserPen,
+  ShieldCheck
 } from "lucide-react";
 
 const SORT_OPTIONS = [
@@ -82,6 +84,10 @@ export default function Documents() {
   const [newNote, setNewNote] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
+  const [signatureMemberId, setSignatureMemberId] = useState("");
+  const [signatureSubject, setSignatureSubject] = useState("");
+  const [typedSignature, setTypedSignature] = useState("");
+  const [signatureConsent, setSignatureConsent] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Form state for create/edit
@@ -106,6 +112,11 @@ export default function Documents() {
     search: searchTerm || undefined,
     isArchived: showArchived,
   });
+  const { data: members = [] } = trpc.members.list.useQuery();
+  const { data: signatureRequests = [], refetch: refetchSignatures } = trpc.signatures.listForDocument.useQuery(
+    { documentId: selectedDocument?.id || 0 },
+    { enabled: !!selectedDocument }
+  );
   const { data: notes, refetch: refetchNotes } = trpc.notes.listByDocument.useQuery(
     { documentId: selectedDocument?.id || 0 },
     { enabled: !!selectedDocument }
@@ -169,6 +180,34 @@ export default function Documents() {
     onError: (error) => {
       toast.error("Erreur: " + error.message);
     },
+  });
+
+  const createSignatureRequest = trpc.signatures.createRequest.useMutation({
+    onSuccess: () => {
+      refetchSignatures();
+      setSignatureMemberId("");
+      setSignatureSubject("");
+      toast.success("Demande de signature créée");
+    },
+    onError: (error) => toast.error("Erreur de signature: " + error.message),
+  });
+
+  const signRequest = trpc.signatures.sign.useMutation({
+    onSuccess: () => {
+      refetchSignatures();
+      setTypedSignature("");
+      setSignatureConsent(false);
+      toast.success("Signature enregistrée avec preuve d’intégrité");
+    },
+    onError: (error) => toast.error("Signature refusée: " + error.message),
+  });
+
+  const cancelSignatureRequest = trpc.signatures.cancel.useMutation({
+    onSuccess: () => {
+      refetchSignatures();
+      toast.success("Demande annulée");
+    },
+    onError: (error) => toast.error("Erreur: " + error.message),
   });
 
   const deleteNote = trpc.notes.delete.useMutation({
@@ -817,6 +856,30 @@ export default function Documents() {
                   accept=".doc,.docx,.xls,.xlsx,.pdf,.png,.jpg,.jpeg"
                   onChange={handleFileUpload}
                 />
+              </div>
+
+              <Separator />
+
+              {/* Electronic signatures */}
+              <div className="space-y-4">
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <h4 className="flex items-center gap-2 text-sm font-medium"><UserPen className="h-4 w-4" />Signature électronique</h4>
+                    <p className="mt-1 text-xs text-muted-foreground">Circuit interne avec consentement explicite, horodatage et empreinte du document.</p>
+                  </div>
+                  <ShieldCheck className="h-5 w-5 text-primary" />
+                </div>
+                <div className="grid gap-3 rounded-lg border bg-muted/30 p-4">
+                  <Label htmlFor="signature-subject">Objet de la demande</Label>
+                  <Input id="signature-subject" value={signatureSubject} onChange={(event) => setSignatureSubject(event.target.value)} placeholder={`Signature requise : ${selectedDocument?.title ?? "document"}`} />
+                  <Label htmlFor="signature-member">Signataire membre</Label>
+                  <Select value={signatureMemberId} onValueChange={setSignatureMemberId}>
+                    <SelectTrigger id="signature-member"><SelectValue placeholder="Choisir un membre actif" /></SelectTrigger>
+                    <SelectContent>{members.filter((member) => member.status === "active").map((member) => <SelectItem key={member.id} value={String(member.id)}>{member.firstName} {member.lastName}{member.email ? ` · ${member.email}` : ""}</SelectItem>)}</SelectContent>
+                  </Select>
+                  <Button disabled={!signatureMemberId || !signatureSubject.trim() || createSignatureRequest.isPending} onClick={() => { const member = members.find((item) => String(item.id) === signatureMemberId); if (!member || !selectedDocument) return; createSignatureRequest.mutate({ documentId: selectedDocument.id, memberId: member.id, subject: signatureSubject.trim() }); }} className="gap-2"><UserPen className="h-4 w-4" />{createSignatureRequest.isPending ? "Création…" : "Demander une signature"}</Button>
+                </div>
+                <div className="space-y-3">{signatureRequests.length === 0 ? <p className="text-sm text-muted-foreground">Aucune demande de signature pour ce document.</p> : signatureRequests.map((request) => { const signer = request.signers[0]; return <div key={request.id} className="rounded-lg border p-4"><div className="flex flex-wrap items-start justify-between gap-3"><div><p className="font-medium">{request.subject}</p><p className="text-xs text-muted-foreground">{signer?.signerName} · {signer?.signerEmail}</p></div><Badge variant={request.status === "completed" ? "default" : request.status === "cancelled" ? "destructive" : "secondary"}>{request.status === "completed" ? "Signé" : request.status === "cancelled" ? "Annulé" : request.status === "partially-signed" ? "Partiellement signé" : "En attente"}</Badge></div>{signer?.status === "pending" && request.status !== "cancelled" ? <div className="mt-3 space-y-2"><Input value={typedSignature} onChange={(event) => setTypedSignature(event.target.value)} placeholder="Votre nom complet comme signature" aria-label="Signature saisie" /><label className="flex items-start gap-2 text-xs text-muted-foreground"><input type="checkbox" checked={signatureConsent} onChange={(event) => setSignatureConsent(event.target.checked)} className="mt-0.5" />Je confirme avoir lu le document et consentir à l’enregistrement de cette signature électronique.</label><Button size="sm" disabled={!signatureConsent || typedSignature.trim().length < 2 || signRequest.isPending} onClick={() => signRequest.mutate({ requestId: request.id, signerId: signer.id, typedSignature: typedSignature.trim(), consent: true })} className="gap-2"><ShieldCheck className="h-4 w-4" />Signer ce document</Button></div> : signer?.evidenceHash ? <p className="mt-3 break-all text-[11px] text-muted-foreground">Preuve : {signer.evidenceHash}</p> : null}{request.status !== "completed" && request.status !== "cancelled" ? <Button variant="ghost" size="sm" className="mt-2 text-destructive" disabled={cancelSignatureRequest.isPending} onClick={() => cancelSignatureRequest.mutate({ id: request.id })}>Annuler la demande</Button> : null}</div>; })}</div>
               </div>
 
               <Separator />

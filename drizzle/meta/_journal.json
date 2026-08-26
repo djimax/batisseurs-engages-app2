@@ -260,6 +260,13 @@
       "when": 1787651191852,
       "tag": "0036_parallel_amazoness",
       "breakpoints": true
+    },
+    {
+      "idx": 37,
+      "version": "5",
+      "when": 1787768846871,
+      "tag": "0037_yellow_tempest",
+      "breakpoints": true
     }
   ]
 }

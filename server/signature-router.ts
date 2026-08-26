@@ -1,0 +1,84 @@
+import { createHash } from "node:crypto";
+import { z } from "zod";
+import { eq } from "drizzle-orm";
+import { router, protectedProcedure } from "./_core/trpc";
+import { assertPermission } from "./authorization";
+import { logAudit } from "./audit";
+import { getDb, getDocumentById, getMemberById, getSignatureRequestById, getSignatureRequestsForDocument, createSignatureRequest, signSignatureRequest, cancelSignatureRequest, buildDocumentIntegrityHash } from "./db";
+import { members } from "../drizzle/schema";
+
+const signatureInput = z.object({
+  documentId: z.number().int().positive(),
+  memberId: z.number().int().positive(),
+  subject: z.string().trim().min(1).max(255),
+  expiresAt: z.string().datetime().optional(),
+});
+
+export const signatureRouter = router({
+  listForDocument: protectedProcedure
+    .input(z.object({ documentId: z.number().int().positive() }))
+    .query(async ({ input, ctx }) => {
+      await assertPermission(ctx.user, "signatures.view");
+      return getSignatureRequestsForDocument(input.documentId);
+    }),
+
+  getById: protectedProcedure
+    .input(z.object({ id: z.number().int().positive() }))
+    .query(async ({ input, ctx }) => {
+      await assertPermission(ctx.user, "signatures.view");
+      return getSignatureRequestById(input.id);
+    }),
+
+  createRequest: protectedProcedure
+    .input(signatureInput)
+    .mutation(async ({ input, ctx }) => {
+      await assertPermission(ctx.user, "signatures.manage");
+      const document = await getDocumentById(input.documentId);
+      if (!document) throw new Error("Document introuvable");
+      const member = await getMemberById(input.memberId);
+      if (!member || member.status !== "active") throw new Error("Le signataire doit être un membre actif");
+      const result = await createSignatureRequest({
+        documentId: document.id,
+        createdBy: ctx.user.id,
+        subject: input.subject,
+        documentHash: buildDocumentIntegrityHash(document),
+        expiresAt: input.expiresAt ?? null,
+        signer: { memberId: member.id, signerName: `${member.firstName} ${member.lastName}`.trim(), signerEmail: member.email ?? "" },
+      });
+      await logAudit({ userId: ctx.user.id, action: "CREATE", entityType: "signature_request", entityId: result?.id, entityName: input.subject, description: `Demande de signature créée pour le document ${document.id}`, newValue: JSON.stringify({ documentHash: result?.documentHash, signerId: member.id }), status: "success" });
+      return result;
+    }),
+
+  sign: protectedProcedure
+    .input(z.object({ requestId: z.number().int().positive(), signerId: z.number().int().positive(), typedSignature: z.string().trim().min(2).max(255), consent: z.literal(true) }))
+    .mutation(async ({ input, ctx }) => {
+      const request = await getSignatureRequestById(input.requestId);
+      if (!request) throw new Error("Demande de signature introuvable");
+      const signer = request.signers.find((item) => item.id === input.signerId);
+      if (!signer) throw new Error("Signataire introuvable");
+      if (signer.status === "signed") return request;
+      if (request.status === "cancelled" || request.status === "completed") throw new Error("Cette demande n’est plus signable");
+      if (request.expiresAt && new Date(request.expiresAt).getTime() < Date.now()) throw new Error("Cette demande de signature a expiré");
+
+      const db = await getDb();
+      if (!db) throw new Error("Database not available");
+      const memberRows = await db.select({ userId: members.userId }).from(members).where(eq(members.id, signer.memberId)).limit(1);
+      const isAssignedMember = memberRows[0]?.userId === ctx.user.id;
+      if (!isAssignedMember) await assertPermission(ctx.user, "signatures.sign");
+
+      const signedAt = new Date().toISOString();
+      const evidenceHash = createHash("sha256").update(JSON.stringify({ requestId: request.id, signerId: signer.id, documentHash: request.documentHash, signerName: signer.signerName, typedSignature: input.typedSignature, consent: input.consent, signedAt })).digest("hex");
+      const result = await signSignatureRequest({ requestId: request.id, signerId: signer.id, typedSignature: input.typedSignature, signedAt, evidenceHash });
+      await logAudit({ userId: ctx.user.id, action: "UPDATE", entityType: "signature_request", entityId: request.id, entityName: request.subject, description: `Signature électronique enregistrée pour ${signer.signerName}`, newValue: JSON.stringify({ signerId: signer.id, evidenceHash, signedAt, documentHash: request.documentHash }), status: "success" });
+      return result;
+    }),
+
+  cancel: protectedProcedure
+    .input(z.object({ id: z.number().int().positive() }))
+    .mutation(async ({ input, ctx }) => {
+      await assertPermission(ctx.user, "signatures.manage");
+      const result = await cancelSignatureRequest(input.id);
+      await logAudit({ userId: ctx.user.id, action: "UPDATE", entityType: "signature_request", entityId: input.id, description: "Demande de signature annulée", status: "success" });
+      return result;
+    }),
+});

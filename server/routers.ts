@@ -54,6 +54,7 @@ import { governanceRouter } from "./governance-router";
 import { stripeRouter } from "./stripe-router";
 import { campaignsRouter } from "./campaigns-router";
 import { eventsRouter } from "./events-router";
+import { signatureRouter } from "./signature-router";
 
 // Note: Email procedures are now in email-router.ts and imported above
 
@@ -69,6 +70,7 @@ export const appRouter = router({
   stripe: stripeRouter,
   campaigns: campaignsRouter,
   events: eventsRouter,
+  signatures: signatureRouter,
   
   auth: router({
     me: publicProcedure.query(opts => opts.ctx.user),
