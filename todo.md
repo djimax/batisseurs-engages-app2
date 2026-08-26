@@ -2012,3 +2012,4 @@
 - [x] Convertir explicitement les demandes EUR en XOF avant les contrôles budgétaires de référence
 - [x] Indiquer dans le formulaire achats que le contrôle budgétaire est référencé en XOF
 - [x] Ajouter la saisie et l’affichage des échéances documentaires dans l’interface
+- [x] Ajouter un endpoint planifié idempotent pour notifier les échéances documentaires proches

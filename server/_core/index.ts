@@ -8,6 +8,7 @@ import { appRouter } from "../routers";
 import { createContext } from "./context";
 import { serveStatic, setupVite } from "./vite";
 import { membershipRemindersHandler } from "../membership-reminders-handler";
+import { documentRemindersHandler } from "../document-reminders-handler";
 import { stripeWebhookHandler } from "../stripe-webhook";
 
 function isPortAvailable(port: number): Promise<boolean> {
@@ -41,6 +42,7 @@ async function startServer() {
   registerOAuthRoutes(app);
   // Platform-managed Heartbeat callbacks must be mounted before the Vite/static fallback.
   app.post("/api/scheduled/membership-reminders", membershipRemindersHandler);
+  app.post("/api/scheduled/document-reminders", documentRemindersHandler);
   // tRPC API
   app.use(
     "/api/trpc",
