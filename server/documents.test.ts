@@ -1,4 +1,5 @@
 import { describe, expect, it, vi, beforeEach } from "vitest";
+import { readFileSync } from "node:fs";
 import { appRouter } from "./routers";
 import type { TrpcContext } from "./_core/context";
 
@@ -70,6 +71,14 @@ describe("Categories Router", () => {
 });
 
 describe("Documents Router", () => {
+  it("logs the administrative document lifecycle in the central audit trail", async () => {
+    const source = readFileSync(new URL("./routers.ts", import.meta.url), "utf8");
+    expect(source).toContain('action: "CREATE", entityType: "document"');
+    expect(source).toContain('action: "UPDATE", entityType: "document"');
+    expect(source).toContain('action: "DELETE", entityType: "document"');
+    expect(source).toContain('action: "ARCHIVE", entityType: "document"');
+  });
+
   it("should list documents (protected)", async () => {
     const ctx = createAuthContext();
     const caller = appRouter.createCaller(ctx);

@@ -2013,3 +2013,4 @@
 - [x] Indiquer dans le formulaire achats que le contrôle budgétaire est référencé en XOF
 - [x] Ajouter la saisie et l’affichage des échéances documentaires dans l’interface
 - [x] Ajouter un endpoint planifié idempotent pour notifier les échéances documentaires proches
+- [x] Journaliser les créations, modifications, suppressions et archivages de documents dans l’audit centralisé

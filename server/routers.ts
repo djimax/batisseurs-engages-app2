@@ -173,6 +173,7 @@ export const appRouter = router({
           entityId: result.id as number,
           details: `Document "${input.title}" créé`,
         });
+        await logAudit({ userId: ctx.user.id, action: "CREATE", entityType: "document", entityId: result.id as number, entityName: input.title, description: `Document "${input.title}" créé`, newValue: JSON.stringify({ categoryId: input.categoryId, priority: input.priority ?? "medium", dueDate: input.dueDate?.toISOString() ?? null }), status: "success" });
         await notifyOwner({
           title: "Nouveau document créé",
           content: `Le document "${input.title}" a été créé par ${ctx.user.name || "un utilisateur"}.`,
@@ -207,6 +208,7 @@ export const appRouter = router({
           entityId: id,
           details: `Document mis à jour`,
         });
+        await logAudit({ userId: ctx.user.id, action: "UPDATE", entityType: "document", entityId: id, description: "Document mis à jour", newValue: JSON.stringify({ ...data, dueDate: data.dueDate?.toISOString() ?? null }), status: "success" });
         return result;
       }),
     
@@ -222,6 +224,7 @@ export const appRouter = router({
           entityId: input.id,
           details: `Document supprimé`,
         });
+        await logAudit({ userId: ctx.user.id, action: "DELETE", entityType: "document", entityId: input.id, description: "Document supprimé", status: "success" });
         return { success: true };
       }),
     
@@ -362,6 +365,7 @@ export const appRouter = router({
           entityId: input.id,
           details: "Document archivé",
         });
+        await logAudit({ userId: ctx.user.id, action: "ARCHIVE", entityType: "document", entityId: input.id, description: "Document archivé", newValue: JSON.stringify({ isArchived: 1 }), status: "success" });
         await notifyOwner({
           title: "Document archivé",
           content: `Le document a été archivé par ${ctx.user.name || "un utilisateur"}.`,
