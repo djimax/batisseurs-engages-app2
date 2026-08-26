@@ -5,7 +5,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Plus, DollarSign, Gift, TrendingUp, AlertCircle, FileText, Printer } from "lucide-react";
+import { Plus, DollarSign, Gift, TrendingUp, AlertCircle, FileText, Printer, Mail } from "lucide-react";
 import { toast } from "sonner";
 import { FinanceCharts } from "@/components/FinanceCharts";
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip as RechartsTooltip, Legend } from "recharts";
@@ -111,6 +111,10 @@ export default function Finance() {
       await refetchReceipts();
       openPrintableDocument(receipt.documentHtml);
     },
+    onError: (error) => toast.error(error.message),
+  });
+  const sendReceiptEmail = trpc.email.sendReceiptEmail.useMutation({
+    onSuccess: () => toast.success("Le reçu a été envoyé par e-mail"),
     onError: (error) => toast.error(error.message),
   });
   const [cotisations, setCotisations] = useState<Cotisation[]>([]);
@@ -308,6 +312,9 @@ export default function Finance() {
     });
   };
 
+  const handleSendReceiptEmail = (receiptId: number) => {
+    sendReceiptEmail.mutate({ receiptId });
+  };
   const printExistingReceipt = (receipt: (typeof receipts)[number]) => {
     const amount = Number(receipt.amount);
     const equivalentCurrency = receipt.currency === "EUR" ? "XOF" : "EUR";
@@ -840,7 +847,10 @@ export default function Finance() {
                 const equivalentAmount = convertCurrency(sourceAmount, receipt.currency, equivalentCurrency);
                 return <div key={receipt.id} className="flex flex-col gap-3 rounded-xl border p-4 sm:flex-row sm:items-center sm:justify-between">
                   <div><div className="flex flex-wrap items-center gap-2"><p className="font-medium">{receipt.documentType === "tax_receipt" ? "Reçu fiscal de don" : "Certificat de don"}</p><span className="rounded-full bg-primary/10 px-2 py-1 text-xs text-primary">{receipt.receiptNumber}</span></div><p className="text-sm text-muted-foreground">{receipt.donorName} · {new Date(receipt.donationDate).toLocaleDateString("fr-FR")}</p><p className="text-sm">{sourceAmount.toLocaleString("fr-FR")} {receipt.currency === "EUR" ? "€" : "F CFA"} <span className="text-muted-foreground">(≈ {equivalentAmount.toLocaleString("fr-FR")} {equivalentCurrency === "EUR" ? "€" : "F CFA"})</span></p></div>
-                  <Button variant="outline" size="sm" className="gap-2" onClick={() => printExistingReceipt(receipt)}><Printer className="h-4 w-4" />Imprimer</Button>
+                  <div className="flex flex-wrap gap-2">
+                    <Button variant="outline" size="sm" className="gap-2" onClick={() => printExistingReceipt(receipt)}><Printer className="h-4 w-4" />Imprimer</Button>
+                    <Button variant="outline" size="sm" className="gap-2" disabled={!receipt.donorEmail || sendReceiptEmail.isPending} onClick={() => handleSendReceiptEmail(receipt.id)} title={receipt.donorEmail ? "Envoyer le reçu par e-mail" : "Aucune adresse e-mail enregistrée"}><Mail className="h-4 w-4" />{sendReceiptEmail.isPending ? "Envoi…" : "Envoyer"}</Button>
+                  </div>
                 </div>;
               })}
             </CardContent>

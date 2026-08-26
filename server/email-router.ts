@@ -3,12 +3,15 @@ import {
   getEmailTemplates, getEmailTemplateById, createEmailTemplate, updateEmailTemplate, deleteEmailTemplate,
   getEmailHistory, getEmailHistoryById, createEmailHistory, updateEmailHistory,
   getEmailRecipients, createEmailRecipient, updateEmailRecipient,
-  getAllMembers, getFilteredMembers,
+  getAllMembers, getFilteredMembers, getGlobalSettings, getMemberById, getCotisationsByMember,
   createPasswordResetRequest, listPasswordResetRequests, updatePasswordResetRequest, getPasswordResetRequest,
 } from "./db";
 import { logAudit } from "./audit";
 import { notifyOwner } from "./_core/notification";
 import { publicProcedure, protectedProcedure, router } from "./_core/trpc";
+import { sendTransactionalEmail } from "./brevo";
+import { assertPermission } from "./authorization";
+import { getTaxReceiptById } from "./financial";
 
 export const emailRouter = router({
   // Email Templates
@@ -160,26 +163,27 @@ export const emailRouter = router({
               status: "pending",
             });
 
-            // Send email using Manus notification system
-            const memberName = `${member.firstName} ${member.lastName}`.trim();
-            const emailSent = await notifyOwner({
-              title: `${input.subject} - ${memberName}`,
-              content: `Email sent to ${member.email}:\n\n${input.content}`,
-            });
-
-            if (emailSent) {
-              successCount++;
-              // Update recipient status
-              const recipients = await getEmailRecipients(history.id);
-              const lastRecipient = recipients[recipients.length - 1];
-              if (lastRecipient) {
-                await updateEmailRecipient(lastRecipient.id, {
-                  status: "sent",
-                  sentAt: new Date().toISOString(),
-                });
-              }
-            } else {
+            const memberName = `${member.firstName ?? ""} ${member.lastName ?? ""}`.trim();
+            const recipientEmail = member.email?.trim();
+            if (!recipientEmail) {
               failureCount++;
+              continue;
+            }
+
+            await sendTransactionalEmail({
+              to: { email: recipientEmail, name: memberName || undefined },
+              subject: input.subject,
+              textContent: input.content,
+            });
+            successCount++;
+
+            const recipients = await getEmailRecipients(history.id);
+            const currentRecipient = recipients.find((recipient) => recipient.recipientId === member.id && recipient.status === "pending");
+            if (currentRecipient) {
+              await updateEmailRecipient(currentRecipient.id, {
+                status: "sent",
+                sentAt: new Date().toISOString(),
+              });
             }
           } catch (error) {
             failureCount++;
@@ -228,6 +232,62 @@ export const emailRouter = router({
       }
     }),
 
+
+  sendReceiptEmail: protectedProcedure
+    .input(z.object({ receiptId: z.number().int().positive() }))
+    .mutation(async ({ input, ctx }) => {
+      await assertPermission(ctx.user, "finances.manage");
+      const receipt = await getTaxReceiptById(input.receiptId);
+      if (!receipt) throw new Error("Reçu introuvable");
+      if (!receipt.donorEmail) throw new Error("Le reçu ne contient pas d’adresse e-mail");
+      const settings = await getGlobalSettings();
+      const label = receipt.documentType === "tax_receipt" ? "reçu fiscal de don" : "certificat de don";
+      const associationName = settings?.associationName ?? "Les Bâtisseurs Engagés";
+      const content = `Bonjour ${receipt.donorName},\n\nVeuillez trouver la confirmation de votre ${label} ${receipt.receiptNumber}, enregistré au nom de ${associationName}.\n\nMontant : ${receipt.amount} ${receipt.currency}\nDate du don : ${new Date(receipt.donationDate).toLocaleDateString("fr-FR")}\n\nConservez ce message avec vos justificatifs.\n\nCordialement,\n${associationName}${receipt.pdfUrl ? `\n\nDocument : ${receipt.pdfUrl}` : ""}`;
+      try {
+        const result = await sendTransactionalEmail({
+          to: { email: receipt.donorEmail, name: receipt.donorName },
+          subject: `${label[0].toUpperCase()}${label.slice(1)} ${receipt.receiptNumber}`,
+          textContent: content,
+        });
+        await logAudit({ userId: ctx.user.id, action: "CREATE", entityType: "transactional_email", entityId: receipt.id, entityName: receipt.receiptNumber, description: `Envoi Brevo du ${label} à ${receipt.donorEmail}`, newValue: JSON.stringify({ provider: "brevo", messageId: result.messageId }), status: "success" });
+        return { success: true, messageId: result.messageId };
+      } catch (error) {
+        await logAudit({ userId: ctx.user.id, action: "CREATE", entityType: "transactional_email", entityId: receipt.id, entityName: receipt.receiptNumber, description: `Échec d’envoi Brevo du ${label} à ${receipt.donorEmail}`, status: "failed", errorMessage: error instanceof Error ? error.message : "Erreur inconnue" });
+        throw error;
+      }
+    }),
+
+  sendRegistrationConfirmation: protectedProcedure
+    .input(z.object({ memberId: z.number().int().positive() }))
+    .mutation(async ({ input, ctx }) => {
+      await assertPermission(ctx.user, "members.manage");
+      const member = await getMemberById(input.memberId);
+      if (!member) throw new Error("Membre introuvable");
+      if (!member.email) throw new Error("Le membre ne contient pas d’adresse e-mail");
+      const associationName = (await getGlobalSettings())?.associationName ?? "Les Bâtisseurs Engagés";
+      const content = `Bonjour ${member.firstName} ${member.lastName},\n\nVotre inscription à ${associationName} est bien enregistrée. Nous vous remercions pour votre engagement.\n\nCordialement,\n${associationName}`;
+      const result = await sendTransactionalEmail({ to: { email: member.email, name: `${member.firstName} ${member.lastName}` }, subject: `Confirmation de votre inscription à ${associationName}`, textContent: content });
+      await logAudit({ userId: ctx.user.id, action: "CREATE", entityType: "transactional_email", entityId: member.id, entityName: "registration_confirmation", description: `Confirmation d’inscription envoyée par Brevo à ${member.email}`, newValue: JSON.stringify({ provider: "brevo", messageId: result.messageId }), status: "success" });
+      return { success: true, messageId: result.messageId };
+    }),
+
+  sendMembershipReminder: protectedProcedure
+    .input(z.object({ memberId: z.number().int().positive() }))
+    .mutation(async ({ input, ctx }) => {
+      await assertPermission(ctx.user, "finances.manage");
+      const member = await getMemberById(input.memberId);
+      if (!member) throw new Error("Membre introuvable");
+      if (!member.email) throw new Error("Le membre ne contient pas d’adresse e-mail");
+      const dues = await getCotisationsByMember(input.memberId);
+      const due = dues.find((cotisation) => cotisation.statut !== "payée");
+      if (!due) throw new Error("Aucune cotisation en attente pour ce membre");
+      const associationName = (await getGlobalSettings())?.associationName ?? "Les Bâtisseurs Engagés";
+      const content = `Bonjour ${member.firstName} ${member.lastName},\n\nNous vous rappelons que votre cotisation de ${due.montant} ${due.currency} est ${due.statut}. Échéance : ${new Date(due.dateFin).toLocaleDateString("fr-FR")}.\n\nMerci de régulariser votre situation auprès de ${associationName}.\n\nCordialement,\n${associationName}`;
+      const result = await sendTransactionalEmail({ to: { email: member.email, name: `${member.firstName} ${member.lastName}` }, subject: `Rappel de cotisation — ${associationName}`, textContent: content });
+      await logAudit({ userId: ctx.user.id, action: "CREATE", entityType: "transactional_email", entityId: member.id, entityName: "membership_reminder", description: `Rappel de cotisation envoyé par Brevo à ${member.email}`, newValue: JSON.stringify({ provider: "brevo", messageId: result.messageId, cotisationId: due.id }), status: "success" });
+      return { success: true, messageId: result.messageId, cotisationId: due.id };
+    }),
 
   // Email history
   history: router({

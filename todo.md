@@ -1897,3 +1897,13 @@
 - [x] Conserver recherche, filtres, tri, chargement et états vides dans l’interface Événements
 - [x] Préparer une intégration calendrier externe sans rendre Google Calendar obligatoire
 - [x] Ajouter les tests de permissions, validation et non-régression du module Événements
+
+## Intégration Brevo
+- [x] Auditer les modèles, historiques, préférences et flux d’e-mails existants
+- [x] Ajouter la clé `BREVO_API_KEY` côté serveur sans exposer sa valeur au client
+- [ ] Ajouter la configuration de l’expéditeur et du domaine vérifié
+- [x] Implémenter un client Brevo avec timeout, validation, journalisation et gestion d’erreur
+- [x] Connecter les e-mails transactionnels de reçus, rappels, convocations et confirmations
+- [ ] Respecter les consentements, désabonnements et préférences des membres
+- [x] Ajouter tests de contrat et de non-régression sans envoyer de vrai e-mail
+- [x] Valider TypeScript, tests, build et sauvegarder l’intégration
