@@ -2008,3 +2008,4 @@
 - [x] Vérifier à nouveau le budget projet lors de l’approbation d’une demande d’achat
 - [x] Afficher les échéances et l’état expiré des devis dans l’interface achats
 - [x] Refuser les devis liés à une demande inexistante ou à un fournisseur inactif
+- [x] Permettre de renseigner la date de validité d’un devis depuis le formulaire achats
