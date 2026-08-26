@@ -1874,3 +1874,11 @@
 - [x] Ajouter un test de non-régression de visibilité du panneau Stripe
 - [x] Valider TypeScript, tests, build et sauvegarder le correctif
 - [x] Ajouter un onglet « Paiements Stripe » visible dans Finance, avec explication du mode en ligne et de la configuration requise
+
+## Progression des campagnes de collecte
+- [x] Auditer le modèle et la vue des campagnes pour identifier objectif et montant collecté
+- [x] Calculer le pourcentage collecté avec protection contre les valeurs invalides
+- [x] Afficher une barre de progression visuelle par campagne
+- [x] Gérer les objectifs atteints, dépassés et les états sans objectif
+- [x] Ajouter les attributs d’accessibilité et les tests de non-régression
+- [x] Valider TypeScript, tests, build et rendu responsive

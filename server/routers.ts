@@ -52,6 +52,7 @@ import { antennasRouter, groupesRouter } from "./antennes-groupes-router";
 import { canAssignMemberGrade, MEMBER_GRADE_LEVELS } from "../shared/memberProgression";
 import { governanceRouter } from "./governance-router";
 import { stripeRouter } from "./stripe-router";
+import { campaignsRouter } from "./campaigns-router";
 
 // Note: Email procedures are now in email-router.ts and imported above
 
@@ -65,6 +66,7 @@ export const appRouter = router({
   groupes: groupesRouter,
   governance: governanceRouter,
   stripe: stripeRouter,
+  campaigns: campaignsRouter,
   
   auth: router({
     me: publicProcedure.query(opts => opts.ctx.user),

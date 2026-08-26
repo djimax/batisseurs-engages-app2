@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -12,8 +12,33 @@ import { toast } from "sonner";
 import { useFormatAmount } from "@/hooks/useFormatAmount";
 import { AmountDisplay } from "@/components/AmountDisplay";
 
+type Campaign = {
+  id: number;
+  title: string;
+  description?: string | null;
+  objectif: number;
+  montantCollecte: number;
+  dateDebut: string | Date;
+  dateFin: string | Date;
+  status: "draft" | "active" | "completed" | "cancelled";
+  progress: number;
+};
+
+const EMPTY_CAMPAIGNS: Campaign[] = [];
+
+function formatCampaignDate(value: string | Date) {
+  return new Date(value).toLocaleDateString("fr-FR");
+}
+
 export default function Campaigns() {
   const { formatAmountWithConversion } = useFormatAmount();
+  const { data: campaigns = EMPTY_CAMPAIGNS, isLoading } = trpc.campaigns.list.useQuery();
+  const campaignStats = useMemo(() => campaigns.reduce((stats, campaign) => ({
+    active: stats.active + (campaign.status === "active" ? 1 : 0),
+    collected: stats.collected + campaign.montantCollecte,
+    objective: stats.objective + campaign.objectif,
+  }), { active: 0, collected: 0, objective: 0 }), [campaigns]);
+  const totalProgress = campaignStats.objective > 0 ? Math.min(100, Math.round((campaignStats.collected / campaignStats.objective) * 100)) : 0;
   const [isOpen, setIsOpen] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [formData, setFormData] = useState({
@@ -24,32 +49,6 @@ export default function Campaigns() {
     dateFin: "",
     status: "draft" as const,
   });
-
-  // Placeholder: In real implementation, these would be tRPC queries
-  const campaigns = [
-    {
-      id: 1,
-      title: "Campagne de Financement 2025",
-      description: "Collecte de fonds pour les projets de l'année 2025",
-      objectif: "5000",
-      montantCollecte: "3200",
-      dateDebut: new Date("2025-01-01"),
-      dateFin: new Date("2025-03-31"),
-      status: "active",
-      progress: 64,
-    },
-    {
-      id: 2,
-      title: "Adhésions Annuelles",
-      description: "Collecte des adhésions pour l'année 2025",
-      objectif: "2000",
-      montantCollecte: "1800",
-      dateDebut: new Date("2025-01-15"),
-      dateFin: new Date("2025-12-31"),
-      status: "active",
-      progress: 90,
-    },
-  ];
 
   const handleSubmit = () => {
     if (!formData.title || !formData.objectif) {
@@ -125,7 +124,7 @@ export default function Campaigns() {
             <CardTitle className="text-sm font-medium text-muted-foreground">Campagnes Actives</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">2</div>
+            <div className="text-2xl font-bold">{campaignStats.active}</div>
             <p className="text-xs text-muted-foreground mt-1">En cours de collecte</p>
           </CardContent>
         </Card>
@@ -135,7 +134,7 @@ export default function Campaigns() {
             <CardTitle className="text-sm font-medium text-muted-foreground">Total Collecté</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold"><AmountDisplay amount={5000} sourceCurrency="EUR" /></div>
+            <div className="text-2xl font-bold"><AmountDisplay amount={campaignStats.collected} sourceCurrency="EUR" /></div>
             <p className="text-xs text-muted-foreground mt-1">Toutes campagnes confondues</p>
           </CardContent>
         </Card>
@@ -145,14 +144,16 @@ export default function Campaigns() {
             <CardTitle className="text-sm font-medium text-muted-foreground">Objectif Total</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold"><AmountDisplay amount={7000} sourceCurrency="EUR" /></div>
-            <p className="text-xs text-muted-foreground mt-1">71% atteint</p>
+            <div className="text-2xl font-bold"><AmountDisplay amount={campaignStats.objective} sourceCurrency="EUR" /></div>
+            <p className="text-xs text-muted-foreground mt-1">{totalProgress}% atteint</p>
           </CardContent>
         </Card>
       </div>
 
       {/* Campaigns List */}
       <div className="space-y-4">
+        {isLoading && <Card><CardContent className="py-10 text-center text-muted-foreground">Chargement des campagnes…</CardContent></Card>}
+        {!isLoading && campaigns.length === 0 && <Card><CardContent className="py-10 text-center text-muted-foreground">Aucune campagne de collecte n’est encore enregistrée.</CardContent></Card>}
         {campaigns.map((campaign) => (
           <Card key={campaign.id} className="hover:shadow-md transition-shadow">
             <CardHeader>
@@ -164,7 +165,7 @@ export default function Campaigns() {
                       {getStatusLabel(campaign.status)}
                     </Badge>
                   </div>
-                  <p className="text-sm text-muted-foreground mt-2">{campaign.description}</p>
+                  <p className="text-sm text-muted-foreground mt-2">{campaign.description || "Aucune description"}</p>
                 </div>
                 <div className="flex gap-2">
                   <Button
@@ -195,36 +196,46 @@ export default function Campaigns() {
                   <span className="text-sm font-medium">Progression</span>
                   <span className="text-sm font-semibold">{campaign.progress}%</span>
                 </div>
-                <div className="w-full bg-gray-200 rounded-full h-2">
+                <div
+                  className="h-2 w-full overflow-hidden rounded-full bg-muted"
+                  role="progressbar"
+                  aria-label={`Progression de la campagne ${campaign.title}`}
+                  aria-valuemin={0}
+                  aria-valuemax={100}
+                  aria-valuenow={campaign.progress}
+                >
                   <div
-                    className="bg-green-500 h-2 rounded-full transition-all"
+                    className={`h-full rounded-full transition-[width,background-color] duration-500 ${campaign.progress >= 100 ? "bg-primary" : "bg-green-500"}`}
                     style={{ width: `${campaign.progress}%` }}
                   />
                 </div>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  {campaign.progress >= 100 ? "Objectif atteint" : campaign.objectif > 0 ? `${campaign.progress}% de l’objectif atteint` : "Objectif non renseigné"}
+                </p>
               </div>
 
               {/* Campaign Details */}
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <div>
                   <p className="text-xs text-muted-foreground">Collecté</p>
-                  <p className="text-lg font-bold text-green-600"><AmountDisplay amount={parseFloat(campaign.montantCollecte || "0")} sourceCurrency="EUR" /></p>
+                  <p className="text-lg font-bold text-green-600"><AmountDisplay amount={campaign.montantCollecte} sourceCurrency="EUR" /></p>
                 </div>
                 <div>
                   <p className="text-xs text-muted-foreground">Objectif</p>
-                  <p className="text-lg font-bold"><AmountDisplay amount={parseFloat(campaign.objectif || "0")} sourceCurrency="EUR" /></p>
+                  <p className="text-lg font-bold"><AmountDisplay amount={campaign.objectif} sourceCurrency="EUR" /></p>
                 </div>
                 <div className="flex items-center gap-2">
                   <Calendar className="h-4 w-4 text-muted-foreground" />
                   <div>
                     <p className="text-xs text-muted-foreground">Début</p>
-                    <p className="text-sm font-medium">{campaign.dateDebut.toLocaleDateString('fr-FR')}</p>
+                    <p className="text-sm font-medium">{formatCampaignDate(campaign.dateDebut)}</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
                   <Calendar className="h-4 w-4 text-muted-foreground" />
                   <div>
                     <p className="text-xs text-muted-foreground">Fin</p>
-                    <p className="text-sm font-medium">{campaign.dateFin.toLocaleDateString('fr-FR')}</p>
+                    <p className="text-sm font-medium">{formatCampaignDate(campaign.dateFin)}</p>
                   </div>
                 </div>
               </div>
