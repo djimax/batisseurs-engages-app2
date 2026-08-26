@@ -72,7 +72,7 @@
 - [x] Invalidation des caches après archivage/restauration
 
 ## Fonctionnalités Futures (Non Implémentées)
-- [ ] Système de dates d'échéance avec rappels automatiques
+- [x] Système de dates d'échéance avec rappels automatiques
 - [ ] Notifications par email pour les documents urgents
 - [ ] Intégration calendrier pour les échéances
 - [ ] Système d'approbation de documents
