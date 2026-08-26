@@ -194,7 +194,9 @@ export const crmRouter = router({
         if (ctx.user?.role !== "admin") {
           throw new Error("Unauthorized: Admin only");
         }
-        return createAdhesionPipeline(input as any);
+        const result = await createAdhesionPipeline(input as any);
+        await logAudit({ userId: ctx.user.id, action: "CREATE", entityType: "crm_adhesion_pipeline", entityId: result.id, description: `Entrée de pipeline créée pour le contact #${input.contactId}`, status: "success" });
+        return result;
       }),
 
     updateStatus: protectedProcedure
@@ -208,12 +210,14 @@ export const crmRouter = router({
         if (ctx.user?.role !== "admin") {
           throw new Error("Unauthorized: Admin only");
         }
-        return updateAdhesionPipeline(input.id, {
+        const result = await updateAdhesionPipeline(input.id, {
           stage: input.stage,
           approvalDate: input.approvalDate,
           rejectionReason: input.rejectionReason,
           updatedAt: new Date(),
         } as any);
+        await logAudit({ userId: ctx.user.id, action: "UPDATE", entityType: "crm_adhesion_pipeline", entityId: input.id, description: `Étape de pipeline mise à jour : ${input.stage}`, newValue: JSON.stringify({ stage: input.stage, rejectionReason: input.rejectionReason ?? null }), status: "success" });
+        return result;
       }),
   }),
 
@@ -238,7 +242,9 @@ export const crmRouter = router({
         if (ctx.user?.role !== "admin") {
           throw new Error("Unauthorized: Admin only");
         }
-        return createCrmReport(input as any);
+        const result = await createCrmReport(input as any);
+        await logAudit({ userId: ctx.user.id, action: "CREATE", entityType: "crm_report", entityId: result.id, entityName: input.name, description: "Rapport CRM créé", status: "success" });
+        return result;
       }),
 
     getEngagementMetrics: protectedProcedure
@@ -278,7 +284,9 @@ export const crmRouter = router({
         if (ctx.user?.role !== "admin") {
           throw new Error("Unauthorized: Admin only");
         }
-        return createCrmEmailIntegration(input as any);
+        const result = await createCrmEmailIntegration(input as any);
+        await logAudit({ userId: ctx.user.id, action: "CREATE", entityType: "crm_email", entityId: result.id, description: `Email CRM journalisé pour le contact #${input.contactId}`, newValue: JSON.stringify({ direction: input.direction, status: input.status }), status: "success" });
+        return result;
       }),
   }),
 });

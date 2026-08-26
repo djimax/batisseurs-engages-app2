@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { readFileSync } from "node:fs";
 import { EURO_TO_XOF, buildDonationDocumentHtml, convertFinancialAmount, formatFinancialAmount, parseFinancialAmount } from "./financial";
 
 describe("Financial multi-currency helpers", () => {
@@ -21,6 +22,17 @@ describe("Financial multi-currency helpers", () => {
   it("formats each currency with an explicit symbol", () => {
     expect(formatFinancialAmount(12.5, "EUR")).toContain("€");
     expect(formatFinancialAmount(65595.7, "XOF")).toContain("F CFA");
+  });
+
+  it("audits financial and annual membership mutations centrally", () => {
+    const routerSource = readFileSync(new URL("./routers.ts", import.meta.url), "utf8");
+    const adhesionSource = readFileSync(new URL("./members-adhesions-router.ts", import.meta.url), "utf8");
+    expect(routerSource).toContain('entityType: "membership_fee_rule"');
+    expect(routerSource).toContain('entityType: "cotisation"');
+    expect(routerSource).toContain('entityType: "don"');
+    expect(routerSource).toContain('entityType: "depense"');
+    expect(adhesionSource).toContain('action: "CREATE"');
+    expect(adhesionSource).toContain('action: "RENEW"');
   });
 
   it("builds a printable donation document with original and equivalent amounts", () => {

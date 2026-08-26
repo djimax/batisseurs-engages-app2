@@ -2039,3 +2039,6 @@
 - [x] Étendre l’audit centralisé à la restauration des documents et ajouter un test de non-régression RESTORE.
 - [ ] Couvrir les modifications critiques des membres, finances, achats, signatures et paramètres par l’audit centralisé.
 - [x] Conserver l’audit documentaire/commentaires comme périmètre distinct tant que la couverture globale de l’application n’est pas démontrée.
+- [x] Couvrir l’audit CRM : contacts, activités, pipeline d’adhésion, rapports et historique email.
+- [ ] Ajouter des tests d’assertion dédiés aux nouvelles entrées d’audit finances, adhésions et CRM.
+- [ ] Finaliser la couverture d’audit globale des modules critiques non encore vérifiés.
