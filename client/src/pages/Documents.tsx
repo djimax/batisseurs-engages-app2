@@ -99,6 +99,7 @@ export default function Documents() {
     categoryId: 0,
     priority: "medium" as "low" | "medium" | "high" | "urgent",
     status: "pending" as "pending" | "in-progress" | "completed",
+    dueDate: "",
   });
 
   const { data: categories } = trpc.categories.list.useQuery();
@@ -240,6 +241,7 @@ export default function Documents() {
       categoryId: 0,
       priority: "medium",
       status: "pending",
+      dueDate: "",
     });
   };
 
@@ -248,7 +250,7 @@ export default function Documents() {
       toast.error("Veuillez remplir tous les champs obligatoires");
       return;
     }
-    createDocument.mutate(formData);
+    createDocument.mutate({ ...formData, dueDate: formData.dueDate ? new Date(`${formData.dueDate}T23:59:59.000Z`) : undefined });
   };
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -624,6 +626,7 @@ export default function Documents() {
                 <p className="text-sm text-muted-foreground line-clamp-2 mb-4">
                   {doc.description || "Aucune description"}
                 </p>
+                {doc.dueDate ? <p className={`mb-3 text-xs font-medium ${new Date(doc.dueDate).getTime() < Date.now() ? "text-destructive" : "text-muted-foreground"}`}>{new Date(doc.dueDate).getTime() < Date.now() ? "Échéance dépassée" : `Échéance : ${new Date(doc.dueDate).toLocaleDateString("fr-FR")}`}</p> : null}
                 <div className="flex items-center justify-between">
                   <div className="flex gap-2">
                     {getStatusBadge(doc.status)}
@@ -713,6 +716,11 @@ export default function Documents() {
                   ))}
                 </SelectContent>
               </Select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="dueDate">Date d’échéance</Label>
+              <Input id="dueDate" type="date" value={formData.dueDate} onChange={(e) => setFormData({ ...formData, dueDate: e.target.value })} />
+              <p className="text-xs text-muted-foreground">Optionnel, pour suivre les documents à finaliser ou renouveler.</p>
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">

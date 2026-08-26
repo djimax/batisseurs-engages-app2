@@ -80,7 +80,7 @@
 - [ ] Partage de documents avec permissions granulaires
 - [ ] Commentaires collaboratifs sur les documents
 - [ ] Intégration avec Google Drive ou OneDrive
-- [ ] Signature électronique des documents
+- [x] Signature électronique des documents
 - [ ] Audit trail complet des modifications
 
 
@@ -2011,3 +2011,4 @@
 - [x] Permettre de renseigner la date de validité d’un devis depuis le formulaire achats
 - [x] Convertir explicitement les demandes EUR en XOF avant les contrôles budgétaires de référence
 - [x] Indiquer dans le formulaire achats que le contrôle budgétaire est référencé en XOF
+- [x] Ajouter la saisie et l’affichage des échéances documentaires dans l’interface
