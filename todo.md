@@ -2044,3 +2044,5 @@
 - [ ] Finaliser la couverture d’audit globale des modules critiques non encore vérifiés.
 - [x] Étendre l’audit de gouvernance aux assemblées, changements de statut, participants et présences.
 - [x] Compléter l’audit de gouvernance pour résolutions, procurations et votes, puis ajouter les tests associés.
+- [x] Ajouter une trace d’audit à la création des paiements Stripe et valider le contrat Stripe.
+- [ ] Étendre l’audit aux changements d’état reçus via webhook Stripe et vérifier les événements idempotents.

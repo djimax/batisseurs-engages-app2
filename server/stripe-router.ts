@@ -6,6 +6,7 @@ import { protectedProcedure, router } from "./_core/trpc";
 import { assertPermission } from "./authorization";
 import { getDb } from "./db";
 import { campaigns, stripePayments } from "../drizzle/schema";
+import { logAudit } from "./audit";
 
 const paymentTypeSchema = z.enum(["cotisation", "don", "campagne"]);
 const currencySchema = z.enum(["EUR", "XOF"]);
@@ -99,6 +100,7 @@ export const stripeRouter = router({
         stripePaymentIntentId: typeof session.payment_intent === "string" ? session.payment_intent : undefined,
         status: "created",
       });
+      await logAudit({ userId: ctx.user.id, action: "CREATE", entityType: "stripe_payment", entityId: 0, entityName: session.id, description: `Session Stripe créée pour ${input.paymentType}`, newValue: JSON.stringify({ amountMinor: input.amountMinor, currency: input.currency, campaignId: input.campaignId ?? null, memberId: input.memberId ?? null }), status: "success" });
       return { sessionId: session.id, checkoutUrl: session.url };
     }),
 
