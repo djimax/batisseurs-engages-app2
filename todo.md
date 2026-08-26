@@ -253,31 +253,31 @@
 ## Phase 10 - Améliorations Inspirées de HelloAsso
 
 ### Dashboard d'Accueil Amélioré
-- [ ] Créer un nouveau dashboard avec onboarding pour nouveaux utilisateurs
-- [ ] Afficher les étapes de configuration (3 étapes comme HelloAsso)
-- [ ] Barre de progression pour l'onboarding
+- [x] Créer un nouveau dashboard avec onboarding pour nouveaux utilisateurs
+- [ ] Afficher les étapes de configuration (3 étapes comme HelloAsso) — le dashboard expose actuellement 5 étapes métier.
+- [x] Barre de progression pour l'onboarding
 - [ ] Afficher les informations de l'association (nom, RIB, etc.)
 - [ ] Section "Ressources utiles" avec liens vers guides et formations
-- [ ] Afficher le solde total collecté en évidence
+- [ ] Afficher le solde total collecté en évidence — le dashboard expose actuellement le solde disponible, distinction à clarifier.
 - [ ] Afficher les paiements des 7 derniers jours
-- [ ] Afficher les campagnes en cours
+- [ ] Afficher les campagnes en cours — le dashboard expose actuellement le nombre de campagnes actives, pas la liste détaillée.
 
 ### Système de Campagnes de Collecte
 - [ ] Créer une table "campaigns" pour les campagnes de collecte
 - [ ] Page Campagnes avec liste et création
 - [ ] Formulaire de création de campagne (titre, description, objectif, date fin)
-- [ ] Afficher le montant collecté vs objectif
-- [ ] Barre de progression pour chaque campagne
+- [x] Afficher le montant collecté vs objectif
+- [x] Barre de progression pour chaque campagne
 - [ ] Lien direct pour partager la campagne
 - [ ] Historique des contributions par campagne
 
 ### Système de Paiements en Ligne
-- [ ] Intégration HelloAsso API (si possible) ou Stripe
-- [ ] Générer des liens de paiement pour les cotisations
-- [ ] Générer des liens de paiement pour les dons
-- [ ] Suivi des paiements en attente
+- [x] Intégration HelloAsso API (si possible) ou Stripe (Stripe intégré)
+- [x] Générer des liens de paiement pour les cotisations
+- [x] Générer des liens de paiement pour les dons
+- [x] Suivi des paiements en attente
 - [ ] Notifications automatiques quand un paiement est reçu
-- [ ] Historique des tentatives de paiement
+- [x] Historique des tentatives de paiement
 
 ### Rapports Financiers Avancés
 - [ ] Rapport mensuel détaillé
