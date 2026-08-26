@@ -51,6 +51,7 @@ export async function stripeWebhookHandler(req: Request, res: Response) {
       if (payment && payment.status !== "completed") {
         const paymentIntentId = typeof session.payment_intent === "string" ? session.payment_intent : undefined;
         await db.update(stripePayments).set({ status: "completed", stripePaymentIntentId: paymentIntentId, updatedAt: paidAt() }).where(eq(stripePayments.id, payment.id));
+        await logAudit({ action: "UPDATE", entityType: "stripe_payment", entityId: payment.id, entityName: session.id, description: "Paiement Stripe confirmé par webhook", newValue: JSON.stringify({ status: "completed", eventId: event.id }), status: "success" });
         const amount = session.amount_total ?? 0;
         const currency = (session.currency ?? "eur").toUpperCase();
         const metadata = session.metadata ?? {};
@@ -109,10 +110,15 @@ export async function stripeWebhookHandler(req: Request, res: Response) {
     if (event.type === "checkout.session.expired" || event.type === "payment_intent.payment_failed") {
       const object = event.data.object as Stripe.Checkout.Session | Stripe.PaymentIntent;
       const sessionId = "id" in object && object.id.startsWith("cs_") ? object.id : undefined;
-      if (sessionId) await db.update(stripePayments).set({ status: "failed", updatedAt: paidAt() }).where(eq(stripePayments.stripeCheckoutSessionId, sessionId));
+      if (sessionId) {
+        await db.update(stripePayments).set({ status: "failed", updatedAt: paidAt() }).where(eq(stripePayments.stripeCheckoutSessionId, sessionId));
+        const failedRows = await db.select({ id: stripePayments.id }).from(stripePayments).where(eq(stripePayments.stripeCheckoutSessionId, sessionId)).limit(1);
+        if (failedRows[0]) await logAudit({ action: "UPDATE", entityType: "stripe_payment", entityId: failedRows[0].id, entityName: sessionId, description: "Paiement Stripe échoué ou session expirée", newValue: JSON.stringify({ status: "failed", eventId: event.id }), status: "success" });
+      }
     }
 
     await db.update(stripeEvents).set({ status: "processed", processedAt: paidAt() }).where(eq(stripeEvents.stripeEventId, event.id));
+    await logAudit({ action: "UPDATE", entityType: "stripe_event", entityId: 0, entityName: event.id, description: `Événement Stripe traité : ${event.type}`, newValue: JSON.stringify({ status: "processed" }), status: "success" });
     console.log(`[Stripe] Événement traité ${event.type} (${event.id})`);
     return res.json({ received: true });
   } catch (error) {

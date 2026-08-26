@@ -2046,3 +2046,4 @@
 - [x] Compléter l’audit de gouvernance pour résolutions, procurations et votes, puis ajouter les tests associés.
 - [x] Ajouter une trace d’audit à la création des paiements Stripe et valider le contrat Stripe.
 - [ ] Étendre l’audit aux changements d’état reçus via webhook Stripe et vérifier les événements idempotents.
+- [x] Étendre l’audit aux changements d’état reçus via webhook Stripe et vérifier l’idempotence des événements déjà enregistrés.
