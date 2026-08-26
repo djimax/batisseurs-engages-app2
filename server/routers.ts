@@ -28,7 +28,7 @@ import {
   createProjectUpdate, getProjectUpdates,
   createProjectTaskComment, getProjectTaskComments, deleteProjectTaskComment, getProjectReport,
   getProjectBudgetItems, createProjectBudgetItem, updateProjectBudgetItem, deleteProjectBudgetItem,
-  getDashboardStatistics, getGlobalDashboardSummary, getProjectsStatistics, getTasksStatistics, getFinanceStatistics, getMembersStatistics,
+  getDashboardStatistics, getGlobalDashboardSummary, getProjectsStatistics, getTasksStatistics, getFinanceStatistics, getMembersStatistics, getSignatureDeliveryDashboard,
   createMemberCertificate, getMemberCertificates,
   getAllUsers, getUserById, updateUserRole, getAdminCount, isUserAdmin,
   getAnnouncements, createAnnouncement, updateAnnouncement, deleteAnnouncement,
@@ -2185,6 +2185,11 @@ export const appRouter = router({
 
     members: protectedProcedure.query(async () => {
       return await getMembersStatistics();
+    }),
+
+    signatureDelivery: protectedProcedure.query(async ({ ctx }) => {
+      await assertPermission(ctx.user, "signatures.view");
+      return await getSignatureDeliveryDashboard();
     }),
   }),
 

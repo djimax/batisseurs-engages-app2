@@ -749,6 +749,53 @@ export async function getSignatureExportData(id: number) {
   return { request, document: { id: document.id, title: document.title, description: document.description, fileName: document.fileName, fileType: document.fileType, fileSize: document.fileSize, fileUrl: document.fileUrl }, audit };
 }
 
+export function resolveSignatureDeliveryStatus(eventAction: string | undefined, requestStatus: string) {
+  if (eventAction === "EMAIL_SENT") return "sent" as const;
+  if (eventAction === "EMAIL_FAILED") return "failed" as const;
+  if (eventAction === "EMAIL_SKIPPED") return "skipped" as const;
+  return requestStatus === "completed" ? "pending" as const : "not-ready" as const;
+}
+
+export async function getSignatureDeliveryDashboard(limit = 20) {
+  const db = await getDb();
+  if (!db) return { summary: { sent: 0, failed: 0, skipped: 0, pending: 0, notReady: 0 }, requests: [] };
+  const requests = await db.select().from(signatureRequests).orderBy(desc(signatureRequests.createdAt)).limit(limit);
+  const enriched = await Promise.all(requests.map(async (request) => {
+    const signers = await db.select().from(signatureSigners).where(eq(signatureSigners.requestId, request.id)).orderBy(asc(signatureSigners.orderIndex));
+    const audits = await db.select({ action: auditLogs.action, description: auditLogs.description, status: auditLogs.status, createdAt: auditLogs.createdAt, newValue: auditLogs.newValue }).from(auditLogs).where(and(eq(auditLogs.entityType, "signature_request"), eq(auditLogs.entityId, request.id))).orderBy(desc(auditLogs.createdAt));
+    return {
+      id: request.id,
+      documentId: request.documentId,
+      subject: request.subject,
+      status: request.status,
+      completedAt: request.completedAt,
+      signers: signers.map((signer) => {
+        const event = audits.find((audit) => ["EMAIL_SENT", "EMAIL_FAILED", "EMAIL_SKIPPED"].includes(audit.action) && Boolean(audit.description?.includes(signer.signerEmail)));
+        let messageId: string | null = null;
+        if (event?.newValue) { try { messageId = JSON.parse(event.newValue).messageId ?? null; } catch { messageId = null; } }
+        return {
+          id: signer.id,
+          name: signer.signerName,
+          email: signer.signerEmail,
+          status: resolveSignatureDeliveryStatus(event?.action, request.status),
+          lastAttemptAt: event?.createdAt ?? null,
+          detail: event?.description ?? null,
+          messageId,
+        } as const;
+      }),
+    };
+  }));
+  const summary = { sent: 0, failed: 0, skipped: 0, pending: 0, notReady: 0 };
+  for (const request of enriched) for (const signer of request.signers) {
+    if (signer.status === "sent") summary.sent += 1;
+    else if (signer.status === "failed") summary.failed += 1;
+    else if (signer.status === "skipped") summary.skipped += 1;
+    else if (signer.status === "pending") summary.pending += 1;
+    else summary.notReady += 1;
+  }
+  return { summary, requests: enriched };
+}
+
 export async function cancelSignatureRequest(id: number) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");

@@ -1968,3 +1968,12 @@
 - [x] Journaliser les envois, refus de consentement et erreurs sans annuler la signature
 - [x] Ajouter les tests de pièce jointe, consentement, doublon et panne Brevo
 - [x] Valider TypeScript, tests, build et sauvegarder le jalon
+
+## Suivi des e-mails PDF signés
+- [x] Auditer les journaux d’envoi et le tableau de bord existant
+- [x] Définir les statuts de livraison, dates et règles de relance
+- [x] Ajouter l’agrégat tRPC par demande et par signataire
+- [x] Afficher les badges et détails de livraison dans le tableau de bord
+- [ ] Ajouter une relance sécurisée uniquement pour les échecs ou absences d’envoi
+- [x] Ajouter les tests de calculs, permissions et régression UI
+- [x] Valider TypeScript, tests, build et sauvegarder le jalon
