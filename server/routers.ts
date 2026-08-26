@@ -9,7 +9,7 @@ import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import { 
   getAllCategories, getCategoryById, createCategory, seedDefaultCategories,
-  getAllDocuments, getDocumentById, createDocument, updateDocument, deleteDocument, getDocumentStats, seedDefaultDocuments, getDocumentVersions, createDocumentVersion, getDocumentPermissions, setDocumentPermission, removeDocumentPermission,
+  getAllDocuments, getDocumentById, createDocument, updateDocument, deleteDocument, getDocumentStats, seedDefaultDocuments, getDocumentVersions, createDocumentVersion, getDocumentPermissions, setDocumentPermission, removeDocumentPermission, getDocumentPermissionForUser, getAccessibleDocumentIds,
   getNotesByDocumentId, createNote, deleteNote,
   getAllMembers, getAllMembersWithGrades, getMemberById, createMember, updateMember, deleteMember,
   logActivity, getRecentActivity,
@@ -59,6 +59,12 @@ import { signatureRouter } from "./signature-router";
 import { purchasesRouter } from "./purchases-router";
 
 // Note: Email procedures are now in email-router.ts and imported above
+
+async function assertDocumentCapability(user: { id: number; role?: string | null }, documentId: number, capability: "canView" | "canEdit" | "canDelete") {
+  if (user.role === "admin") return;
+  const permission = await getDocumentPermissionForUser(documentId, user.id);
+  if (!permission || permission[capability] !== 1) throw new TRPCError({ code: "FORBIDDEN", message: "Vous n’avez pas accès à cette opération sur ce document." });
+}
 
 export const appRouter = router({
   system: systemRouter,
@@ -131,28 +137,34 @@ export const appRouter = router({
         await assertPermission(ctx.user, "documents.view");
         await seedDefaultCategories();
         await seedDefaultDocuments();
-        return getAllDocuments({
+        const allDocuments = await getAllDocuments({
           ...input,
           isArchived: input?.isArchived ? 1 : input?.isArchived === false ? 0 : undefined,
         });
+        if (ctx.user.role === "admin") return allDocuments;
+        const accessibleIds = await getAccessibleDocumentIds(ctx.user.id, "canView");
+        return allDocuments.filter((document) => accessibleIds.includes(document.id));
       }),
     
     getById: protectedProcedure
       .input(z.object({ id: z.number().int().positive() }))
             .query(async ({ input, ctx }) => {
         await assertPermission(ctx.user, "documents.view");
+        await assertDocumentCapability(ctx.user, input.id, "canView");
         return getDocumentById(input.id);
       }),
     versions: protectedProcedure
       .input(z.object({ documentId: z.number().int().positive() }))
       .query(async ({ input, ctx }) => {
         await assertPermission(ctx.user, "documents.view");
+        await assertDocumentCapability(ctx.user, input.documentId, "canView");
         return getDocumentVersions(input.documentId);
       }),
     permissions: protectedProcedure
       .input(z.object({ documentId: z.number().int().positive() }))
       .query(async ({ input, ctx }) => {
         await assertPermission(ctx.user, "documents.view");
+        await assertDocumentCapability(ctx.user, input.documentId, "canView");
         return getDocumentPermissions(input.documentId);
       }),
     share: protectedProcedure
@@ -228,6 +240,7 @@ export const appRouter = router({
       }))
       .mutation(async ({ input, ctx }) => {
         await assertPermission(ctx.user, "documents.manage");
+        await assertDocumentCapability(ctx.user, input.id, "canEdit");
         const { id, ...data } = input;
         const convertedData = {
           ...data,
@@ -280,6 +293,7 @@ export const appRouter = router({
       .input(z.object({ id: z.number().int().positive() }))
       .mutation(async ({ input, ctx }) => {
         await assertPermission(ctx.user, "documents.manage");
+        await assertDocumentCapability(ctx.user, input.id, "canDelete");
         await deleteDocument(input.id);
         await logActivity({
           userId: ctx.user.id,
@@ -302,6 +316,7 @@ export const appRouter = router({
       }))
       .mutation(async ({ input, ctx }) => {
         await assertPermission(ctx.user, "documents.manage");
+        await assertDocumentCapability(ctx.user, input.documentId, "canEdit");
         const { documentId, fileName, fileType, fileSize, fileBase64 } = input;
         
         // Convert base64 to buffer and reject forged size metadata
@@ -351,6 +366,7 @@ export const appRouter = router({
       .input(z.object({ documentId: z.number().int().positive() }))
       .mutation(async ({ input, ctx }) => {
         await assertPermission(ctx.user, "documents.manage");
+        await assertDocumentCapability(ctx.user, input.documentId, "canEdit");
         await updateDocument(input.documentId, {
           fileUrl: null,
           fileKey: null,

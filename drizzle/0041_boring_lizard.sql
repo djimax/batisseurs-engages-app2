@@ -9,7 +9,8 @@ CREATE TABLE `document_versions` (
 	`fileSize` int NOT NULL,
 	`contentHash` varchar(128) NOT NULL,
 	`uploadedBy` int NOT NULL,
-	`createdAt` timestamp NOT NULL DEFAULT 'CURRENT_TIMESTAMP'
+	`createdAt` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+	PRIMARY KEY (`id`)
 );
 --> statement-breakpoint
 CREATE INDEX `document_versions_document_idx` ON `document_versions` (`documentId`);--> statement-breakpoint

@@ -1,0 +1,2 @@
+-- La clé primaire de document_versions est incluse dans la migration 0041.
+-- Cette migration est conservée comme marqueur de génération et n’exécute aucune opération.

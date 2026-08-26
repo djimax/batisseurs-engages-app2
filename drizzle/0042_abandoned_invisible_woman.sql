@@ -1,0 +1,1 @@
+ALTER TABLE `document_versions` MODIFY COLUMN `createdAt` timestamp NOT NULL DEFAULT (now());

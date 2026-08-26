@@ -311,6 +311,20 @@ export async function deleteDocument(id: number) {
   await db.delete(documents).where(eq(documents.id, id));
 }
 
+export async function getDocumentPermissionForUser(documentId: number, userId: number) {
+  const db = await getDb();
+  if (!db) return undefined;
+  const rows = await db.select({ permission: documentPermissions }).from(documentPermissions).innerJoin(members, eq(members.id, documentPermissions.memberId)).where(and(eq(documentPermissions.documentId, documentId), eq(members.userId, userId), eq(members.status, "active"))).limit(1);
+  return rows[0]?.permission;
+}
+
+export async function getAccessibleDocumentIds(userId: number, capability: "canView" | "canEdit" | "canDelete" = "canView") {
+  const db = await getDb();
+  if (!db) return [];
+  const rows = await db.select({ documentId: documentPermissions.documentId }).from(documentPermissions).innerJoin(members, eq(members.id, documentPermissions.memberId)).where(and(eq(members.userId, userId), eq(members.status, "active"), eq(documentPermissions[capability], 1)));
+  return rows.map((row) => row.documentId);
+}
+
 export async function getDocumentPermissions(documentId: number) {
   const db = await getDb();
   if (!db) return [];

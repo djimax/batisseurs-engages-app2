@@ -71,12 +71,34 @@ describe("Categories Router", () => {
 });
 
 describe("Documents Router", () => {
+  it("keeps the document version migration valid for a clean MySQL/TiDB setup", () => {
+    const migration = readFileSync(new URL("../drizzle/0041_boring_lizard.sql", import.meta.url), "utf8");
+    expect(migration).not.toContain("DEFAULT 'CURRENT_TIMESTAMP'");
+  });
+
   it("exports document due dates as an ICS calendar from the Documents page", () => {
     const source = readFileSync(new URL("../client/src/pages/Documents.tsx", import.meta.url), "utf8");
     expect(source).toContain("text/calendar;charset=utf-8");
     expect(source).toContain("echeances-documentaires.ics");
     expect(source).toContain("DTSTART;VALUE=DATE");
     expect(source).toContain("UID:document-");
+  });
+
+  it("enforces member-scoped document permissions on sensitive server operations", () => {
+    const source = readFileSync(new URL("./routers.ts", import.meta.url), "utf8");
+    expect(source).toContain("assertDocumentCapability(ctx.user, input.id, \"canView\")");
+    expect(source).toContain("assertDocumentCapability(ctx.user, input.id, \"canEdit\")");
+    expect(source).toContain("assertDocumentCapability(ctx.user, input.id, \"canDelete\")");
+    expect(source).toContain("getAccessibleDocumentIds(ctx.user.id, \"canView\")");
+    expect(source).toContain("members.userId");
+  });
+
+  it("records uploaded document versions with a stable content hash", () => {
+    const source = readFileSync(new URL("./routers.ts", import.meta.url), "utf8");
+    expect(source).toContain("getDocumentVersions(documentId)");
+    expect(source).toContain("createDocumentVersion");
+    expect(source).toContain('createHash("sha256")');
+    expect(source).toContain("versions: protectedProcedure");
   });
 
   it("logs the administrative document lifecycle in the central audit trail", async () => {

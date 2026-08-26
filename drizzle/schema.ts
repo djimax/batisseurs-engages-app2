@@ -414,7 +414,7 @@ export const documents = mysqlTable("documents", {
 });
 
 export const documentVersions = mysqlTable("document_versions", {
-  id: int().autoincrement().notNull(),
+  id: int().primaryKey().autoincrement().notNull(),
   documentId: int().notNull(),
   versionNumber: int().notNull(),
   fileUrl: text().notNull(),
@@ -424,7 +424,7 @@ export const documentVersions = mysqlTable("document_versions", {
   fileSize: int().notNull(),
   contentHash: varchar({ length: 128 }).notNull(),
   uploadedBy: int().notNull(),
-  createdAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
+  createdAt: timestamp({ mode: 'string' }).defaultNow().notNull(),
 }, (table) => ({
   documentIdx: index("document_versions_document_idx").on(table.documentId),
   documentVersionIdx: index("document_versions_document_version_idx").on(table.documentId, table.versionNumber),

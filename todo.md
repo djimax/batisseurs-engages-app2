@@ -74,10 +74,10 @@
 ## Fonctionnalités Futures (Non Implémentées)
 - [x] Système de dates d'échéance avec rappels automatiques
 - [x] Notifications par email pour les documents urgents
-- [ ] Intégration calendrier pour les échéances
-- [ ] Système d'approbation de documents
-- [ ] Historique des versions de documents
-- [ ] Partage de documents avec permissions granulaires
+- [x] Intégration calendrier pour les échéances
+- [x] Système d'approbation de documents
+- [ ] Historique des versions de documents (Renforcement production requis)
+- [ ] Partage de documents avec permissions granulaires (Application serveur requise)
 - [ ] Commentaires collaboratifs sur les documents
 - [ ] Intégration avec Google Drive ou OneDrive
 - [x] Signature électronique des documents
@@ -2018,3 +2018,8 @@
 - [x] Ajouter un circuit d’approbation documentaire explicite avec statut, approbateur et date d’approbation
 - [x] Ajouter un historique versionné des fichiers documentaires avec métadonnées et consultation
 - [x] Ajouter le partage documentaire par membre avec droits de consultation, modification et suppression
+- [x] Appliquer effectivement les permissions documentaires par membre sur liste, détail, modification, suppression, upload et archivage
+- [x] Relier l’utilisateur authentifié à son profil membre pour évaluer les permissions documentaires
+- [x] Ajouter des tests prouvant l’application effective des permissions documentaires côté serveur
+- [x] Corriger et régénérer la migration document_versions avec un SQL valide pour MySQL/TiDB
+- [x] Ajouter un test de création et consultation d’une version documentaire après upload
