@@ -111,6 +111,30 @@ export const signatureRouter = router({
       return result;
     }),
 
+  retryProofEmail: protectedProcedure
+    .input(z.object({ requestId: z.number().int().positive(), signerId: z.number().int().positive() }))
+    .mutation(async ({ input, ctx }) => {
+      await assertPermission(ctx.user, "signatures.manage");
+      const data = await getSignatureExportData(input.requestId);
+      if (!data) throw new Error("La demande doit être entièrement signée");
+      const signer = data.request.signers.find((item) => item.id === input.signerId);
+      if (!signer) throw new Error("Signataire introuvable");
+      const alreadySent = data.audit.some((entry) => entry.action === "EMAIL_SENT" && entry.description?.includes(signer.signerEmail));
+      if (alreadySent) throw new Error("Le PDF a déjà été envoyé à ce signataire");
+      if (!signer.signerEmail) throw new Error("Le signataire ne possède pas d’adresse e-mail");
+      const member = await getMemberById(signer.memberId);
+      if (member?.userId && (await getOrCreateNotificationPreferences(member.userId))?.emailEnabled === 0) throw new Error("Le signataire a désactivé les e-mails");
+      try {
+        const pdf = buildSignedDocumentPdf(data);
+        const result = await sendTransactionalEmail({ to: { email: signer.signerEmail, name: signer.signerName }, subject: `Document signé — ${data.request.subject}`, textContent: `Bonjour ${signer.signerName},\\n\\nLa preuve PDF du document « ${data.document.title} » est jointe à cet e-mail.\\n\\nEmpreinte du document : ${data.request.documentHash}`, attachment: [{ name: `document-signe-${input.requestId}.pdf`, content: pdf.toString("base64") }] });
+        await logAudit({ userId: ctx.user.id, action: "EMAIL_SENT", entityType: "signature_request", entityId: input.requestId, entityName: data.request.subject, description: `PDF signé envoyé à ${signer.signerEmail} (relance)`, newValue: JSON.stringify({ messageId: result.messageId, documentHash: data.request.documentHash, retry: true }), status: "success" });
+        return { success: true, messageId: result.messageId } as const;
+      } catch (error) {
+        await logAudit({ userId: ctx.user.id, action: "EMAIL_FAILED", entityType: "signature_request", entityId: input.requestId, entityName: data.request.subject, description: `Échec de relance du PDF à ${signer.signerEmail}`, newValue: JSON.stringify({ error: error instanceof Error ? error.message : "Erreur inconnue", retry: true }), status: "failed" });
+        throw error;
+      }
+    }),
+
   exportData: protectedProcedure
     .input(z.object({ id: z.number().int().positive() }))
     .query(async ({ input, ctx }) => {

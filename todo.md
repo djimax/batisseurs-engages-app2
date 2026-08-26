@@ -1974,6 +1974,15 @@
 - [x] Définir les statuts de livraison, dates et règles de relance
 - [x] Ajouter l’agrégat tRPC par demande et par signataire
 - [x] Afficher les badges et détails de livraison dans le tableau de bord
-- [ ] Ajouter une relance sécurisée uniquement pour les échecs ou absences d’envoi
+- [x] Ajouter une relance sécurisée uniquement pour les échecs ou absences d’envoi
 - [x] Ajouter les tests de calculs, permissions et régression UI
+- [x] Valider TypeScript, tests, build et sauvegarder le jalon
+
+## Relance manuelle des PDF signés
+- [x] Auditer les statuts et événements de livraison existants
+- [x] Ajouter une procédure sécurisée de relance par signataire
+- [x] Respecter consentement, absence d’e-mail et prévention des doublons
+- [x] Ajouter le bouton de relance dans le tableau de bord avec confirmation
+- [x] Journaliser chaque relance et isoler les erreurs Brevo
+- [x] Ajouter les tests de permission, idempotence et non-régression
 - [x] Valider TypeScript, tests, build et sauvegarder le jalon

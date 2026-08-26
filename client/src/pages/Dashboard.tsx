@@ -30,6 +30,7 @@ import {
   MailWarning,
   MailX,
   Clock3,
+  RefreshCw,
 } from "lucide-react";
 import { MemberGradesChartWidget } from "@/components/MemberGradesChartWidget";
 import {
@@ -62,6 +63,19 @@ export default function Dashboard() {
   const [isEditMode, setIsEditMode] = useState(false);
   const [draggedWidget, setDraggedWidget] = useState<string | null>(null);
   const [transitioningGrade, setTransitioningGrade] = useState<string | null>(null);
+  const [retryingSignerId, setRetryingSignerId] = useState<number | null>(null);
+  const utils = trpc.useUtils();
+  const retryProofEmail = trpc.signatures.retryProofEmail.useMutation({
+    onSuccess: async () => {
+      toast.success("Relance envoyée");
+      await utils.dashboard.signatureDelivery.invalidate();
+      setRetryingSignerId(null);
+    },
+    onError: (error) => {
+      toast.error(error.message);
+      setRetryingSignerId(null);
+    },
+  });
 
   // Load widgets configuration from localStorage
   useEffect(() => {
@@ -98,6 +112,12 @@ export default function Dashboard() {
     { label: "Dons", collected: Number(globalSummary.finance.totalDons ?? 0), expenses: 0 },
     { label: "Dépenses", collected: 0, expenses: Number(globalSummary.finance.totalDepenses ?? 0) },
   ] : [];
+
+  const handleRetryProofEmail = (requestId: number, signerId: number, signerName: string) => {
+    if (!window.confirm(`Relancer l’envoi du PDF signé à ${signerName} ?`)) return;
+    setRetryingSignerId(signerId);
+    retryProofEmail.mutate({ requestId, signerId });
+  };
 
   const handleGradeSelect = (grade: string) => {
     setTransitioningGrade(grade);
@@ -283,7 +303,7 @@ export default function Dashboard() {
         </div>
       ) : null}
 
-      {signatureDeliveryLoading ? <Card className="animate-pulse border-primary/10"><CardContent className="h-48 p-4" /></Card> : signatureDelivery ? <Card className="border-primary/15 bg-gradient-to-br from-card via-card to-primary/5 animate-fade-in-up" style={{ animationDelay: "110ms" }}><CardHeader className="pb-3"><div className="flex items-start justify-between gap-4"><div><CardTitle className="flex items-center gap-2"><MailCheck className="h-5 w-5 text-primary" />Livraison des PDF signés</CardTitle><CardDescription>Suivi par signataire après finalisation du document.</CardDescription></div><Button variant="ghost" size="icon" onClick={() => window.location.assign("/documents")} aria-label="Ouvrir les documents"><ArrowUpRight className="h-4 w-4" /></Button></div></CardHeader><CardContent className="space-y-4"><div className="grid grid-cols-2 gap-2 sm:grid-cols-5">{([{ key: "sent", label: "Envoyés", value: signatureDelivery.summary.sent, className: "text-primary" }, { key: "pending", label: "En attente", value: signatureDelivery.summary.pending, className: "text-amber-600" }, { key: "failed", label: "Échecs", value: signatureDelivery.summary.failed, className: "text-destructive" }, { key: "skipped", label: "Refusés", value: signatureDelivery.summary.skipped, className: "text-muted-foreground" }, { key: "notReady", label: "Non finalisés", value: signatureDelivery.summary.notReady, className: "text-muted-foreground" }] as const).map((item) => <div key={item.key} className="rounded-xl border border-border/60 bg-background/60 p-2.5"><p className="text-[11px] text-muted-foreground">{item.label}</p><p className={`mt-1 text-lg font-semibold ${item.className}`}>{item.value}</p></div>)}</div>{signatureDelivery.requests.length === 0 ? <p className="rounded-xl border border-dashed p-4 text-sm text-muted-foreground">Aucune demande de signature enregistrée.</p> : <div className="space-y-2">{signatureDelivery.requests.slice(0, 5).map((request) => <div key={request.id} className="rounded-xl border border-border/60 bg-background/50 p-3"><div className="mb-2 flex flex-wrap items-center justify-between gap-2"><p className="truncate text-sm font-medium">{request.subject}</p><span className="text-xs text-muted-foreground">{request.status === "completed" ? "Finalisé" : "En cours"}</span></div><div className="grid gap-2 sm:grid-cols-2">{request.signers.map((signer) => { const meta = signer.status === "sent" ? { label: "Envoyé", icon: MailCheck, className: "text-primary" } : signer.status === "failed" ? { label: "Échec", icon: MailX, className: "text-destructive" } : signer.status === "skipped" ? { label: "Refusé", icon: MailWarning, className: "text-muted-foreground" } : signer.status === "pending" ? { label: "En attente", icon: Clock3, className: "text-amber-600" } : { label: "Non finalisé", icon: Clock3, className: "text-muted-foreground" }; const Icon = meta.icon; return <div key={signer.id} className="flex min-w-0 items-center justify-between gap-2 rounded-lg bg-muted/35 px-2.5 py-2 text-xs"><div className="min-w-0"><p className="truncate font-medium">{signer.name}</p><p className="truncate text-muted-foreground">{signer.email}</p></div><span className={`flex shrink-0 items-center gap-1 font-medium ${meta.className}`} title={signer.detail ?? meta.label}><Icon className="h-3.5 w-3.5" />{meta.label}</span></div>; })}</div></div>)}</div>}</CardContent></Card> : null}
+      {signatureDeliveryLoading ? <Card className="animate-pulse border-primary/10"><CardContent className="h-48 p-4" /></Card> : signatureDelivery ? <Card className="border-primary/15 bg-gradient-to-br from-card via-card to-primary/5 animate-fade-in-up" style={{ animationDelay: "110ms" }}><CardHeader className="pb-3"><div className="flex items-start justify-between gap-4"><div><CardTitle className="flex items-center gap-2"><MailCheck className="h-5 w-5 text-primary" />Livraison des PDF signés</CardTitle><CardDescription>Suivi par signataire après finalisation du document.</CardDescription></div><Button variant="ghost" size="icon" onClick={() => window.location.assign("/documents")} aria-label="Ouvrir les documents"><ArrowUpRight className="h-4 w-4" /></Button></div></CardHeader><CardContent className="space-y-4"><div className="grid grid-cols-2 gap-2 sm:grid-cols-5">{([{ key: "sent", label: "Envoyés", value: signatureDelivery.summary.sent, className: "text-primary" }, { key: "pending", label: "En attente", value: signatureDelivery.summary.pending, className: "text-amber-600" }, { key: "failed", label: "Échecs", value: signatureDelivery.summary.failed, className: "text-destructive" }, { key: "skipped", label: "Refusés", value: signatureDelivery.summary.skipped, className: "text-muted-foreground" }, { key: "notReady", label: "Non finalisés", value: signatureDelivery.summary.notReady, className: "text-muted-foreground" }] as const).map((item) => <div key={item.key} className="rounded-xl border border-border/60 bg-background/60 p-2.5"><p className="text-[11px] text-muted-foreground">{item.label}</p><p className={`mt-1 text-lg font-semibold ${item.className}`}>{item.value}</p></div>)}</div>{signatureDelivery.requests.length === 0 ? <p className="rounded-xl border border-dashed p-4 text-sm text-muted-foreground">Aucune demande de signature enregistrée.</p> : <div className="space-y-2">{signatureDelivery.requests.slice(0, 5).map((request) => <div key={request.id} className="rounded-xl border border-border/60 bg-background/50 p-3"><div className="mb-2 flex flex-wrap items-center justify-between gap-2"><p className="truncate text-sm font-medium">{request.subject}</p><span className="text-xs text-muted-foreground">{request.status === "completed" ? "Finalisé" : "En cours"}</span></div><div className="grid gap-2 sm:grid-cols-2">{request.signers.map((signer) => { const meta = signer.status === "sent" ? { label: "Envoyé", icon: MailCheck, className: "text-primary" } : signer.status === "failed" ? { label: "Échec", icon: MailX, className: "text-destructive" } : signer.status === "skipped" ? { label: "Refusé", icon: MailWarning, className: "text-muted-foreground" } : signer.status === "pending" ? { label: "En attente", icon: Clock3, className: "text-amber-600" } : { label: "Non finalisé", icon: Clock3, className: "text-muted-foreground" }; const Icon = meta.icon; return <div key={signer.id} className="flex min-w-0 items-center justify-between gap-2 rounded-lg bg-muted/35 px-2.5 py-2 text-xs"><div className="min-w-0"><p className="truncate font-medium">{signer.name}</p><p className="truncate text-muted-foreground">{signer.email}</p></div><div className="flex shrink-0 items-center gap-2"><span className={`flex items-center gap-1 font-medium ${meta.className}`} title={signer.detail ?? meta.label}><Icon className="h-3.5 w-3.5" />{meta.label}</span>{request.status === "completed" && (signer.status === "failed" || signer.status === "pending") ? <Button variant="ghost" size="icon" className="h-7 w-7" aria-label={`Relancer l’e-mail pour ${signer.name}`} title="Relancer l’e-mail" disabled={retryingSignerId === signer.id} onClick={() => handleRetryProofEmail(request.id, signer.id, signer.name)}>{retryingSignerId === signer.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />}</Button> : null}</div></div>; })}</div></div>)}</div>}</CardContent></Card> : null}
 
       {globalSummary && (
         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4 animate-fade-in-up" style={{ animationDelay: "70ms" }}>
