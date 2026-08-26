@@ -1904,6 +1904,6 @@
 - [ ] Ajouter la configuration de l’expéditeur et du domaine vérifié
 - [x] Implémenter un client Brevo avec timeout, validation, journalisation et gestion d’erreur
 - [x] Connecter les e-mails transactionnels de reçus, rappels, convocations et confirmations
-- [ ] Respecter les consentements, désabonnements et préférences des membres
+- [x] Respecter les consentements, désabonnements et préférences des membres
 - [x] Ajouter tests de contrat et de non-régression sans envoyer de vrai e-mail
 - [x] Valider TypeScript, tests, build et sauvegarder l’intégration

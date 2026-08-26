@@ -12,6 +12,7 @@ import { publicProcedure, protectedProcedure, router } from "./_core/trpc";
 import { sendTransactionalEmail } from "./brevo";
 import { assertPermission } from "./authorization";
 import { getTaxReceiptById } from "./financial";
+import { getOrCreateNotificationPreferences } from "./notification-center";
 
 export const emailRouter = router({
   // Email Templates
@@ -265,6 +266,7 @@ export const emailRouter = router({
       const member = await getMemberById(input.memberId);
       if (!member) throw new Error("Membre introuvable");
       if (!member.email) throw new Error("Le membre ne contient pas d’adresse e-mail");
+      if (member.userId && (await getOrCreateNotificationPreferences(member.userId))?.emailEnabled === 0) throw new Error("Le membre a désactivé les e-mails");
       const associationName = (await getGlobalSettings())?.associationName ?? "Les Bâtisseurs Engagés";
       const content = `Bonjour ${member.firstName} ${member.lastName},\n\nVotre inscription à ${associationName} est bien enregistrée. Nous vous remercions pour votre engagement.\n\nCordialement,\n${associationName}`;
       const result = await sendTransactionalEmail({ to: { email: member.email, name: `${member.firstName} ${member.lastName}` }, subject: `Confirmation de votre inscription à ${associationName}`, textContent: content });
@@ -279,6 +281,7 @@ export const emailRouter = router({
       const member = await getMemberById(input.memberId);
       if (!member) throw new Error("Membre introuvable");
       if (!member.email) throw new Error("Le membre ne contient pas d’adresse e-mail");
+      if (member.userId && (await getOrCreateNotificationPreferences(member.userId))?.emailEnabled === 0) throw new Error("Le membre a désactivé les e-mails");
       const dues = await getCotisationsByMember(input.memberId);
       const due = dues.find((cotisation) => cotisation.statut !== "payée");
       if (!due) throw new Error("Aucune cotisation en attente pour ce membre");
