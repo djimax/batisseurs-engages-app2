@@ -1,8 +1,9 @@
 import { z } from "zod";
 import { router, protectedProcedure } from "./_core/trpc";
+import { TRPCError } from "@trpc/server";
 import { assertPermission } from "./authorization";
 import { logAudit } from "./audit";
-import { createPurchaseQuote, createPurchaseRequest, createSupplier, getPurchaseQuotes, getPurchaseRequests, getSuppliers, updatePurchaseRequest, updateSupplier } from "./db";
+import { createPurchaseQuote, createPurchaseRequest, createSupplier, getPurchaseBudgetStatus, getPurchaseQuotes, getPurchaseRequests, getSuppliers, updatePurchaseRequest, updateSupplier } from "./db";
 
 const amountSchema = z.string().trim().regex(/^\d+(\.\d{1,2})?$/, "Montant invalide").refine((value) => Number(value) > 0, "Le montant doit être positif");
 
@@ -28,8 +29,16 @@ export const purchasesRouter = router({
     await assertPermission(ctx.user, "purchases.view");
     return getPurchaseRequests();
   }),
+  budgetStatus: protectedProcedure.input(z.object({ projectId: z.number().int().positive(), category: z.string().trim().min(2).max(100), requestedAmount: amountSchema })).query(async ({ input, ctx }) => {
+    await assertPermission(ctx.user, "purchases.view");
+    return getPurchaseBudgetStatus(input.projectId, input.category, Number(input.requestedAmount));
+  }),
   createRequest: protectedProcedure.input(z.object({ supplierId: z.number().int().positive().nullable().optional(), projectId: z.number().int().positive().nullable().optional(), description: z.string().trim().min(3).max(500), category: z.string().trim().min(2).max(100), amount: amountSchema, currency: z.enum(["EUR", "XOF"]), neededBy: z.string().datetime().nullable().optional(), justification: z.string().max(5000).nullable().optional(), status: z.enum(["draft", "submitted"]).default("draft") })).mutation(async ({ input, ctx }) => {
     await assertPermission(ctx.user, "purchases.manage");
+    if (input.status === "submitted" && input.projectId) {
+      const budget = await getPurchaseBudgetStatus(input.projectId, input.category, Number(input.amount));
+      if (!budget.withinBudget) throw new TRPCError({ code: "CONFLICT", message: `Budget projet insuffisant : ${budget.remaining.toFixed(2)} disponible(s)` });
+    }
     const request = await createPurchaseRequest({ ...input, requestedBy: ctx.user.id });
     await logAudit({ userId: ctx.user.id, action: "CREATE", entityType: "purchase_request", entityId: request?.id, description: `Demande d’achat créée : ${input.description}`, status: "success" });
     return request;

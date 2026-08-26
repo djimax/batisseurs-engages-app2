@@ -1993,9 +1993,11 @@
 - [x] Ajouter le schéma et la migration non destructive
 - [x] Ajouter helpers et procédures tRPC sécurisées avec audit
 - [x] Créer l’interface fournisseurs et achats avec états de validation
-- [ ] Ajouter contrôles budgétaires et traçabilité
+- [x] Ajouter contrôles budgétaires et traçabilité
 - [x] Ajouter tests de calculs, permissions et non-régression
+- [x] Ajouter tests de non-régression du contrôle budgétaire et de la consultation budgétaire
 - [x] Valider TypeScript, tests, build et sauvegarder le jalon
 - [x] Corriger les références tRPC `signatures` incohérentes révélées par la validation du module achats
 - [x] Corriger les assertions du test achats pour refléter les statuts validés par le schéma Zod
 - [x] Ajouter l’export CSV des demandes et l’onglet de consultation des devis
+- [x] Relier le formulaire d’achat aux projets et appliquer le contrôle de budget à la soumission

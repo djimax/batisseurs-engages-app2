@@ -846,6 +846,17 @@ export async function createPurchaseRequest(data: typeof purchaseRequests.$infer
   return db.select().from(purchaseRequests).where(eq(purchaseRequests.id, Number(result[0].insertId))).limit(1).then((rows) => rows[0]);
 }
 
+export async function getPurchaseBudgetStatus(projectId: number, category: string, requestedAmount: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const budgetRows = await db.select({ allocated: sql<number>`coalesce(sum(cast(${projectBudgetItems.amount} as decimal(15,2))), 0)`, spent: sql<number>`coalesce(sum(cast(${projectBudgetItems.spent} as decimal(15,2))), 0)` }).from(projectBudgetItems).where(and(eq(projectBudgetItems.projectId, projectId), eq(projectBudgetItems.category, category)));
+  const committedRows = await db.select({ committed: sql<number>`coalesce(sum(cast(${purchaseRequests.amount} as decimal(15,2))), 0)` }).from(purchaseRequests).where(and(eq(purchaseRequests.projectId, projectId), eq(purchaseRequests.category, category), inArray(purchaseRequests.status, ["submitted", "approved", "ordered", "received"])));
+  const allocated = Number(budgetRows[0]?.allocated ?? 0);
+  const spent = Number(budgetRows[0]?.spent ?? 0);
+  const committed = Number(committedRows[0]?.committed ?? 0);
+  return { allocated, spent, committed, remaining: allocated - spent - committed, requestedAmount, withinBudget: allocated <= 0 || allocated - spent - committed >= requestedAmount };
+}
+
 export async function updatePurchaseRequest(id: number, data: Partial<typeof purchaseRequests.$inferInsert>) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
