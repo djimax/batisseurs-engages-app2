@@ -47,6 +47,14 @@ describe("purchases and suppliers module", () => {
     expect(router).toContain('assertPermission(ctx.user, "purchases.view")');
   });
 
+  it("rejects orphan quotes and inactive suppliers", () => {
+    const router = readFileSync(new URL("./purchases-router.ts", import.meta.url), "utf8");
+    expect(router).toContain("Demande d’achat introuvable");
+    expect(router).toContain("Fournisseur introuvable");
+    expect(router).toContain("fournisseur sélectionné est inactif");
+    expect(router).toContain("getSupplierById");
+  });
+
   it("rechecks the budget before approval", () => {
     const router = readFileSync(new URL("./purchases-router.ts", import.meta.url), "utf8");
     expect(router).toContain("getPurchaseRequestById");

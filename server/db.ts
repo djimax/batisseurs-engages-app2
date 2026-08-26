@@ -829,6 +829,11 @@ export async function updateSupplier(id: number, data: Partial<typeof suppliers.
   await db.update(suppliers).set(data).where(eq(suppliers.id, id));
   return db.select().from(suppliers).where(eq(suppliers.id, id)).limit(1).then((rows) => rows[0]);
 }
+export async function getSupplierById(id: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  return db.select().from(suppliers).where(eq(suppliers.id, id)).limit(1).then((rows) => rows[0]);
+}
 
 export async function getPurchaseRequests() {
   const db = await getDb();

@@ -5,7 +5,7 @@ import { nanoid } from "nanoid";
 import { storagePut } from "./storage";
 import { assertPermission } from "./authorization";
 import { logAudit } from "./audit";
-import { createPurchaseQuote, createPurchaseRequest, createSupplier, getPurchaseBudgetStatus, getPurchaseQuotes, getPurchaseRequestById, getPurchaseRequests, getSuppliers, selectPurchaseQuote, updatePurchaseRequest, updateSupplier } from "./db";
+import { createPurchaseQuote, createPurchaseRequest, createSupplier, getPurchaseBudgetStatus, getPurchaseQuotes, getPurchaseRequestById, getPurchaseRequests, getSupplierById, getSuppliers, selectPurchaseQuote, updatePurchaseRequest, updateSupplier } from "./db";
 
 const amountSchema = z.string().trim().regex(/^\d+(\.\d{1,2})?$/, "Montant invalide").refine((value) => Number(value) > 0, "Le montant doit être positif");
 
@@ -64,6 +64,11 @@ export const purchasesRouter = router({
   }),
   createQuote: protectedProcedure.input(z.object({ purchaseRequestId: z.number().int().positive(), supplierId: z.number().int().positive(), quoteNumber: z.string().max(100).nullable().optional(), amount: amountSchema, currency: z.enum(["EUR", "XOF"]), documentUrl: z.string().url().nullable().optional(), validUntil: z.string().datetime().nullable().optional(), document: z.object({ fileName: z.string().trim().min(1).max(255).refine((name) => !name.includes("/") && !name.includes("\\") && !name.includes("\0"), "Nom de fichier invalide"), fileType: z.enum(["application/pdf", "image/jpeg", "image/png"]), fileSize: z.number().int().positive().max(10 * 1024 * 1024), fileBase64: z.string().regex(/^[A-Za-z0-9+/]*={0,2}$/, "Contenu Base64 invalide").max(15 * 1024 * 1024) }).nullable().optional() })).mutation(async ({ input, ctx }) => {
     await assertPermission(ctx.user, "purchases.manage");
+    const request = await getPurchaseRequestById(input.purchaseRequestId);
+    if (!request) throw new TRPCError({ code: "NOT_FOUND", message: "Demande d’achat introuvable" });
+    const supplier = await getSupplierById(input.supplierId);
+    if (!supplier) throw new TRPCError({ code: "NOT_FOUND", message: "Fournisseur introuvable" });
+    if (supplier.status !== "active") throw new TRPCError({ code: "CONFLICT", message: "Le fournisseur sélectionné est inactif" });
     let documentUrl = input.documentUrl ?? null;
     if (input.document) {
       const fileBuffer = Buffer.from(input.document.fileBase64, "base64");

@@ -2007,3 +2007,4 @@
 - [x] Valider TypeScript, 351 tests et le build de production pour le flux de devis
 - [x] Vérifier à nouveau le budget projet lors de l’approbation d’une demande d’achat
 - [x] Afficher les échéances et l’état expiré des devis dans l’interface achats
+- [x] Refuser les devis liés à une demande inexistante ou à un fournisseur inactif
