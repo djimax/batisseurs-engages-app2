@@ -5,7 +5,7 @@ CREATE TABLE `notification_schedules` (
 	`cronExpression` varchar(32) NOT NULL,
 	`isEnabled` int NOT NULL DEFAULT 1,
 	`lastRunAt` timestamp,
-	`createdAt` timestamp NOT NULL DEFAULT 'CURRENT_TIMESTAMP',
+	`createdAt` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
 	`updatedAt` timestamp NOT NULL DEFAULT (now()) ON UPDATE CURRENT_TIMESTAMP,
 	CONSTRAINT `notification_schedules_name_unique` UNIQUE(`name`),
 	CONSTRAINT `notification_schedules_task_uid_unique` UNIQUE(`scheduleCronTaskUid`)

@@ -7,7 +7,7 @@ CREATE TABLE `signature_requests` (
 	`status` enum('pending','partially-signed','completed','cancelled','expired') NOT NULL DEFAULT 'pending',
 	`expiresAt` timestamp,
 	`completedAt` timestamp,
-	`createdAt` timestamp NOT NULL DEFAULT 'CURRENT_TIMESTAMP',
+	`createdAt` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
 	`updatedAt` timestamp NOT NULL DEFAULT (now()) ON UPDATE CURRENT_TIMESTAMP
 );
 --> statement-breakpoint
@@ -23,7 +23,7 @@ CREATE TABLE `signature_signers` (
 	`signedAt` timestamp,
 	`consentAt` timestamp,
 	`evidenceHash` varchar(128),
-	`createdAt` timestamp NOT NULL DEFAULT 'CURRENT_TIMESTAMP',
+	`createdAt` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
 	`updatedAt` timestamp NOT NULL DEFAULT (now()) ON UPDATE CURRENT_TIMESTAMP
 );
 --> statement-breakpoint

@@ -6,8 +6,8 @@ CREATE TABLE `member_evaluations` (
 	`gradeProposed` varchar(100) NOT NULL,
 	`responsibilitiesAssigned` text,
 	`comments` text NOT NULL,
-	`evaluatedAt` timestamp NOT NULL DEFAULT 'CURRENT_TIMESTAMP',
-	`createdAt` timestamp NOT NULL DEFAULT 'CURRENT_TIMESTAMP'
+	`evaluatedAt` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+	`createdAt` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 --> statement-breakpoint
 CREATE TABLE `member_grades` (
@@ -16,7 +16,7 @@ CREATE TABLE `member_grades` (
 	`currentGrade` varchar(100) NOT NULL DEFAULT 'Membre Adhérent',
 	`currentResponsibilities` text,
 	`lastEvaluationId` int,
-	`promotedAt` timestamp NOT NULL DEFAULT 'CURRENT_TIMESTAMP',
+	`promotedAt` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
 	`updatedAt` timestamp NOT NULL DEFAULT (now()) ON UPDATE CURRENT_TIMESTAMP,
 	CONSTRAINT `member_grades_memberId_unique` UNIQUE(`memberId`)
 );

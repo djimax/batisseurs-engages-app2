@@ -1,4 +1,4 @@
-ALTER TABLE `members` DROP INDEX `members_memberID_unique`;--> statement-breakpoint
+-- Index members_memberID_unique absent sur les bases vierges ; aucune suppression nécessaire.--> statement-breakpoint
 ALTER TABLE `adhesions` MODIFY COLUMN `annee` int;--> statement-breakpoint
 ALTER TABLE `adhesions` MODIFY COLUMN `montant` decimal(10,2) NOT NULL;--> statement-breakpoint
 ALTER TABLE `adhesions` MODIFY COLUMN `dateAdhesion` timestamp;--> statement-breakpoint

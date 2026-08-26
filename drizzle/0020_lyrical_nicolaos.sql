@@ -1,1 +1,1 @@
-ALTER TABLE `members` ADD COLUMN `photo` text;--> statement-breakpoint
+-- La colonne photo est déjà créée par la migration 0019 ; marqueur conservé pour la chaîne historique.

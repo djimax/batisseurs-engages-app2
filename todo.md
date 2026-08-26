@@ -76,7 +76,7 @@
 - [x] Notifications par email pour les documents urgents
 - [x] Intégration calendrier pour les échéances
 - [x] Système d'approbation de documents
-- [ ] Historique des versions de documents (chaîne Drizzle cohérente et tests de contrat validés ; exécution sur base MySQL vierge à finaliser)
+- [x] Historique des versions de documents (chaîne Drizzle cohérente et tests de contrat validés ; migration vierge exécutée avec succès)
 - [x] Partage de documents avec permissions granulaires (flux tRPC non-admin lié à members.userId validé)
 - [x] Commentaires collaboratifs sur les documents
 - [ ] Intégration avec Google Drive ou OneDrive
@@ -2027,13 +2027,13 @@
 - [x] Ajouter la traçabilité centralisée des créations et suppressions de commentaires
 - [x] Distinguer explicitement les commentaires collaboratifs des notes simples et tester cette capacité
 - [x] Exécuter un test d’intégration réel upload puis consultation d’une version documentaire avec empreinte SHA-256
-- [ ] Vérifier la chaîne complète des migrations document_versions sur une base vierge
+- [x] Vérifier la chaîne complète des migrations document_versions sur une base vierge (base temporaire isolée, tables document_versions et __drizzle_migrations vérifiées)
 - [x] Appliquer et tester les permissions granulaires sur archivage et restauration documentaire
 - [x] Ajouter des tests d’autorisation par membre pour canView, canEdit et canDelete
 - [x] Garantir automatiquement l’accès du créateur ou propriétaire non administrateur à ses documents
 - [x] Ajouter de vrais tests serveur d’autorisation par membre lié pour canView, canEdit et canDelete
-- [ ] Valider la chaîne complète des migrations documentaires sur une base vierge après correction
-- [ ] Exécuter et documenter une validation réelle de toutes les migrations documentaires sur une base vierge
+- [x] Valider la chaîne complète des migrations documentaires sur une base vierge après correction (chaîne complète appliquée avec succès)
+- [x] Exécuter et documenter une validation réelle de toutes les migrations documentaires sur une base vierge (scripts/validate-fresh-migrations.mjs, base temporaire supprimée après contrôle)
 - [x] Exécuter un flux d’autorisation non-admin lié à members.userId couvrant canView, canEdit, canDelete et archivage/restauration
 
 - [x] Étendre l’audit centralisé à la restauration des documents et ajouter un test de non-régression RESTORE.

@@ -6,7 +6,7 @@ CREATE TABLE `membership_fee_rules` (
 	`isActive` int NOT NULL DEFAULT 1,
 	`validFrom` date NOT NULL,
 	`createdBy` int,
-	`createdAt` timestamp NOT NULL DEFAULT 'CURRENT_TIMESTAMP',
+	`createdAt` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
 	`updatedAt` timestamp NOT NULL DEFAULT (now()) ON UPDATE CURRENT_TIMESTAMP
 );
 --> statement-breakpoint

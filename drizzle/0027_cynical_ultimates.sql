@@ -4,7 +4,7 @@ CREATE TABLE `project_task_comments` (
 	`projectId` int NOT NULL,
 	`authorId` int NOT NULL,
 	`content` text NOT NULL,
-	`createdAt` timestamp NOT NULL DEFAULT 'CURRENT_TIMESTAMP',
+	`createdAt` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
 	`updatedAt` timestamp NOT NULL DEFAULT (now()) ON UPDATE CURRENT_TIMESTAMP
 );
 --> statement-breakpoint

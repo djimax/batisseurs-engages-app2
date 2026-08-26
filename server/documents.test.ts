@@ -85,6 +85,20 @@ describe("Documents Router", () => {
     expect(migration).toContain("PRIMARY KEY (`id`)");
   });
 
+  it("keeps the complete 0041 to 0043 document migration chain ordered", () => {
+    const journal = readFileSync(new URL("../drizzle/meta/_journal.json", import.meta.url), "utf8");
+    const finalSnapshot = readFileSync(new URL("../drizzle/meta/0043_snapshot.json", import.meta.url), "utf8");
+    const migration42 = readFileSync(new URL("../drizzle/0042_abandoned_invisible_woman.sql", import.meta.url), "utf8");
+    const migration43 = readFileSync(new URL("../drizzle/0043_sturdy_eddie_brock.sql", import.meta.url), "utf8");
+    expect(journal.indexOf("0041_boring_lizard")).toBeGreaterThanOrEqual(0);
+    expect(journal.indexOf("0042_abandoned_invisible_woman")).toBeGreaterThan(journal.indexOf("0041_boring_lizard"));
+    expect(journal.indexOf("0043_sturdy_eddie_brock")).toBeGreaterThan(journal.indexOf("0042_abandoned_invisible_woman"));
+    expect(migration42).toContain("ALTER TABLE `document_versions`");
+    expect(migration43).toContain("migration 0041");
+    expect(finalSnapshot).toContain('"document_versions"');
+    expect(finalSnapshot).toContain('"document_versions_document_version_idx"');
+  });
+
   it("exports document due dates as an ICS calendar from the Documents page", () => {
     const source = readFileSync(new URL("../client/src/pages/Documents.tsx", import.meta.url), "utf8");
     expect(source).toContain("text/calendar;charset=utf-8");

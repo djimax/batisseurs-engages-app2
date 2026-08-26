@@ -1,1 +1,1 @@
-ALTER TABLE `members` MODIFY COLUMN `gender` enum('1','2','3');
+ALTER TABLE `members` ADD COLUMN IF NOT EXISTS `gender` enum('1','2','3');

@@ -6,7 +6,7 @@ CREATE TABLE `association_decisions` (
 	`decisionDate` timestamp NOT NULL,
 	`signedBy` varchar(255) NOT NULL,
 	`status` enum('draft','active','archived') NOT NULL DEFAULT 'active',
-	`createdAt` timestamp NOT NULL DEFAULT 'CURRENT_TIMESTAMP',
+	`createdAt` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
 	`updatedAt` timestamp NOT NULL DEFAULT (now()) ON UPDATE CURRENT_TIMESTAMP,
 	CONSTRAINT `association_decisions_ref_unique` UNIQUE(`referenceNumber`)
 );
@@ -23,7 +23,7 @@ CREATE TABLE `financial_expenses` (
 	`status` enum('pending','approved','rejected','reimbursed') NOT NULL DEFAULT 'pending',
 	`receiptUrl` text,
 	`createdBy` int NOT NULL,
-	`createdAt` timestamp NOT NULL DEFAULT 'CURRENT_TIMESTAMP',
+	`createdAt` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
 	`updatedAt` timestamp NOT NULL DEFAULT (now()) ON UPDATE CURRENT_TIMESTAMP
 );
 --> statement-breakpoint
@@ -32,9 +32,9 @@ CREATE TABLE `member_certificates` (
 	`memberId` int NOT NULL,
 	`certificateType` enum('membership_card','tax_receipt','attestation') NOT NULL,
 	`referenceNumber` varchar(100) NOT NULL,
-	`issuedAt` timestamp NOT NULL DEFAULT 'CURRENT_TIMESTAMP',
+	`issuedAt` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
 	`pdfUrl` text,
-	`createdAt` timestamp NOT NULL DEFAULT 'CURRENT_TIMESTAMP'
+	`createdAt` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 --> statement-breakpoint
 CREATE TABLE `member_status_history` (
@@ -44,7 +44,7 @@ CREATE TABLE `member_status_history` (
 	`newStatus` varchar(50) NOT NULL,
 	`reason` text NOT NULL,
 	`changedBy` int,
-	`createdAt` timestamp NOT NULL DEFAULT 'CURRENT_TIMESTAMP'
+	`createdAt` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 --> statement-breakpoint
 CREATE TABLE `tax_receipts` (
@@ -57,7 +57,7 @@ CREATE TABLE `tax_receipts` (
 	`donationDate` timestamp NOT NULL,
 	`pdfUrl` text,
 	`issuedBy` int NOT NULL,
-	`createdAt` timestamp NOT NULL DEFAULT 'CURRENT_TIMESTAMP',
+	`createdAt` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
 	CONSTRAINT `tax_receipts_number_unique` UNIQUE(`receiptNumber`)
 );
 --> statement-breakpoint
