@@ -1,7 +1,7 @@
 import { z } from "zod";
 import {
   getEmailTemplates, getEmailTemplateById, createEmailTemplate, updateEmailTemplate, deleteEmailTemplate,
-  getEmailHistory, getEmailHistoryById, createEmailHistory, updateEmailHistory,
+  getEmailHistory, getEmailHistoryById, getEmailCampaignStatistics, createEmailHistory, updateEmailHistory,
   getEmailRecipients, createEmailRecipient, updateEmailRecipient,
   getAllMembers, getFilteredMembers, getGlobalSettings, getMemberById, getCotisationsByMember,
   createPasswordResetRequest, listPasswordResetRequests, updatePasswordResetRequest, getPasswordResetRequest,
@@ -308,6 +308,11 @@ export const emailRouter = router({
 
   // Email history
   history: router({
+    statistics: protectedProcedure.query(async ({ ctx }) => {
+      await assertPermission(ctx.user, "members.view");
+      return getEmailCampaignStatistics();
+    }),
+
     list: protectedProcedure
       .input(z.object({
         limit: z.number().default(50),

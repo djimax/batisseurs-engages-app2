@@ -1931,3 +1931,12 @@
 - [x] Garantir qu’un aperçu ne déclenche aucun envoi et ne divulgue pas de données inutiles
 - [x] Ajouter les tests de permissions, de remplacement et de non-régression
 - [x] Valider TypeScript, tests, build et sauvegarder le jalon
+
+## Pilotage des campagnes e-mail
+- [x] Auditer l’historique, les statuts de destinataires et l’écran d’administration existants
+- [x] Ajouter des statistiques agrégées sécurisées par campagne
+- [x] Ajouter filtres, recherche et états d’envoi exploitables
+- [x] Ajouter le détail des destinataires et des erreurs sans exposer de secret
+- [x] Ajouter tests de calculs, permissions et non-régression
+- [x] Valider TypeScript, tests, build et sauvegarder le jalon
+- [x] Rendre le test de credentials Brevo déterministe sans dépendre d’un délai réseau externe

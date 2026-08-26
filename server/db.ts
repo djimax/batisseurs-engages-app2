@@ -695,6 +695,28 @@ export async function getEmailHistory(limit: number = 50) {
     .limit(limit);
 }
 
+type EmailCampaignSummaryRow = { status: "pending" | "sending" | "sent" | "failed"; recipientCount: number; successCount: number | null; failureCount: number | null };
+
+export function summarizeEmailCampaigns(history: EmailCampaignSummaryRow[]) {
+  const totalRecipients = history.reduce((sum, item) => sum + (item.recipientCount ?? 0), 0);
+  const successfulRecipients = history.reduce((sum, item) => sum + (item.successCount ?? 0), 0);
+  const failedRecipients = history.reduce((sum, item) => sum + (item.failureCount ?? 0), 0);
+  return {
+    totalCampaigns: history.length,
+    sentCampaigns: history.filter((item) => item.status === "sent").length,
+    failedCampaigns: history.filter((item) => item.status === "failed").length,
+    activeCampaigns: history.filter((item) => item.status === "pending" || item.status === "sending").length,
+    totalRecipients,
+    successfulRecipients,
+    failedRecipients,
+    deliveryRate: totalRecipients > 0 ? Math.round((successfulRecipients / totalRecipients) * 1000) / 10 : 0,
+  };
+}
+
+export async function getEmailCampaignStatistics() {
+  return summarizeEmailCampaigns(await getEmailHistory(500));
+}
+
 export async function getEmailHistoryById(id: number) {
   const db = await getDb();
   if (!db) return undefined;
