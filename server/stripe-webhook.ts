@@ -2,7 +2,9 @@ import type { Request, Response } from "express";
 import Stripe from "stripe";
 import { eq } from "drizzle-orm";
 import { getDb } from "./db";
-import { campaigns, cotisations, dons, stripeEvents, stripePayments, transactions } from "../drizzle/schema";
+import { campaigns, cotisations, dons, members, stripeEvents, stripePayments, transactions } from "../drizzle/schema";
+import { sendTransactionalEmail } from "./brevo";
+import { logAudit } from "./audit";
 
 const paidAt = () => new Date().toISOString().slice(0, 19).replace("T", " ");
 
@@ -84,6 +86,23 @@ export async function stripeWebhookHandler(req: Request, res: Response) {
           memberId: payment.memberId ?? undefined,
           referenceId: payment.cotisationId ?? donationId ?? payment.campaignId ?? undefined,
         });
+
+        const memberRows = payment.memberId
+          ? await db.select({ firstName: members.firstName, lastName: members.lastName, email: members.email }).from(members).where(eq(members.id, payment.memberId)).limit(1)
+          : [];
+        const recipientEmail = session.customer_details?.email || metadata.customer_email || memberRows[0]?.email;
+        if (recipientEmail) {
+          try {
+            const paymentLabel = payment.paymentType === "cotisation" ? "cotisation" : payment.paymentType === "campagne" ? "don affecté à une campagne" : "don";
+            const recipientName = session.customer_details?.name || `${memberRows[0]?.firstName ?? ""} ${memberRows[0]?.lastName ?? ""}`.trim() || undefined;
+            const content = `Bonjour${recipientName ? ` ${recipientName}` : ""},\n\nNous confirmons la réception de votre ${paymentLabel} d’un montant de ${amountInMajorUnits(amount, currency)} ${currency}.\n\nRéférence Stripe : ${session.id}\n\nMerci pour votre soutien aux Bâtisseurs Engagés.`;
+            const emailResult = await sendTransactionalEmail({ to: { email: recipientEmail, name: recipientName }, subject: "Confirmation de votre paiement — Les Bâtisseurs Engagés", textContent: content });
+            await logAudit({ action: "CREATE", entityType: "transactional_email", entityId: payment.id, entityName: "stripe_payment_confirmation", description: `Confirmation de paiement envoyée par Brevo à ${recipientEmail}`, newValue: JSON.stringify({ provider: "brevo", messageId: emailResult.messageId, stripeSessionId: session.id }), status: "success" });
+          } catch (emailError) {
+            console.error("[Brevo] Confirmation de paiement non envoyée", emailError);
+            await logAudit({ action: "CREATE", entityType: "transactional_email", entityId: payment.id, entityName: "stripe_payment_confirmation", description: `Échec de confirmation de paiement pour ${recipientEmail}`, status: "failed", errorMessage: emailError instanceof Error ? emailError.message : "Erreur inconnue" });
+          }
+        }
       }
     }
 

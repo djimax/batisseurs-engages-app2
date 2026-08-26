@@ -22,6 +22,9 @@ describe("Stripe integration contract", () => {
     expect(webhookSource).toContain('db.insert(dons).values');
     expect(webhookSource).toContain('payment.paymentType === "campagne"');
     expect(webhookSource).toContain('await db.insert(transactions).values');
+    expect(webhookSource).toContain('sendTransactionalEmail');
+    expect(webhookSource).toContain('Confirmation de votre paiement');
+    expect(webhookSource).toContain('Confirmation de paiement non envoyée');
   });
 
   it("mounts the webhook with a raw body parser before JSON", () => {

@@ -1907,3 +1907,6 @@
 - [x] Respecter les consentements, désabonnements et préférences des membres
 - [x] Ajouter tests de contrat et de non-régression sans envoyer de vrai e-mail
 - [x] Valider TypeScript, tests, build et sauvegarder l’intégration
+
+- [x] Envoyer une confirmation Brevo après paiement Stripe confirmé sans faire échouer le webhook
+- [x] Auditer la confirmation de paiement Stripe et couvrir son comportement par un test
