@@ -2112,3 +2112,5 @@
 - [x] Corriger la concordance des types d’entités et actions dans les filtres de l’historique d’audit réel (valeurs singulières alignées sur le serveur et actions d’accès ajoutées).
 - [x] Enrichir le journal d’audit global avec l’identité de l’utilisateur et un filtrage SQL borné (COALESCE de l’email enregistré et du compte, pagination SQL jusqu’à 500 lignes).
 - [x] Ajouter un test de non-régression du branchement AuditHistory sur les données réelles (48 tests ciblés réussis).
+- [x] Valider l’export CSV d’audit par TypeScript et 50 tests ciblés réussis.
+- [x] Ajouter un export CSV du journal d’audit filtré, limité aux lignes actuellement consultées (UTF-8 avec BOM, échappement CSV, données admin visibles uniquement).

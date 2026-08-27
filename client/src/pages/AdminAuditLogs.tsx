@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Check, ChevronLeft, ChevronRight, Filter, X } from "lucide-react";
+import { Check, ChevronLeft, ChevronRight, Download, Filter, X } from "lucide-react";
 import { toast } from "sonner";
 
 export default function AdminAuditLogs() {
@@ -75,6 +75,21 @@ export default function AdminAuditLogs() {
     return status === "success"
       ? "bg-green-100 text-green-800"
       : "bg-red-100 text-red-800";
+  };
+  const exportCsv = () => {
+    const escapeCsv = (value: unknown) => `"${String(value ?? "").replaceAll('"', '""')}"`;
+    const rows = [
+      ["Date", "Action", "Type", "Entité", "Utilisateur", "Statut"],
+      ...logs.map((log) => [new Date(log.createdAt).toISOString(), log.action, log.entityType, log.entityName || `#${log.entityId ?? ""}`, log.userEmail || (log.userId ? `Utilisateur #${log.userId}` : ""), log.status]),
+    ];
+    const csv = rows.map((row) => row.map(escapeCsv).join(",")).join("\\r\\n");
+    const url = URL.createObjectURL(new Blob([`\\uFEFF${csv}`], { type: "text/csv;charset=utf-8" }));
+    const anchor = document.createElement("a");
+    anchor.href = url;
+    anchor.download = `journal-audit-page-${page + 1}.csv`;
+    anchor.click();
+    URL.revokeObjectURL(url);
+    toast.success("Export CSV préparé");
   };
 
   return (
@@ -158,10 +173,10 @@ export default function AdminAuditLogs() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Activités Récentes</CardTitle>
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"><div><CardTitle>Activités Récentes</CardTitle>
           <CardDescription>
             {logs.length} activité{logs.length !== 1 ? "s" : ""} affichée{logs.length !== 1 ? "s" : ""}
-          </CardDescription>
+          </CardDescription></div><Button variant="outline" size="sm" className="gap-2" onClick={exportCsv} disabled={logs.length === 0}><Download className="h-4 w-4" />Exporter cette page</Button></div>
         </CardHeader>
         <CardContent>
           {isLoading ? (
