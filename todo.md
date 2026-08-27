@@ -2099,6 +2099,11 @@
 - [x] Ajouter un filtre Documents pour retrouver les documents sous conservation légale ou avec une date de rétention active.
 - [x] Ajouter un export RGPD sécurisé des données personnelles de l’utilisateur connecté (profil, fiche membre, documents créés, notes et audit propre ; URLs S3 privées exclues).
 - [x] Ajouter et réussir le test contractuel de l’export RGPD (35 tests ciblés au total).
+- [x] Ajouter une demande de suppression RGPD non destructive et enregistrée en base.
+- [x] Ajouter les procédures protégées de création, consultation et revue administrateur des demandes RGPD.
+- [x] Ajouter la table `data_deletion_requests` avec migration 0050 additive et défauts timestamp compatibles MySQL/TiDB.
+- [x] Valider le workflow RGPD : migration vierge réussie, TypeScript sans erreur et 46 tests ciblés réussis.
+- [x] Intégrer la revue des demandes RGPD dans l’interface d’administration (liste des demandes en attente, justification, approbation/refus confirmé et audit de la décision).
 - [x] Rejouer la vérification complète du projet : TypeScript sans erreur, 55 suites et 378 tests réussis.
 - [x] Remplacer les données simulées d’AuditHistory par la procédure tRPC admin.getAuditLogs, avec rafraîchissement et filtres conservés.
 - [x] Valider AuditHistory, Documents et export RGPD : TypeScript sans erreur et 46 tests ciblés réussis.

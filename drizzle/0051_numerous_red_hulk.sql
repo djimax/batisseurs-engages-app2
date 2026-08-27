@@ -1,0 +1,1 @@
+ALTER TABLE `data_deletion_requests` MODIFY COLUMN `createdAt` timestamp NOT NULL DEFAULT (now());

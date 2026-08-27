@@ -35,7 +35,7 @@ import {
   getNewsList, createNews, updateNews, deleteNews, getNewsComments, addNewsComment, deleteNewsComment,
   createMemberEvaluation, getMemberEvaluations, getMemberGrade
 } from "./db";
-import { roles, permissions, rolePermissions, userRoles, userScopes, auditLogs, emailTemplates, emailHistory, emailRecipients, members, adhesions, notificationSchedules, announcements, news, newsComments, projects, projectMembers, groupes, groupeMembers, antennes, documents, documentNotes, users } from "../drizzle/schema";
+import { roles, permissions, rolePermissions, userRoles, userScopes, auditLogs, emailTemplates, emailHistory, emailRecipients, members, adhesions, notificationSchedules, announcements, news, newsComments, projects, projectMembers, groupes, groupeMembers, antennes, documents, documentNotes, users, dataDeletionRequests } from "../drizzle/schema";
 import { buildMemberCardPayload, getMemberHistory, getMemberStatusHistory, memberStatusSchema, recordMemberHistory, recordMemberStatus } from "./member-lifecycle";
 import { createUserNotification, generateMembershipReminderNotifications, getOrCreateNotificationPreferences, listUserNotifications, markAllNotificationsRead, markNotificationRead, updateNotificationPreferences } from "./notification-center";
 import { and, eq, desc, sql } from "drizzle-orm";
@@ -94,6 +94,22 @@ export const appRouter = router({
       ]);
       await logAudit({ userId: ctx.user.id, action: "EXPORT", entityType: "user_data", entityId: ctx.user.id, description: "Export RGPD des données personnelles", status: "success" });
       return { exportedAt: new Date().toISOString(), user: { id: ctx.user.id, name: ctx.user.name, email: ctx.user.email, role: ctx.user.role, loginMethod: ctx.user.loginMethod, createdAt: ctx.user.createdAt, updatedAt: ctx.user.updatedAt, lastSignedIn: ctx.user.lastSignedIn }, memberProfiles, ownedDocuments, authoredNotes, auditHistory };
+    }),
+    requestDataDeletion: protectedProcedure
+      .input(z.object({ reason: z.string().trim().max(2000).optional() }))
+      .mutation(async ({ input, ctx }) => {
+        const db = await getDb();
+        if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Base de données indisponible" });
+        const existing = await db.select({ id: dataDeletionRequests.id }).from(dataDeletionRequests).where(and(eq(dataDeletionRequests.userId, ctx.user.id), eq(dataDeletionRequests.status, "pending"))).limit(1);
+        if (existing.length) throw new TRPCError({ code: "CONFLICT", message: "Une demande de suppression est déjà en attente" });
+        const result = await db.insert(dataDeletionRequests).values({ userId: ctx.user.id, reason: input.reason?.trim() || null, status: "pending" });
+        await logAudit({ userId: ctx.user.id, action: "CREATE", entityType: "data_deletion_request", entityId: Number(result[0].insertId), description: "Demande de suppression RGPD créée", status: "success" });
+        return db.select().from(dataDeletionRequests).where(eq(dataDeletionRequests.id, Number(result[0].insertId))).limit(1).then((rows) => rows[0]);
+      }),
+    myDataDeletionRequest: protectedProcedure.query(async ({ ctx }) => {
+      const db = await getDb();
+      if (!db) return undefined;
+      return db.select().from(dataDeletionRequests).where(eq(dataDeletionRequests.userId, ctx.user.id)).orderBy(desc(dataDeletionRequests.createdAt)).limit(1).then((rows) => rows[0]);
     }),
     logout: publicProcedure.mutation(({ ctx }) => {
       const cookieOptions = getSessionCookieOptions(ctx.req);
@@ -1883,6 +1899,28 @@ export const appRouter = router({
         return { success: true } as const;
       }),
 
+    listDataDeletionRequests: protectedProcedure
+      .input(z.object({ status: z.enum(["pending", "approved", "rejected", "cancelled"]).optional() }).optional())
+      .query(async ({ input, ctx }) => {
+        await assertPermission(ctx.user, "admin.audit.view");
+        const db = await getDb();
+        if (!db) return [];
+        const condition = input?.status ? eq(dataDeletionRequests.status, input.status) : undefined;
+        return db.select({ id: dataDeletionRequests.id, userId: dataDeletionRequests.userId, userEmail: users.email, userName: users.name, reason: dataDeletionRequests.reason, status: dataDeletionRequests.status, reviewedBy: dataDeletionRequests.reviewedBy, reviewedAt: dataDeletionRequests.reviewedAt, reviewComment: dataDeletionRequests.reviewComment, createdAt: dataDeletionRequests.createdAt }).from(dataDeletionRequests).leftJoin(users, eq(dataDeletionRequests.userId, users.id)).where(condition).orderBy(desc(dataDeletionRequests.createdAt)).limit(100);
+      }),
+    reviewDataDeletionRequest: protectedProcedure
+      .input(z.object({ id: z.number().int().positive(), status: z.enum(["approved", "rejected"]), comment: z.string().trim().max(2000).optional() }))
+      .mutation(async ({ input, ctx }) => {
+        await assertPermission(ctx.user, "admin.audit.view");
+        const db = await getDb();
+        if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Base de données indisponible" });
+        const existing = await db.select().from(dataDeletionRequests).where(eq(dataDeletionRequests.id, input.id)).limit(1);
+        if (!existing[0]) throw new TRPCError({ code: "NOT_FOUND", message: "Demande RGPD introuvable" });
+        if (existing[0].status !== "pending") throw new TRPCError({ code: "CONFLICT", message: "Cette demande a déjà été traitée" });
+        await db.update(dataDeletionRequests).set({ status: input.status, reviewedBy: ctx.user.id, reviewedAt: new Date().toISOString(), reviewComment: input.comment?.trim() || null }).where(eq(dataDeletionRequests.id, input.id));
+        await logAudit({ userId: ctx.user.id, action: "UPDATE", entityType: "data_deletion_request", entityId: input.id, description: `Demande de suppression RGPD ${input.status === "approved" ? "approuvée" : "refusée"}`, status: "success" });
+        return { success: true } as const;
+      }),
     getAuditLogs: protectedProcedure
       .input(z.object({
         limit: z.number().int().min(1).max(500).default(100),

@@ -7,7 +7,8 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { ChevronLeft, ChevronRight, Filter } from "lucide-react";
+import { Check, ChevronLeft, ChevronRight, Filter, X } from "lucide-react";
+import { toast } from "sonner";
 
 export default function AdminAuditLogs() {
   const { data: user } = trpc.auth.me.useQuery();
@@ -20,6 +21,9 @@ export default function AdminAuditLogs() {
 
   const limit = 20;
   const offset = page * limit;
+  const utils = trpc.useUtils();
+  const { data: deletionRequests = [] } = trpc.admin.listDataDeletionRequests.useQuery({ status: "pending" });
+  const reviewDeletionRequest = trpc.admin.reviewDataDeletionRequest.useMutation({ onSuccess: async () => { await utils.admin.listDataDeletionRequests.invalidate(); await utils.admin.getAuditLogs.invalidate(); toast.success("Demande RGPD mise à jour"); } });
 
   // Fetch audit logs
   const { data: logs = [], isLoading } = trpc.admin.getAuditLogs.useQuery({
@@ -82,6 +86,10 @@ export default function AdminAuditLogs() {
         </p>
       </div>
 
+      {deletionRequests.length > 0 && <Card className="border-amber-300 bg-amber-50/50 dark:bg-amber-950/20">
+        <CardHeader><CardTitle>Demandes RGPD à examiner</CardTitle><CardDescription>Examinez chaque demande et consignez une décision. L’approbation ne supprime aucune donnée automatiquement.</CardDescription></CardHeader>
+        <CardContent className="space-y-3">{deletionRequests.map((request) => <div key={request.id} className="flex flex-col gap-3 rounded-xl border bg-background p-4 md:flex-row md:items-center md:justify-between"><div className="min-w-0"><p className="font-medium">{request.userName || request.userEmail || `Utilisateur #${request.userId}`}</p><p className="text-sm text-muted-foreground">{request.userEmail || "Email non renseigné"} · {new Date(request.createdAt).toLocaleString("fr-FR")}</p>{request.reason && <p className="mt-2 text-sm">{request.reason}</p>}</div><div className="flex shrink-0 gap-2"><Button size="sm" variant="outline" className="gap-1 text-destructive" disabled={reviewDeletionRequest.isPending} onClick={() => { if (window.confirm("Refuser cette demande RGPD ?")) reviewDeletionRequest.mutate({ id: request.id, status: "rejected" }); }}><X className="h-4 w-4" />Refuser</Button><Button size="sm" className="gap-1" disabled={reviewDeletionRequest.isPending} onClick={() => { if (window.confirm("Approuver cette demande RGPD ? La suppression effective devra être traitée selon votre procédure interne.")) reviewDeletionRequest.mutate({ id: request.id, status: "approved" }); }}><Check className="h-4 w-4" />Approuver</Button></div></div>)}</CardContent>
+      </Card>}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">

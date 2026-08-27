@@ -785,6 +785,20 @@ export const passwordResetRequests = mysqlTable("password_reset_requests", {
 	index("password_reset_requests_token_unique").on(table.token),
 ]);
 
+export const dataDeletionRequests = mysqlTable("data_deletion_requests", {
+	id: int().autoincrement().notNull(),
+	userId: int().notNull(),
+	reason: text(),
+	status: mysqlEnum(['pending','approved','rejected','cancelled']).default('pending').notNull(),
+	reviewedBy: int(),
+	reviewedAt: timestamp({ mode: 'string' }),
+	reviewComment: text(),
+	createdAt: timestamp({ mode: 'string' }).defaultNow().notNull(),
+	updatedAt: timestamp({ mode: 'string' }).defaultNow().onUpdateNow().notNull(),
+}, (table) => [
+	index("data_deletion_requests_user_idx").on(table.userId),
+	index("data_deletion_requests_status_idx").on(table.status),
+]);
 export const permissions = mysqlTable("permissions", {
 	id: int().autoincrement().notNull(),
 	name: varchar({ length: 100 }).notNull(),

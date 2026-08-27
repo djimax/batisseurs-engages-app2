@@ -62,6 +62,9 @@ export default function Settings() {
   const lastSync = getLastSync();
   const isAdmin = currentUser?.role === "admin";
   const { refetch: refetchPersonalData, isFetching: isExportingPersonalData } = trpc.auth.exportMyData.useQuery(undefined, { enabled: false });
+  const { data: myDeletionRequest, refetch: refetchDeletionRequest } = trpc.auth.myDataDeletionRequest.useQuery();
+  const requestDataDeletion = trpc.auth.requestDataDeletion.useMutation({ onSuccess: () => { void refetchDeletionRequest(); toast.success("Demande de suppression enregistrée"); } });
+  const [deletionReason, setDeletionReason] = useState("");
 
   useEffect(() => {
     const savedMode = localStorage.getItem("appMode") as "online" | "offline" | null;
@@ -408,6 +411,7 @@ export default function Settings() {
                   <p className="font-semibold">Mes données personnelles</p>
                   <p className="mt-1 text-sm text-muted-foreground">Téléchargez une copie JSON de votre profil, de vos contributions documentaires et de votre historique d’audit.</p>
                   <Button onClick={handleExportPersonalData} disabled={isExportingPersonalData} variant="outline" className="mt-3 gap-2"><Download className="h-4 w-4" />{isExportingPersonalData ? "Préparation…" : "Exporter mes données (RGPD)"}</Button>
+                  {myDeletionRequest?.status === "pending" ? <p className="mt-3 text-sm text-amber-700">Une demande de suppression est en attente d’examen administratif.</p> : <AlertDialog><AlertDialogTrigger asChild><Button variant="ghost" className="mt-2 w-full justify-start gap-2 text-destructive hover:text-destructive"><AlertTriangle className="h-4 w-4" />Demander la suppression de mes données</Button></AlertDialogTrigger><AlertDialogContent><AlertDialogHeader><AlertDialogTitle>Demander la suppression de vos données ?</AlertDialogTitle><AlertDialogDescription>La demande sera examinée par un administrateur. Aucune donnée ne sera supprimée automatiquement.</AlertDialogDescription></AlertDialogHeader><textarea value={deletionReason} onChange={(event) => setDeletionReason(event.target.value)} maxLength={2000} placeholder="Motif facultatif" className="min-h-24 w-full rounded-md border bg-background p-3 text-sm" /><AlertDialogFooter><AlertDialogCancel>Annuler</AlertDialogCancel><AlertDialogAction onClick={() => requestDataDeletion.mutate({ reason: deletionReason || undefined })} disabled={requestDataDeletion.isPending}>Envoyer la demande</AlertDialogAction></AlertDialogFooter></AlertDialogContent></AlertDialog>}
                 </div>
               </CardContent>
             </Card>
