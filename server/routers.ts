@@ -222,6 +222,26 @@ export const appRouter = router({
         await logAudit({ userId: ctx.user.id, action: input.action, entityType: "document", entityId: input.id, entityName: document.title, description: `Accès documentaire : ${input.action}`, status: "success" });
         return { success: true as const };
       }),
+    accessLog: protectedProcedure
+      .input(z.object({ id: z.number().int().positive() }))
+      .query(async ({ input, ctx }) => {
+        await assertDocumentCapability(ctx.user, input.id, "canView");
+        const db = await getDb();
+        if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Base de données indisponible" });
+        return db.select({
+          id: auditLogs.id,
+          action: auditLogs.action,
+          userId: auditLogs.userId,
+          userEmail: auditLogs.userEmail,
+          description: auditLogs.description,
+          status: auditLogs.status,
+          errorMessage: auditLogs.errorMessage,
+          createdAt: auditLogs.createdAt,
+        }).from(auditLogs)
+          .where(and(eq(auditLogs.entityType, "document"), eq(auditLogs.entityId, input.id)))
+          .orderBy(desc(auditLogs.createdAt))
+          .limit(100);
+      }),
     savedViews: protectedProcedure.query(async ({ ctx }) => {
       await assertPermission(ctx.user, "documents.view");
       return getDocumentSavedViews(ctx.user.id);

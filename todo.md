@@ -2090,3 +2090,6 @@
 - [x] Empêcher la suppression automatique ou manuelle d’un document sous exemption légale.
 - [x] Afficher le statut de conservation dans Documents et ajouter les tests associés (badge conservation légale/date et 33 tests Documents validés).
 - [x] Aligner la base active avec le champ legalHold avant de valider la politique de conservation.
+- [x] Ajouter une lecture protégée du journal d’accès par document, limitée aux 100 derniers événements et réutilisant l’audit centralisé.
+- [x] Afficher les consultations, téléchargements, impressions et exports dans le détail documentaire.
+- [x] Valider le journal d’accès par TypeScript et 33 tests Documents.

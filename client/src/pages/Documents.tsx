@@ -174,6 +174,10 @@ export default function Documents() {
     { documentId: selectedDocument?.id || 0 },
     { enabled: !!selectedDocument }
   );
+  const { data: accessLog = [] } = trpc.documents.accessLog.useQuery(
+    { id: selectedDocument?.id || 0 },
+    { enabled: !!selectedDocument }
+  );
 
   const createDocument = trpc.documents.create.useMutation({
     onSuccess: () => {
@@ -1112,6 +1116,14 @@ export default function Documents() {
               <div>
                 <h4 className="text-sm font-medium mb-3">Historique des versions</h4>
                 {documentVersions.length === 0 ? <p className="text-sm text-muted-foreground">Aucune version enregistrée.</p> : <div className="space-y-2">{documentVersions.map((version) => <div key={version.id} className="flex flex-wrap items-center justify-between gap-3 rounded-lg border p-3"><div className="min-w-0"><p className="font-medium">Version {version.versionNumber} · {version.fileName}</p><p className="text-xs text-muted-foreground">{new Date(version.createdAt).toLocaleString("fr-FR")} · {(version.fileSize / 1024).toFixed(1)} Ko</p><p className="break-all text-[11px] text-muted-foreground">SHA-256 : {version.contentHash}</p></div><Button size="sm" variant="outline" onClick={() => { recordDocumentAccess.mutate({ id: selectedDocument.id, action: "VIEW" }); window.open(version.fileUrl, "_blank"); }}><Download className="mr-1 h-4 w-4" />Ouvrir</Button></div>)}</div>}
+              </div>
+
+              <Separator />
+
+              {/* Access log */}
+              <div>
+                <h4 className="text-sm font-medium mb-3 flex items-center gap-2"><Eye className="h-4 w-4" />Journal d’accès</h4>
+                {accessLog.length === 0 ? <p className="text-sm text-muted-foreground">Aucun accès enregistré pour ce document.</p> : <div className="space-y-2">{accessLog.map((entry) => <div key={entry.id} className="flex flex-wrap items-center justify-between gap-3 rounded-lg border p-3 text-sm"><div><p className="font-medium">{entry.action === "VIEW" ? "Consultation" : entry.action === "DOWNLOAD" ? "Téléchargement" : entry.action === "PRINT" ? "Impression" : entry.action === "EXPORT" ? "Export" : entry.action}</p><p className="text-xs text-muted-foreground">{entry.userEmail || `Utilisateur #${entry.userId ?? "inconnu"}`} · {new Date(entry.createdAt).toLocaleString("fr-FR")}</p></div><Badge variant={entry.status === "success" ? "secondary" : "destructive"}>{entry.status === "success" ? "Réussi" : "Échec"}</Badge></div>)}</div>}
               </div>
 
               <Separator />
