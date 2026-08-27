@@ -217,7 +217,7 @@ export default function AdminAuditLogs() {
                           {log.entityName || `#${log.entityId}`}
                         </TableCell>
                         <TableCell className="text-sm">
-                          {log.userId ? `Utilisateur #${log.userId}` : "-"}
+                          {log.userEmail || (log.userId ? `Utilisateur #${log.userId}` : "-")}
                         </TableCell>
                         <TableCell>
                           <Badge className={getStatusBadgeColor(log.status)}>

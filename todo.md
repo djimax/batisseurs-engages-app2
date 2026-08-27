@@ -2113,4 +2113,6 @@
 - [x] Enrichir le journal d’audit global avec l’identité de l’utilisateur et un filtrage SQL borné (COALESCE de l’email enregistré et du compte, pagination SQL jusqu’à 500 lignes).
 - [x] Ajouter un test de non-régression du branchement AuditHistory sur les données réelles (48 tests ciblés réussis).
 - [x] Valider l’export CSV d’audit par TypeScript et 50 tests ciblés réussis.
+- [x] Valider l’affichage de l’identité résolue par TypeScript et 17 tests audit/RGPD ciblés réussis.
+- [x] Afficher l’email résolu de l’utilisateur dans le tableau AuditHistory administrateur.
 - [x] Ajouter un export CSV du journal d’audit filtré, limité aux lignes actuellement consultées (UTF-8 avec BOM, échappement CSV, données admin visibles uniquement).
