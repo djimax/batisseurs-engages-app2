@@ -27,6 +27,14 @@ describe("RGPD deletion request contract", () => {
     expect(routerSource).toContain("code: \"CONFLICT\"");
   });
 
+  it("allows only the requesting user to cancel a pending request", () => {
+    expect(routerSource).toContain("cancelDataDeletionRequest: protectedProcedure");
+    expect(routerSource).toContain("eq(dataDeletionRequests.userId, ctx.user.id)");
+    expect(routerSource).toContain("eq(dataDeletionRequests.status, \"pending\")");
+    expect(routerSource).toContain('status: "cancelled"');
+    expect(routerSource).toContain("Demande de suppression RGPD annulée par son auteur");
+  });
+
   it("limits review actions to admins with audit logging", () => {
     expect(routerSource).toContain("listDataDeletionRequests: protectedProcedure");
     expect(routerSource).toContain("reviewDataDeletionRequest: protectedProcedure");
