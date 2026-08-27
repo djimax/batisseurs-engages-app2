@@ -2109,6 +2109,7 @@
 - [x] Valider le workflow RGPD : migration vierge réussie, TypeScript sans erreur et 48 tests ciblés réussis.
 - [x] Ajouter les tests contractuels de protection contre les demandes RGPD en doublon et de revue limitée aux administrateurs.
 - [x] Valider le retrait d’une demande RGPD pending par TypeScript et 19 tests Settings/RGPD ciblés réussis.
+- [x] Ajouter un test de cohérence garantissant que le statut cancelled existe dans le schéma et la migration RGPD (7 tests RGPD réussis).
 - [x] Intégrer la revue des demandes RGPD dans l’interface d’administration (liste des demandes en attente, justification, approbation/refus confirmé et audit de la décision).
 - [x] Rejouer la vérification complète du projet : TypeScript sans erreur, 56 suites et 382 tests réussis.
 - [x] Remplacer les données simulées d’AuditHistory par la procédure tRPC admin.getAuditLogs, avec rafraîchissement et filtres conservés.

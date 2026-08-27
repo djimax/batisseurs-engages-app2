@@ -3,6 +3,8 @@ import { readFileSync } from "node:fs";
 
 const routerSource = readFileSync(new URL("./routers.ts", import.meta.url), "utf8");
 const settingsSource = readFileSync(new URL("../client/src/pages/Settings.tsx", import.meta.url), "utf8");
+const schemaSource = readFileSync(new URL("../drizzle/schema.ts", import.meta.url), "utf8");
+const migrationSource = readFileSync(new URL("../drizzle/0050_classy_hairball.sql", import.meta.url), "utf8");
 
 describe("auth.exportMyData", () => {
   it("expose un export protégé limité aux données du compte", () => {
@@ -19,6 +21,13 @@ describe("auth.exportMyData", () => {
   });
 });
 
+
+describe("RGPD schema contract", () => {
+  it("keeps the cancelled status available in schema and migration", () => {
+    expect(schemaSource).toContain("'pending','approved','rejected','cancelled'");
+    expect(migrationSource).toContain("'pending','approved','rejected','cancelled'");
+  });
+});
 
 describe("RGPD Settings UI contract", () => {
   it("shows final statuses instead of reopening a treated request", () => {
