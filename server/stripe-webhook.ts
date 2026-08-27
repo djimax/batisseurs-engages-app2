@@ -5,6 +5,7 @@ import { getDb } from "./db";
 import { campaigns, cotisations, dons, members, stripeEvents, stripePayments, transactions } from "../drizzle/schema";
 import { sendTransactionalEmail } from "./brevo";
 import { logAudit } from "./audit";
+import { createUserNotification } from "./notification-center";
 
 const paidAt = () => new Date().toISOString().slice(0, 19).replace("T", " ");
 
@@ -89,9 +90,23 @@ export async function stripeWebhookHandler(req: Request, res: Response) {
         });
 
         const memberRows = payment.memberId
-          ? await db.select({ firstName: members.firstName, lastName: members.lastName, email: members.email }).from(members).where(eq(members.id, payment.memberId)).limit(1)
+          ? await db.select({ userId: members.userId, firstName: members.firstName, lastName: members.lastName, email: members.email }).from(members).where(eq(members.id, payment.memberId)).limit(1)
           : [];
         const recipientEmail = session.customer_details?.email || metadata.customer_email || memberRows[0]?.email;
+        if (memberRows[0]?.userId) {
+          const paymentLabel = payment.paymentType === "cotisation" ? "cotisation" : payment.paymentType === "campagne" ? "don affecté à une campagne" : "don";
+          await createUserNotification({
+            userId: memberRows[0].userId,
+            title: "Paiement confirmé",
+            message: `Votre ${paymentLabel} de ${amountInMajorUnits(amount, currency)} ${currency} a bien été reçu.`,
+            type: "success",
+            actionUrl: "/finance",
+            eventKey: "payment_received",
+            entityType: "stripe_payment",
+            entityId: payment.id,
+            dedupeKey: `stripe-payment-received:${session.id}`,
+          });
+        }
         if (recipientEmail) {
           try {
             const paymentLabel = payment.paymentType === "cotisation" ? "cotisation" : payment.paymentType === "campagne" ? "don affecté à une campagne" : "don";

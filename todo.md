@@ -276,7 +276,7 @@
 - [x] Générer des liens de paiement pour les cotisations
 - [x] Générer des liens de paiement pour les dons
 - [x] Suivi des paiements en attente
-- [ ] Notifications automatiques quand un paiement est reçu
+- [x] Notifications automatiques quand un paiement est reçu : notification in-app dédupliquée par session Stripe, respectant les préférences et ciblant le membre lié.
 - [x] Historique des tentatives de paiement
 
 ### Rapports Financiers Avancés
@@ -2114,5 +2114,6 @@
 - [x] Ajouter un test de non-régression du branchement AuditHistory sur les données réelles (48 tests ciblés réussis).
 - [x] Valider l’export CSV d’audit par TypeScript et 50 tests ciblés réussis.
 - [x] Valider l’affichage de l’identité résolue par TypeScript et 17 tests audit/RGPD ciblés réussis.
+- [x] Valider la notification Stripe de paiement confirmé par TypeScript et 23 tests Stripe/notifications ciblés réussis.
 - [x] Afficher l’email résolu de l’utilisateur dans le tableau AuditHistory administrateur.
 - [x] Ajouter un export CSV du journal d’audit filtré, limité aux lignes actuellement consultées (UTF-8 avec BOM, échappement CSV, données admin visibles uniquement).
