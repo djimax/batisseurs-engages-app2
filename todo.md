@@ -2123,6 +2123,8 @@
 - [x] Valider la notification Stripe de paiement confirmé par TypeScript et 23 tests Stripe/notifications ciblés réussis.
 - [x] Ajouter au test Stripe les assertions du ciblage membre, des préférences et de la clé de déduplication de la notification in-app (8 tests Stripe/notifications réussis).
 - [x] Ajouter une notification in-app au réviseur lorsqu’une revue documentaire lui est assignée, avec lien vers le document et déduplication par assignation.
+- [x] Valider les notifications de décision de revue par TypeScript et 39 tests Documents/notifications/audit ciblés réussis.
+- [x] Notifier le créateur après approbation ou demande de correction d’un document, avec commentaire éventuel, lien et déduplication par résultat.
 - [x] Rejouer la régression complète après RGPD, audit et notifications Stripe : TypeScript sans erreur, 56 suites et 382 tests réussis.
 - [x] Afficher l’email résolu de l’utilisateur dans le tableau AuditHistory administrateur.
 - [x] Ajouter un export CSV du journal d’audit filtré, limité aux lignes actuellement consultées (UTF-8 avec BOM, échappement CSV, données admin visibles uniquement).

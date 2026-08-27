@@ -424,6 +424,21 @@ export const appRouter = router({
         if (ctx.user.role !== "admin" && document.reviewerId !== ctx.user.id) throw new TRPCError({ code: "FORBIDDEN", message: "Vous n’êtes pas le réviseur désigné." });
         await updateDocument(input.id, { approvalStatus: input.status, approvedBy: ctx.user.id, approvedAt: new Date().toISOString(), approvalComment: input.comment ?? null, updatedBy: ctx.user.id } as any);
         await logAudit({ userId: ctx.user.id, action: input.status === "approved" ? "REVIEW_APPROVE" : "REVIEW_REJECT", entityType: "document", entityId: input.id, entityName: document.title, description: "Décision de revue documentaire", newValue: JSON.stringify({ status: input.status, comment: input.comment ?? null }), status: "success" });
+        if (document.createdBy && document.createdBy !== ctx.user.id) {
+          await createUserNotification({
+            userId: document.createdBy,
+            title: input.status === "approved" ? "Document approuvé" : "Corrections demandées",
+            message: input.status === "approved"
+              ? `Le document « ${document.title} » a été approuvé.`
+              : `Des corrections sont demandées pour le document « ${document.title} »${input.comment ? ` : ${input.comment}` : "."}`,
+            type: input.status === "approved" ? "success" : "warning",
+            actionUrl: `/documents/${input.id}`,
+            eventKey: input.status === "approved" ? "document_review_approved" : "document_review_changes_requested",
+            entityType: "document",
+            entityId: input.id,
+            dedupeKey: `document-review-result:${input.id}:${input.status}:${document.updatedAt}`,
+          });
+        }
         return getDocumentById(input.id);
       }),
     approve: protectedProcedure
