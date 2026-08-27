@@ -6,6 +6,7 @@ import { storagePut } from "./storage";
 import { assertPermission } from "./authorization";
 import { logAudit } from "./audit";
 import { createPurchaseQuote, createPurchaseRequest, createSupplier, getPurchaseBudgetStatus, getPurchaseQuotes, getPurchaseRequestById, getPurchaseRequests, getSupplierById, getSuppliers, selectPurchaseQuote, updatePurchaseRequest, updateSupplier } from "./db";
+import { createUserNotification } from "./notification-center";
 
 const amountSchema = z.string().trim().regex(/^\d+(\.\d{1,2})?$/, "Montant invalide").refine((value) => Number(value) > 0, "Le montant doit être positif");
 
@@ -56,6 +57,19 @@ export const purchasesRouter = router({
     const changes = approvalStatuses.includes(input.status) ? { status: input.status, approvedBy: ctx.user.id, approvedAt: new Date().toISOString() } : { status: input.status };
     const request = await updatePurchaseRequest(input.id, changes);
     await logAudit({ userId: ctx.user.id, action: "UPDATE", entityType: "purchase_request", entityId: input.id, description: `Demande d’achat ${input.id} : ${input.status}`, newValue: JSON.stringify({ status: input.status }), status: "success" });
+    if (request?.requestedBy && approvalStatuses.includes(input.status) && request.requestedBy !== ctx.user.id) {
+      await createUserNotification({
+        userId: request.requestedBy,
+        title: input.status === "approved" ? "Demande d’achat approuvée" : "Demande d’achat rejetée",
+        message: `Votre demande « ${request.description} » a été ${input.status === "approved" ? "approuvée" : "rejetée"}.`,
+        type: input.status === "approved" ? "success" : "warning",
+        actionUrl: "/purchases",
+        eventKey: `purchase_request_${input.status}`,
+        entityType: "purchase_request",
+        entityId: request.id,
+        dedupeKey: `purchase-request-status:${request.id}:${input.status}:${request.updatedAt}`,
+      });
+    }
     return request;
   }),
   quotes: protectedProcedure.input(z.object({ purchaseRequestId: z.number().int().positive().optional() }).optional()).query(async ({ input, ctx }) => {
