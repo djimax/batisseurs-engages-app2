@@ -210,6 +210,15 @@ describe("Documents Router", () => {
     expect(source).toContain('action: "ARCHIVE", entityType: "document"');
   });
 
+  it("protects the document review workflow and audits its decisions", () => {
+    const source = readFileSync(new URL("./routers.ts", import.meta.url), "utf8");
+    expect(source).toContain("assignReview: protectedProcedure");
+    expect(source).toContain("submitReview: protectedProcedure");
+    expect(source).toContain("document.reviewerId !== ctx.user.id");
+    expect(source).toContain('action: "ASSIGN_REVIEW"');
+    expect(source).toContain('action: input.status === "approved" ? "REVIEW_APPROVE" : "REVIEW_REJECT"');
+  });
+
   it("should list documents (protected)", async () => {
     const ctx = createAuthContext();
     const caller = appRouter.createCaller(ctx);

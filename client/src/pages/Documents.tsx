@@ -196,6 +196,15 @@ export default function Documents() {
     onError: (error) => toast.error("Impossible de supprimer la vue : " + error.message),
   });
 
+  const assignReview = trpc.documents.assignReview.useMutation({
+    onSuccess: (document) => { if (document) setSelectedDocument(document); utils.documents.list.invalidate(); toast.success("Revue assignée"); },
+    onError: (error) => toast.error("Assignation impossible : " + error.message),
+  });
+  const submitReview = trpc.documents.submitReview.useMutation({
+    onSuccess: (document) => { if (document) setSelectedDocument(document); utils.documents.list.invalidate(); toast.success("Décision de revue enregistrée"); },
+    onError: (error) => toast.error("Décision impossible : " + error.message),
+  });
+
   const updateDocument = trpc.documents.update.useMutation({
     onSuccess: () => {
       utils.documents.list.invalidate();
@@ -977,6 +986,18 @@ export default function Documents() {
                 </div>
                 <div className="space-y-1"><Label>Niveau de confidentialité</Label><Select value={selectedDocument?.confidentiality ?? "internal"} onValueChange={(value) => setSelectedDocument({ ...selectedDocument, confidentiality: value })}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="internal">Interne</SelectItem><SelectItem value="restricted">Restreint</SelectItem><SelectItem value="confidential">Confidentiel</SelectItem></SelectContent></Select></div>
                 <Button size="sm" variant="outline" disabled={updateDocument.isPending || !selectedDocument} onClick={() => selectedDocument && updateDocument.mutate({ id: selectedDocument.id, fiscalYear: selectedDocument.fiscalYear ?? null, funder: selectedDocument.funder?.trim() || null, confidentiality: selectedDocument.confidentiality ?? "internal" })}>Enregistrer les métadonnées</Button>
+              </div>
+
+              <Separator />
+
+              {/* Review workflow */}
+              <div className="space-y-3">
+                <div><h4 className="text-sm font-medium">Circuit de revue</h4><p className="text-xs text-muted-foreground">Désignez un réviseur et suivez la date de retour attendue.</p></div>
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <div className="space-y-1"><Label>Réviseur</Label><Select value={selectedDocument?.reviewerId ? String(selectedDocument.reviewerId) : "none"} onValueChange={(value) => setSelectedDocument({ ...selectedDocument, reviewerId: value === "none" ? null : Number(value) })}><SelectTrigger><SelectValue placeholder="Choisir un réviseur" /></SelectTrigger><SelectContent><SelectItem value="none">Aucun réviseur</SelectItem>{members.filter((member) => member.status === "active").map((member) => <SelectItem key={member.id} value={String(member.userId ?? member.id)}>{member.firstName} {member.lastName}</SelectItem>)}</SelectContent></Select></div>
+                  <div className="space-y-1"><Label htmlFor="review-due-date">Échéance de revue</Label><Input id="review-due-date" type="date" value={selectedDocument?.reviewDueDate ? new Date(selectedDocument.reviewDueDate).toISOString().slice(0, 10) : ""} onChange={(e) => setSelectedDocument({ ...selectedDocument, reviewDueDate: e.target.value ? new Date(`${e.target.value}T23:59:59.000Z`) : null })} /></div>
+                </div>
+                <div className="flex flex-wrap gap-2"><Button size="sm" variant="outline" disabled={assignReview.isPending} onClick={() => selectedDocument && assignReview.mutate({ id: selectedDocument.id, reviewerId: selectedDocument.reviewerId ?? null, reviewDueDate: selectedDocument.reviewDueDate ? new Date(selectedDocument.reviewDueDate) : null })}>Enregistrer la revue</Button><Button size="sm" variant="outline" disabled={submitReview.isPending} onClick={() => selectedDocument && submitReview.mutate({ id: selectedDocument.id, status: "approved" })}>Marquer approuvé</Button><Button size="sm" variant="ghost" className="text-destructive" disabled={submitReview.isPending} onClick={() => selectedDocument && submitReview.mutate({ id: selectedDocument.id, status: "rejected" })}>Demander des corrections</Button></div>
               </div>
 
               <Separator />

@@ -410,6 +410,8 @@ export const documents = mysqlTable("documents", {
 	approvedBy: int(),
 	approvedAt: timestamp({ mode: 'string' }),
 	approvalComment: text(),
+	reviewerId: int(),
+	reviewDueDate: timestamp({ mode: 'string' }),
 	isArchived: int().default(0),
 	fiscalYear: int(),
 	antenneId: int(),

@@ -307,6 +307,26 @@ export const appRouter = router({
         await logAudit({ userId: ctx.user.id, action: "UPDATE", entityType: "document", entityId: id, description: "Document mis à jour", newValue: JSON.stringify({ ...data, dueDate: data.dueDate?.toISOString() ?? null, fiscalYear: data.fiscalYear ?? null, antenneId: data.antenneId ?? null, projectId: data.projectId ?? null, funder: data.funder ?? null, confidentiality: data.confidentiality ?? null, businessOwnerId: data.businessOwnerId ?? null }), status: "success" });
         return result;
       }),
+    assignReview: protectedProcedure
+      .input(z.object({ id: z.number().int().positive(), reviewerId: z.number().int().positive().nullable(), reviewDueDate: z.date().nullable() }))
+      .mutation(async ({ input, ctx }) => {
+        await assertPermission(ctx.user, "documents.manage");
+        const document = await getDocumentById(input.id);
+        if (!document) throw new TRPCError({ code: "NOT_FOUND", message: "Document introuvable" });
+        await updateDocument(input.id, { reviewerId: input.reviewerId, reviewDueDate: input.reviewDueDate?.toISOString() ?? null, updatedBy: ctx.user.id } as any);
+        await logAudit({ userId: ctx.user.id, action: "ASSIGN_REVIEW", entityType: "document", entityId: input.id, entityName: document.title, description: "Révision documentaire assignée", newValue: JSON.stringify({ reviewerId: input.reviewerId, reviewDueDate: input.reviewDueDate?.toISOString() ?? null }), status: "success" });
+        return getDocumentById(input.id);
+      }),
+    submitReview: protectedProcedure
+      .input(z.object({ id: z.number().int().positive(), status: z.enum(["approved", "rejected"]), comment: z.string().trim().max(2000).optional() }))
+      .mutation(async ({ input, ctx }) => {
+        const document = await getDocumentById(input.id);
+        if (!document) throw new TRPCError({ code: "NOT_FOUND", message: "Document introuvable" });
+        if (ctx.user.role !== "admin" && document.reviewerId !== ctx.user.id) throw new TRPCError({ code: "FORBIDDEN", message: "Vous n’êtes pas le réviseur désigné." });
+        await updateDocument(input.id, { approvalStatus: input.status, approvedBy: ctx.user.id, approvedAt: new Date().toISOString(), approvalComment: input.comment ?? null, updatedBy: ctx.user.id } as any);
+        await logAudit({ userId: ctx.user.id, action: input.status === "approved" ? "REVIEW_APPROVE" : "REVIEW_REJECT", entityType: "document", entityId: input.id, entityName: document.title, description: "Décision de revue documentaire", newValue: JSON.stringify({ status: input.status, comment: input.comment ?? null }), status: "success" });
+        return getDocumentById(input.id);
+      }),
     approve: protectedProcedure
       .input(z.object({
         id: z.number().int().positive(),

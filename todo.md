@@ -2069,3 +2069,7 @@
 - [x] Permettre la sélection et le traitement de plusieurs fichiers avec progression individuelle.
 - [x] Afficher les erreurs partielles et les résultats d’import sans perdre les fichiers déjà acceptés.
 - [ ] Ajouter les tests Vitest du contrôle de doublons et du flux multi-fichiers (contrôle de doublon validé ; test navigateur multi-fichiers restant).
+- [x] Définir le réviseur, l’échéance et les états du circuit de revue documentaire.
+- [x] Implémenter les transitions de revue avec permissions et audit centralisé.
+- [x] Ajouter l’affichage du suivi de revue et des échéances dans Documents.
+- [x] Ajouter les tests Vitest du circuit de revue et des transitions interdites (contrat de permissions, réviseur désigné et audit validés).
