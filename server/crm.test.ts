@@ -22,7 +22,7 @@ import {
 
 describe("Critical resource authorization contract", () => {
   it("protects every CRM write family behind the authenticated admin guard", () => {
-    expect(crmRouterSource.match(/Unauthorized: Admin only/g)?.length).toBeGreaterThanOrEqual(8);
+    expect(crmRouterSource.match(/assertPermission\(ctx\.user, "crm\.manage"\)/g)?.length).toBeGreaterThanOrEqual(8);
     expect(crmRouterSource).toContain("contacts:");
     expect(crmRouterSource).toContain("activities:");
     expect(crmRouterSource).toContain("pipeline:");

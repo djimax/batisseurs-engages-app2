@@ -2133,6 +2133,7 @@
 - [x] Ajouter les actions d’accès et de conservation documentaire aux choix de filtre AuditHistory (VIEW, DOWNLOAD, PRINT, REVIEW, ARCHIVE, RESTORE et HOLD).
 - [ ] Lot global : auditer et renforcer les permissions par ressource dans les modules critiques — CRM et finances couverts ; autres ressources restantes à auditer.
 - [x] Vérifier et couvrir les mutations CRM et finances sensibles par des tests d’autorisation admin/non-admin (contrats CRM admin-only et permissions finances.view/finances.manage, 39 tests ciblés réussis).
+- [x] Remplacer les garde-fous CRM admin-only par des permissions granulaires crm.view et crm.manage pour les écritures, avec permissions ajoutées au catalogue par défaut.
 - [ ] Lot global : compléter les notifications d’événements clés et la couverture de tests.
 - [ ] Lot global : documenter l’architecture, les API tRPC et les rôles/permissions.
 - [ ] Lot global : évaluer les intégrations externes restantes et leurs blocages de facturation.

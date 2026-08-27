@@ -24,6 +24,8 @@ export const DEFAULT_PERMISSIONS = [
   { name: "communication.manage", category: "communication", description: "Publier et gérer les annonces et actualités" },
   { name: "members.view", category: "members", description: "Consulter les membres" },
   { name: "members.manage", category: "members", description: "Créer et modifier les membres" },
+  { name: "crm.view", category: "crm", description: "Consulter les contacts, activités et rapports CRM" },
+  { name: "crm.manage", category: "crm", description: "Créer, modifier et supprimer les éléments CRM" },
   { name: "documents.view", category: "documents", description: "Consulter les documents" },
   { name: "documents.manage", category: "documents", description: "Créer et modifier les documents" },
   { name: "signatures.view", category: "documents", description: "Consulter les demandes et preuves de signature" },
