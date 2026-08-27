@@ -104,6 +104,7 @@ export default function Documents() {
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [priorityFilter, setPriorityFilter] = useState<string>("all");
+  const [retentionFilter, setRetentionFilter] = useState<string>("all");
   const [sortBy, setSortBy] = useState<string>("date-newest");
   const [showArchived, setShowArchived] = useState<boolean>(false);
   const [selectedDocument, setSelectedDocument] = useState<any>(null);
@@ -158,6 +159,7 @@ export default function Documents() {
       : undefined,
     search: searchTerm || undefined,
     isArchived: showArchived,
+    retentionFilter: retentionFilter !== "all" ? (retentionFilter as "legal-hold" | "active") : undefined,
   });
   const { data: members = [] } = trpc.members.list.useQuery();
   const { data: signatureRequests = [], refetch: refetchSignatures } = trpc.signature.listForDocument.useQuery(
@@ -676,6 +678,10 @@ export default function Documents() {
                 </SelectContent>
               </Select>
 
+              <Select value={retentionFilter} onValueChange={setRetentionFilter}>
+                <SelectTrigger className="w-[190px]"><ShieldCheck className="h-4 w-4 mr-2" /><SelectValue placeholder="Conservation" /></SelectTrigger>
+                <SelectContent><SelectItem value="all">Toute conservation</SelectItem><SelectItem value="active">Conservation active</SelectItem><SelectItem value="legal-hold">Exemption légale</SelectItem></SelectContent>
+              </Select>
               <Button
                 variant={showArchived ? "default" : "outline"}
                 onClick={() => setShowArchived(!showArchived)}

@@ -132,6 +132,7 @@ export const appRouter = router({
         priority: z.enum(["low", "medium", "high", "urgent"]).optional(),
         search: z.string().trim().max(200).optional(),
         isArchived: z.boolean().optional(),
+        retentionFilter: z.enum(["legal-hold", "active"]).optional(),
       }).optional())
       .query(async ({ input, ctx }) => {
         await assertPermission(ctx.user, "documents.view");
@@ -140,6 +141,7 @@ export const appRouter = router({
         const allDocuments = await getAllDocuments({
           ...input,
           isArchived: input?.isArchived ? 1 : input?.isArchived === false ? 0 : undefined,
+          retentionFilter: input?.retentionFilter,
         });
         if (ctx.user.role === "admin") return allDocuments;
         const accessibleIds = await getAccessibleDocumentIds(ctx.user.id, "canView");

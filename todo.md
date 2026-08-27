@@ -2096,3 +2096,4 @@
 - [x] Ajouter l’édition sécurisée de retentionUntil et legalHold dans le détail Documents.
 - [x] Valider le formulaire de conservation par TypeScript et 33 tests Documents.
 - [x] Vérifier la chaîne complète des migrations sur une base MySQL/TiDB temporaire vierge après la migration de rétention.
+- [x] Ajouter un filtre Documents pour retrouver les documents sous conservation légale ou avec une date de rétention active.

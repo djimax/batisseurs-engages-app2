@@ -248,6 +248,7 @@ export async function getAllDocuments(filters?: {
   priority?: string;
   search?: string;
   isArchived?: number;
+  retentionFilter?: "legal-hold" | "active";
 }) {
   const db = await getDb();
   if (!db) return [];
@@ -272,6 +273,11 @@ export async function getAllDocuments(filters?: {
         like(documents.contentIndex, `%${filters.search}%`)
       )
     );
+  }
+  if (filters?.retentionFilter === "legal-hold") {
+    conditions.push(eq(documents.legalHold, true));
+  } else if (filters?.retentionFilter === "active") {
+    conditions.push(or(eq(documents.legalHold, true), gte(documents.retentionUntil, Date.now())));
   }
   if (filters?.isArchived !== undefined) {
     conditions.push(eq(documents.isArchived, filters.isArchived ? 1 : 0));
