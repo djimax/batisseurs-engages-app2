@@ -19,6 +19,10 @@ describe("Stripe integration contract", () => {
 
   it("reconciles confirmed donations and campaign contributions locally", () => {
     const webhookSource = readFileSync(new URL("./stripe-webhook.ts", import.meta.url), "utf8");
+    expect(webhookSource).toContain('createUserNotification({');
+    expect(webhookSource).toContain('userId: memberRows[0].userId');
+    expect(webhookSource).toContain('eventKey: "payment_received"');
+    expect(webhookSource).toContain('dedupeKey: `stripe-payment-received:${session.id}`');
     expect(webhookSource).toContain('db.insert(dons).values');
     expect(webhookSource).toContain('payment.paymentType === "campagne"');
     expect(webhookSource).toContain('await db.insert(transactions).values');
