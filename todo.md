@@ -2102,4 +2102,6 @@
 - [x] Rejouer la vérification complète du projet : TypeScript sans erreur, 55 suites et 378 tests réussis.
 - [x] Remplacer les données simulées d’AuditHistory par la procédure tRPC admin.getAuditLogs, avec rafraîchissement et filtres conservés.
 - [x] Valider AuditHistory, Documents et export RGPD : TypeScript sans erreur et 46 tests ciblés réussis.
+- [x] Valider la requête SQL d’audit enrichie : TypeScript sans erreur et 46 tests ciblés réussis.
 - [x] Corriger la concordance des types d’entités et actions dans les filtres de l’historique d’audit réel (valeurs singulières alignées sur le serveur et actions d’accès ajoutées).
+- [x] Enrichir le journal d’audit global avec l’identité de l’utilisateur et un filtrage SQL borné (COALESCE de l’email enregistré et du compte, pagination SQL jusqu’à 500 lignes).

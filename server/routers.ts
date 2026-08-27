@@ -35,10 +35,10 @@ import {
   getNewsList, createNews, updateNews, deleteNews, getNewsComments, addNewsComment, deleteNewsComment,
   createMemberEvaluation, getMemberEvaluations, getMemberGrade
 } from "./db";
-import { roles, permissions, rolePermissions, userRoles, userScopes, auditLogs, emailTemplates, emailHistory, emailRecipients, members, adhesions, notificationSchedules, announcements, news, newsComments, projects, projectMembers, groupes, groupeMembers, antennes, documents, documentNotes } from "../drizzle/schema";
+import { roles, permissions, rolePermissions, userRoles, userScopes, auditLogs, emailTemplates, emailHistory, emailRecipients, members, adhesions, notificationSchedules, announcements, news, newsComments, projects, projectMembers, groupes, groupeMembers, antennes, documents, documentNotes, users } from "../drizzle/schema";
 import { buildMemberCardPayload, getMemberHistory, getMemberStatusHistory, memberStatusSchema, recordMemberHistory, recordMemberStatus } from "./member-lifecycle";
 import { createUserNotification, generateMembershipReminderNotifications, getOrCreateNotificationPreferences, listUserNotifications, markAllNotificationsRead, markNotificationRead, updateNotificationPreferences } from "./notification-center";
-import { and, eq, desc } from "drizzle-orm";
+import { and, eq, desc, sql } from "drizzle-orm";
 import { parse as parseCookieHeader } from "cookie";
 import { createHeartbeatJob } from "./_core/heartbeat";
 import { logAudit } from "./audit";
@@ -1897,22 +1897,28 @@ export const appRouter = router({
         if (!db) return [];
         
         try {
-          const result = await db.select().from(auditLogs);
-          let filtered = result;
-          
-          if (input.entityType) {
-            filtered = filtered.filter(log => log.entityType === input.entityType);
-          }
-          if (input.userId) {
-            filtered = filtered.filter(log => log.userId === input.userId);
-          }
-          if (input.action) {
-            filtered = filtered.filter(log => log.action === input.action);
-          }
-          
-          return filtered
-            .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
-            .slice(input.offset, input.offset + input.limit);
+          const conditions = [];
+          if (input.entityType) conditions.push(eq(auditLogs.entityType, input.entityType));
+          if (input.userId) conditions.push(eq(auditLogs.userId, input.userId));
+          if (input.action) conditions.push(eq(auditLogs.action, input.action));
+          return db.select({
+            id: auditLogs.id,
+            userId: auditLogs.userId,
+            userEmail: sql<string>`COALESCE(${auditLogs.userEmail}, ${users.email})`,
+            action: auditLogs.action,
+            entityType: auditLogs.entityType,
+            entityId: auditLogs.entityId,
+            entityName: auditLogs.entityName,
+            description: auditLogs.description,
+            oldValue: auditLogs.oldValue,
+            newValue: auditLogs.newValue,
+            status: auditLogs.status,
+            createdAt: auditLogs.createdAt,
+          }).from(auditLogs).leftJoin(users, eq(auditLogs.userId, users.id))
+            .where(conditions.length ? and(...conditions) : undefined)
+            .orderBy(desc(auditLogs.createdAt))
+            .limit(input.limit)
+            .offset(input.offset);
         } catch (error) {
           console.error("Failed to get audit logs:", error);
           return [];
