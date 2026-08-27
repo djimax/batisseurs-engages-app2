@@ -10,6 +10,7 @@ import { useBackup } from "@/hooks/useBackup";
 import { useSyncHistory } from "@/hooks/useSyncHistory";
 import { useCurrency } from "@/contexts/CurrencyContext";
 import { useTheme } from "@/contexts/ThemeContext";
+import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
 import { useEffect, useRef, useState } from "react";
 import { useLocation } from "wouter";
@@ -60,6 +61,7 @@ export default function Settings() {
   const syncStats = getSyncStats();
   const lastSync = getLastSync();
   const isAdmin = currentUser?.role === "admin";
+  const { refetch: refetchPersonalData, isFetching: isExportingPersonalData } = trpc.auth.exportMyData.useQuery(undefined, { enabled: false });
 
   useEffect(() => {
     const savedMode = localStorage.getItem("appMode") as "online" | "offline" | null;
@@ -111,6 +113,24 @@ export default function Settings() {
     } catch (error) {
       console.error("Erreur lors de l'export :", error);
       toast.error("Impossible d’exporter la sauvegarde");
+    }
+  };
+
+  const handleExportPersonalData = async () => {
+    try {
+      const result = await refetchPersonalData();
+      if (!result.data) throw new Error("Export indisponible");
+      const blob = new Blob([JSON.stringify(result.data, null, 2)], { type: "application/json;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `export-rgpd-${new Date().toISOString().slice(0, 10)}.json`;
+      link.click();
+      URL.revokeObjectURL(url);
+      toast.success("Export RGPD téléchargé");
+    } catch (error) {
+      console.error("Erreur lors de l’export RGPD :", error);
+      toast.error("Impossible d’exporter vos données personnelles");
     }
   };
 
@@ -384,6 +404,11 @@ export default function Settings() {
                 </div>
                 <input ref={fileInputRef} type="file" accept=".json" onChange={handleImportBackup} className="hidden" />
                 <p className="text-xs text-muted-foreground">La sauvegarde concerne les données locales : documents, membres, catégories et notes.</p>
+                <div className="rounded-xl border border-primary/20 bg-primary/[0.03] p-4">
+                  <p className="font-semibold">Mes données personnelles</p>
+                  <p className="mt-1 text-sm text-muted-foreground">Téléchargez une copie JSON de votre profil, de vos contributions documentaires et de votre historique d’audit.</p>
+                  <Button onClick={handleExportPersonalData} disabled={isExportingPersonalData} variant="outline" className="mt-3 gap-2"><Download className="h-4 w-4" />{isExportingPersonalData ? "Préparation…" : "Exporter mes données (RGPD)"}</Button>
+                </div>
               </CardContent>
             </Card>
 

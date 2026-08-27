@@ -2097,3 +2097,5 @@
 - [x] Valider le formulaire de conservation par TypeScript et 33 tests Documents.
 - [x] Vérifier la chaîne complète des migrations sur une base MySQL/TiDB temporaire vierge après la migration de rétention.
 - [x] Ajouter un filtre Documents pour retrouver les documents sous conservation légale ou avec une date de rétention active.
+- [x] Ajouter un export RGPD sécurisé des données personnelles de l’utilisateur connecté (profil, fiche membre, documents créés, notes et audit propre ; URLs S3 privées exclues).
+- [x] Ajouter et réussir le test contractuel de l’export RGPD (35 tests ciblés au total).

@@ -35,7 +35,7 @@ import {
   getNewsList, createNews, updateNews, deleteNews, getNewsComments, addNewsComment, deleteNewsComment,
   createMemberEvaluation, getMemberEvaluations, getMemberGrade
 } from "./db";
-import { roles, permissions, rolePermissions, userRoles, userScopes, auditLogs, emailTemplates, emailHistory, emailRecipients, members, adhesions, notificationSchedules, announcements, news, newsComments, projects, projectMembers, groupes, groupeMembers, antennes } from "../drizzle/schema";
+import { roles, permissions, rolePermissions, userRoles, userScopes, auditLogs, emailTemplates, emailHistory, emailRecipients, members, adhesions, notificationSchedules, announcements, news, newsComments, projects, projectMembers, groupes, groupeMembers, antennes, documents, documentNotes } from "../drizzle/schema";
 import { buildMemberCardPayload, getMemberHistory, getMemberStatusHistory, memberStatusSchema, recordMemberHistory, recordMemberStatus } from "./member-lifecycle";
 import { createUserNotification, generateMembershipReminderNotifications, getOrCreateNotificationPreferences, listUserNotifications, markAllNotificationsRead, markNotificationRead, updateNotificationPreferences } from "./notification-center";
 import { and, eq, desc } from "drizzle-orm";
@@ -83,6 +83,18 @@ export const appRouter = router({
   
   auth: router({
     me: publicProcedure.query(opts => opts.ctx.user),
+    exportMyData: protectedProcedure.query(async ({ ctx }) => {
+      const db = await getDb();
+      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Base de données indisponible" });
+      const [memberProfiles, ownedDocuments, authoredNotes, auditHistory] = await Promise.all([
+        db.select().from(members).where(eq(members.userId, ctx.user.id)),
+        db.select({ id: documents.id, title: documents.title, description: documents.description, categoryId: documents.categoryId, status: documents.status, priority: documents.priority, createdAt: documents.createdAt, updatedAt: documents.updatedAt, dueDate: documents.dueDate, confidentiality: documents.confidentiality, retentionUntil: documents.retentionUntil, legalHold: documents.legalHold }).from(documents).where(eq(documents.createdBy, ctx.user.id)),
+        db.select().from(documentNotes).where(eq(documentNotes.userId, ctx.user.id)),
+        db.select({ id: auditLogs.id, action: auditLogs.action, entityType: auditLogs.entityType, entityId: auditLogs.entityId, description: auditLogs.description, status: auditLogs.status, createdAt: auditLogs.createdAt }).from(auditLogs).where(eq(auditLogs.userId, ctx.user.id)).orderBy(desc(auditLogs.createdAt)).limit(500),
+      ]);
+      await logAudit({ userId: ctx.user.id, action: "EXPORT", entityType: "user_data", entityId: ctx.user.id, description: "Export RGPD des données personnelles", status: "success" });
+      return { exportedAt: new Date().toISOString(), user: { id: ctx.user.id, name: ctx.user.name, email: ctx.user.email, role: ctx.user.role, loginMethod: ctx.user.loginMethod, createdAt: ctx.user.createdAt, updatedAt: ctx.user.updatedAt, lastSignedIn: ctx.user.lastSignedIn }, memberProfiles, ownedDocuments, authoredNotes, auditHistory };
+    }),
     logout: publicProcedure.mutation(({ ctx }) => {
       const cookieOptions = getSessionCookieOptions(ctx.req);
       ctx.res.clearCookie(COOKIE_NAME, { ...cookieOptions, maxAge: -1 });
