@@ -2105,7 +2105,7 @@
 - [x] Valider le workflow RGPD : migration vierge réussie, TypeScript sans erreur et 48 tests ciblés réussis.
 - [x] Ajouter les tests contractuels de protection contre les demandes RGPD en doublon et de revue limitée aux administrateurs.
 - [x] Intégrer la revue des demandes RGPD dans l’interface d’administration (liste des demandes en attente, justification, approbation/refus confirmé et audit de la décision).
-- [x] Rejouer la vérification complète du projet : TypeScript sans erreur, 55 suites et 378 tests réussis.
+- [x] Rejouer la vérification complète du projet : TypeScript sans erreur, 56 suites et 382 tests réussis.
 - [x] Remplacer les données simulées d’AuditHistory par la procédure tRPC admin.getAuditLogs, avec rafraîchissement et filtres conservés.
 - [x] Valider AuditHistory, Documents et export RGPD : TypeScript sans erreur et 46 tests ciblés réussis.
 - [x] Valider la requête SQL d’audit enrichie : TypeScript sans erreur et 46 tests ciblés réussis.
@@ -2115,5 +2115,6 @@
 - [x] Valider l’export CSV d’audit par TypeScript et 50 tests ciblés réussis.
 - [x] Valider l’affichage de l’identité résolue par TypeScript et 17 tests audit/RGPD ciblés réussis.
 - [x] Valider la notification Stripe de paiement confirmé par TypeScript et 23 tests Stripe/notifications ciblés réussis.
+- [x] Rejouer la régression complète après RGPD, audit et notifications Stripe : TypeScript sans erreur, 56 suites et 382 tests réussis.
 - [x] Afficher l’email résolu de l’utilisateur dans le tableau AuditHistory administrateur.
 - [x] Ajouter un export CSV du journal d’audit filtré, limité aux lignes actuellement consultées (UTF-8 avec BOM, échappement CSV, données admin visibles uniquement).
