@@ -210,6 +210,14 @@ describe("Documents Router", () => {
     expect(source).toContain('action: "ARCHIVE", entityType: "document"');
   });
 
+  it("protects document retention and blocks deletion under legal hold", () => {
+    const source = readFileSync(new URL("./routers.ts", import.meta.url), "utf8");
+    expect(source).toContain("setRetention: protectedProcedure");
+    expect(source).toContain("retentionUntil: z.number().int().positive().nullable()");
+    expect(source).toContain("legalHold: z.boolean()");
+    expect(source).toContain("Ce document est protégé par une politique de conservation.");
+  });
+
   it("protects bulk archive and restore operations per document", () => {
     const source = readFileSync(new URL("./routers.ts", import.meta.url), "utf8");
     expect(source).toContain("bulkArchive: protectedProcedure");

@@ -385,11 +385,27 @@ export const appRouter = router({
         return getDocumentById(input.id);
       }),
     
+    setRetention: protectedProcedure
+      .input(z.object({ id: z.number().int().positive(), retentionUntil: z.number().int().positive().nullable(), legalHold: z.boolean() }))
+      .mutation(async ({ input, ctx }) => {
+        await assertPermission(ctx.user, "documents.manage");
+        await assertDocumentCapability(ctx.user, input.id, "canEdit");
+        const document = await getDocumentById(input.id);
+        if (!document) throw new TRPCError({ code: "NOT_FOUND", message: "Document introuvable" });
+        await updateDocument(input.id, { retentionUntil: input.retentionUntil, legalHold: input.legalHold, updatedBy: ctx.user.id } as any);
+        await logAudit({ userId: ctx.user.id, action: "RETENTION_UPDATE", entityType: "document", entityId: input.id, entityName: document.title, description: "Politique de conservation mise à jour", newValue: JSON.stringify({ retentionUntil: input.retentionUntil, legalHold: input.legalHold }), status: "success" });
+        return getDocumentById(input.id);
+      }),
     delete: protectedProcedure
       .input(z.object({ id: z.number().int().positive() }))
       .mutation(async ({ input, ctx }) => {
         await assertPermission(ctx.user, "documents.manage");
         await assertDocumentCapability(ctx.user, input.id, "canDelete");
+        const document = await getDocumentById(input.id);
+        if (!document) throw new TRPCError({ code: "NOT_FOUND", message: "Document introuvable" });
+        if (document.legalHold || (document.retentionUntil && document.retentionUntil > Date.now())) {
+          throw new TRPCError({ code: "CONFLICT", message: "Ce document est protégé par une politique de conservation." });
+        }
         await deleteDocument(input.id);
         await logActivity({
           userId: ctx.user.id,

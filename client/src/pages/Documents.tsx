@@ -750,6 +750,7 @@ export default function Documents() {
                       <CardDescription className="truncate">
                         {getCategoryName(doc.categoryId)}
                       </CardDescription>
+                      {(doc.legalHold || doc.retentionUntil) && <div className="mt-1 flex flex-wrap gap-1">{doc.legalHold && <Badge variant="destructive" className="text-[10px]">Conservation légale</Badge>}{doc.retentionUntil && <Badge variant="outline" className="text-[10px]">Jusqu’au {new Date(doc.retentionUntil).toLocaleDateString("fr-FR")}</Badge>}</div>}
                     </div>
                   </div>
                   <DropdownMenu>

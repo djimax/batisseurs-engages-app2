@@ -2085,3 +2085,8 @@
 - [x] Ajouter les mutations groupées avec permissions et audit par élément.
 - [x] Intégrer la sélection et les actions en masse dans Documents avec confirmation.
 - [x] Ajouter les tests des actions en masse et des éléments refusés (contrat de permission et refus partiel validés).
+- [x] Auditer les champs d’échéance et les permissions de suppression documentaire.
+- [x] Ajouter une date de conservation et une exemption de conservation légale.
+- [x] Empêcher la suppression automatique ou manuelle d’un document sous exemption légale.
+- [x] Afficher le statut de conservation dans Documents et ajouter les tests associés (badge conservation légale/date et 33 tests Documents validés).
+- [x] Aligner la base active avec le champ legalHold avant de valider la politique de conservation.

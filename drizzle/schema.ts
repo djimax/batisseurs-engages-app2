@@ -1,4 +1,4 @@
-import { mysqlTable, mysqlSchema, AnyMySqlColumn, int, varchar, text, timestamp, mysqlEnum, date, index, uniqueIndex, json, tinyint } from "drizzle-orm/mysql-core"
+import { mysqlTable, mysqlSchema, AnyMySqlColumn, int, varchar, text, timestamp, mysqlEnum, date, index, uniqueIndex, json, tinyint, bigint, boolean } from "drizzle-orm/mysql-core"
 import { sql } from "drizzle-orm"
 
 export const activityLogs = mysqlTable("activity_logs", {
@@ -420,6 +420,8 @@ export const documents = mysqlTable("documents", {
 	confidentiality: mysqlEnum(['internal','restricted','confidential']).default('internal').notNull(),
 	businessOwnerId: int(),
 	contentIndex: text(),
+	retentionUntil: bigint({ mode: "number" }),
+	legalHold: boolean().default(false).notNull(),
 });
 
 export const documentSavedViews = mysqlTable("document_saved_views", {
