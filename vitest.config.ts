@@ -15,5 +15,7 @@ export default defineConfig({
   test: {
     environment: "node",
     include: ["server/**/*.test.ts", "server/**/*.spec.ts"],
+    // La base de test est partagée entre les suites ; éviter les courses entre mutations.
+    fileParallelism: false,
   },
 });
