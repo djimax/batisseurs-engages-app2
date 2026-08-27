@@ -122,6 +122,8 @@ export default function Documents() {
   const [shareCanEdit, setShareCanEdit] = useState(false);
   const [shareCanDelete, setShareCanDelete] = useState(false);
   const [exportingSignatureId, setExportingSignatureId] = useState<number | null>(null);
+  const [savedViewName, setSavedViewName] = useState("");
+  const [selectedSavedViewId, setSelectedSavedViewId] = useState("none");
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Form state for create/edit
@@ -141,6 +143,7 @@ export default function Documents() {
   });
 
   const { data: categories } = trpc.categories.list.useQuery();
+  const { data: savedViews = [] } = trpc.documents.savedViews.useQuery();
   const { data: exportData } = trpc.documents.exportReport.useQuery({});
   const { data: documents, isLoading } = trpc.documents.list.useQuery({
     categoryId: categoryFilter !== "all" ? parseInt(categoryFilter) : undefined,
@@ -182,6 +185,15 @@ export default function Documents() {
     onError: (error) => {
       toast.error("Erreur lors de la création: " + error.message);
     },
+  });
+
+  const saveDocumentView = trpc.documents.saveView.useMutation({
+    onSuccess: () => { utils.documents.savedViews.invalidate(); setSavedViewName(""); toast.success("Vue enregistrée"); },
+    onError: (error) => toast.error("Impossible d’enregistrer la vue : " + error.message),
+  });
+  const deleteDocumentView = trpc.documents.deleteSavedView.useMutation({
+    onSuccess: () => { utils.documents.savedViews.invalidate(); setSelectedSavedViewId("none"); toast.success("Vue supprimée"); },
+    onError: (error) => toast.error("Impossible de supprimer la vue : " + error.message),
   });
 
   const updateDocument = trpc.documents.update.useMutation({
@@ -321,6 +333,28 @@ export default function Documents() {
       confidentiality: "internal",
       businessOwnerId: "",
     });
+  };
+
+  const applySavedView = (viewId: string) => {
+    setSelectedSavedViewId(viewId);
+    if (viewId === "none") return;
+    const view = savedViews.find((item) => String(item.id) === viewId);
+    if (!view) return;
+    try {
+      const filters = JSON.parse(view.filters) as { categoryId?: number | null; status?: string | null; priority?: string | null; search?: string | null; isArchived?: boolean };
+      setCategoryFilter(filters.categoryId ? String(filters.categoryId) : "all");
+      setStatusFilter(filters.status || "all");
+      setPriorityFilter(filters.priority || "all");
+      setSearchTerm(filters.search || "");
+      setShowArchived(Boolean(filters.isArchived));
+      setCurrentPage(1);
+      toast.success(`Vue « ${view.name} » appliquée`);
+    } catch { toast.error("Cette vue enregistrée est illisible"); }
+  };
+
+  const handleSaveCurrentView = () => {
+    if (!savedViewName.trim()) { toast.error("Donnez un nom à cette vue"); return; }
+    saveDocumentView.mutate({ name: savedViewName.trim(), filters: { categoryId: categoryFilter !== "all" ? Number(categoryFilter) : null, status: statusFilter !== "all" ? statusFilter as any : null, priority: priorityFilter !== "all" ? priorityFilter as any : null, search: searchTerm.trim() || null, isArchived: showArchived } });
   };
 
   const handleExportCalendar = () => {
@@ -630,6 +664,15 @@ export default function Documents() {
                 </SelectContent>
               </Select>
             </div>
+          </div>
+          <div className="mt-4 flex flex-col gap-2 border-t pt-4 sm:flex-row sm:items-center">
+            <Select value={selectedSavedViewId} onValueChange={applySavedView}>
+              <SelectTrigger className="w-full sm:w-[240px]"><SelectValue placeholder="Vues enregistrées" /></SelectTrigger>
+              <SelectContent><SelectItem value="none">Filtres actuels</SelectItem>{savedViews.map((view) => <SelectItem key={view.id} value={String(view.id)}>{view.name}</SelectItem>)}</SelectContent>
+            </Select>
+            <Input className="sm:max-w-[220px]" placeholder="Nom de la vue" value={savedViewName} onChange={(e) => setSavedViewName(e.target.value)} maxLength={120} />
+            <Button variant="outline" onClick={handleSaveCurrentView} disabled={saveDocumentView.isPending}>Enregistrer la vue</Button>
+            {selectedSavedViewId !== "none" && <Button variant="ghost" className="text-destructive" onClick={() => deleteDocumentView.mutate({ id: Number(selectedSavedViewId) })} disabled={deleteDocumentView.isPending}>Supprimer</Button>}
           </div>
         </CardContent>
       </Card>

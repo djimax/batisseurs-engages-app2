@@ -419,6 +419,18 @@ export const documents = mysqlTable("documents", {
 	businessOwnerId: int(),
 });
 
+export const documentSavedViews = mysqlTable("document_saved_views", {
+  id: int().autoincrement().notNull(),
+  userId: int().notNull(),
+  name: varchar({ length: 120 }).notNull(),
+  filters: text().notNull(),
+  isDefault: int().default(0).notNull(),
+  createdAt: timestamp({ mode: 'string' }).defaultNow().notNull(),
+  updatedAt: timestamp({ mode: 'string' }).defaultNow().onUpdateNow().notNull(),
+}, (table) => [
+  index("document_saved_views_user_idx").on(table.userId),
+]);
+
 export const documentVersions = mysqlTable("document_versions", {
   id: int().primaryKey().autoincrement().notNull(),
   documentId: int().notNull(),

@@ -2062,5 +2062,5 @@
 - [x] Auditer le schéma, les procédures et l’interface Documents pour définir les métadonnées personnalisées sans doublon.
 - [x] Ajouter les métadonnées documentaires : exercice, antenne, projet, financeur, confidentialité et propriétaire métier (schéma, création et affichage initial validés).
 - [x] Ajouter les validations serveur, l’édition et l’affichage des métadonnées dans Documents (création, édition inline, affichage et audit validés).
-- [ ] Ajouter des vues documentaires enregistrées avec filtres persistants et contrôle d’accès par utilisateur.
-- [ ] Ajouter les tests Vitest et la vérification visuelle du premier lot de métadonnées et vues enregistrées (test d’intégration métadonnées validé ; vues enregistrées restant à couvrir).
+- [x] Ajouter des vues documentaires enregistrées avec filtres persistants et contrôle d’accès par utilisateur.
+- [x] Ajouter les tests Vitest et la vérification visuelle du premier lot de métadonnées et vues enregistrées (28 tests Documents validés ; affichage et contrôles UI vérifiés).

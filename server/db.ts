@@ -5,6 +5,7 @@ import {
   users,
   categories,
   documents,
+  documentSavedViews,
   documentNotes,
   members,
   memberCertificates,
@@ -289,6 +290,25 @@ export async function getDocumentById(id: number) {
   if (!db) return undefined;
   const result = await db.select().from(documents).where(eq(documents.id, id)).limit(1);
   return result[0];
+}
+
+export async function getDocumentSavedViews(userId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(documentSavedViews).where(eq(documentSavedViews.userId, userId)).orderBy(desc(documentSavedViews.updatedAt));
+}
+
+export async function createDocumentSavedView(data: typeof documentSavedViews.$inferInsert) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const result = await db.insert(documentSavedViews).values(data);
+  return db.select().from(documentSavedViews).where(eq(documentSavedViews.id, Number(result[0].insertId))).limit(1).then((rows) => rows[0]);
+}
+
+export async function deleteDocumentSavedView(id: number, userId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.delete(documentSavedViews).where(and(eq(documentSavedViews.id, id), eq(documentSavedViews.userId, userId)));
 }
 
 export async function createDocument(data: InsertDocument) {

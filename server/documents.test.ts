@@ -307,6 +307,26 @@ describe("Documents Router", () => {
     }
   });
 
+  it("persists saved document views per user and audits their lifecycle", async () => {
+    const db = await getDb();
+    if (!db) return;
+    const caller = appRouter.createCaller(createAuthContext());
+    const name = `Vue test ${Date.now()}`;
+    const created = await caller.documents.saveView({ name, filters: { status: "pending", priority: "urgent", isArchived: false } });
+    try {
+      expect(created?.name).toBe(name);
+      const views = await caller.documents.savedViews();
+      expect(views.some((view) => view.id === created?.id && view.userId === 1)).toBe(true);
+      await caller.documents.deleteSavedView({ id: created!.id });
+      const afterDelete = await caller.documents.savedViews();
+      expect(afterDelete.some((view) => view.id === created?.id)).toBe(false);
+      const audits = await db.select().from(auditLogs).where(and(eq(auditLogs.entityType, "document_saved_view"), eq(auditLogs.entityId, created!.id)));
+      expect(audits.map((audit) => audit.action)).toEqual(expect.arrayContaining(["CREATE", "DELETE"]));
+    } finally {
+      await db.delete(auditLogs).where(and(eq(auditLogs.entityType, "document_saved_view"), eq(auditLogs.entityId, created!.id)));
+    }
+  });
+
   it("should update document status (protected)", async () => {
     const ctx = createAuthContext();
     const caller = appRouter.createCaller(ctx);

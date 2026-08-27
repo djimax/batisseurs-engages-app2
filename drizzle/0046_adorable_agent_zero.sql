@@ -1,0 +1,1 @@
+ALTER TABLE `document_saved_views` MODIFY COLUMN `createdAt` timestamp NOT NULL DEFAULT (now());

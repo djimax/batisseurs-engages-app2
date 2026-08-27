@@ -9,7 +9,7 @@ import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import { 
   getAllCategories, getCategoryById, createCategory, seedDefaultCategories,
-  getAllDocuments, getDocumentById, createDocument, updateDocument, deleteDocument, getDocumentStats, seedDefaultDocuments, getDocumentVersions, createDocumentVersion, getDocumentPermissions, setDocumentPermission, removeDocumentPermission, getDocumentPermissionForUser, getAccessibleDocumentIds,
+  getAllDocuments, getDocumentById, createDocument, updateDocument, deleteDocument, getDocumentStats, seedDefaultDocuments, getDocumentVersions, createDocumentVersion, getDocumentPermissions, setDocumentPermission, removeDocumentPermission, getDocumentPermissionForUser, getAccessibleDocumentIds, getDocumentSavedViews, createDocumentSavedView, deleteDocumentSavedView,
   getNotesByDocumentId, getNoteById, createNote, deleteNote,
   getAllMembers, getAllMembersWithGrades, getMemberById, createMember, updateMember, deleteMember,
   logActivity, getRecentActivity,
@@ -195,6 +195,37 @@ export const appRouter = router({
       await seedDefaultDocuments();
       return getDocumentStats();
     }),
+    savedViews: protectedProcedure.query(async ({ ctx }) => {
+      await assertPermission(ctx.user, "documents.view");
+      return getDocumentSavedViews(ctx.user.id);
+    }),
+    saveView: protectedProcedure
+      .input(z.object({
+        name: z.string().trim().min(1).max(120),
+        filters: z.object({
+          categoryId: z.number().int().positive().nullable().optional(),
+          status: z.enum(["pending", "in-progress", "completed"]).nullable().optional(),
+          priority: z.enum(["low", "medium", "high", "urgent"]).nullable().optional(),
+          search: z.string().trim().max(200).nullable().optional(),
+          isArchived: z.boolean().optional(),
+          fiscalYear: z.number().int().min(2000).max(2200).nullable().optional(),
+          confidentiality: z.enum(["internal", "restricted", "confidential"]).nullable().optional(),
+        }),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        await assertPermission(ctx.user, "documents.view");
+        const view = await createDocumentSavedView({ userId: ctx.user.id, name: input.name, filters: JSON.stringify(input.filters), isDefault: 0 });
+        await logAudit({ userId: ctx.user.id, action: "CREATE", entityType: "document_saved_view", entityId: view?.id, entityName: input.name, description: "Vue documentaire enregistrée", newValue: JSON.stringify(input.filters), status: "success" });
+        return view;
+      }),
+    deleteSavedView: protectedProcedure
+      .input(z.object({ id: z.number().int().positive() }))
+      .mutation(async ({ input, ctx }) => {
+        await assertPermission(ctx.user, "documents.view");
+        await deleteDocumentSavedView(input.id, ctx.user.id);
+        await logAudit({ userId: ctx.user.id, action: "DELETE", entityType: "document_saved_view", entityId: input.id, description: "Vue documentaire supprimée", status: "success" });
+        return { success: true as const };
+      }),
     
     create: protectedProcedure
       .input(z.object({
