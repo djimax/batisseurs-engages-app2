@@ -1360,10 +1360,10 @@
 
 ### 4. Notifications en Temps Réel
 - [ ] Implémenter WebSocket pour les notifications en temps réel
-- [ ] Créer un système de notifications avec types (info, warning, error, success)
+- [x] Créer un système de notifications avec types (info, warning, error, success)
 - [ ] Ajouter les notifications pour les événements clés (adhésion, projet, document) — événement document d’assignation au réviseur livré ; adhésion et projet restent à couvrir.
-- [ ] Implémenter les préférences de notification par utilisateur
-- [ ] Créer une page de centre de notifications
+- [x] Implémenter les préférences de notification par utilisateur
+- [x] Créer une page de centre de notifications
 - [ ] Ajouter les notifications par email pour les événements importants
 - [ ] Tests des notifications
 
