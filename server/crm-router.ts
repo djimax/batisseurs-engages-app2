@@ -31,13 +31,15 @@ export const crmRouter = router({
         status: z.string().optional(),
         search: z.string().optional(),
       }).optional())
-      .query(async ({ input }) => {
+      .query(async ({ input, ctx }: any) => {
+        await assertPermission(ctx.user, "crm.view");
         return listCrmContacts(input);
       }),
 
     get: protectedProcedure
       .input(z.number())
-      .query(async ({ input }) => {
+      .query(async ({ input, ctx }: any) => {
+        await assertPermission(ctx.user, "crm.view");
         return getCrmContact(input);
       }),
 
@@ -112,7 +114,8 @@ export const crmRouter = router({
   activities: router({
     list: protectedProcedure
       .input(z.number())
-      .query(async ({ input }: any) => {
+      .query(async ({ input, ctx }: any) => {
+        await assertPermission(ctx.user, "crm.view");
         return listCrmActivities(input);
       }),
 
@@ -167,7 +170,8 @@ export const crmRouter = router({
   pipeline: router({
     list: protectedProcedure
       .input(z.object({ stage: z.string().optional() }).optional())
-      .query(async ({ input }: any) => {
+      .query(async ({ input, ctx }: any) => {
+        await assertPermission(ctx.user, "crm.view");
         return listAdhesionPipeline(input?.stage);
       }),
 
@@ -210,7 +214,8 @@ export const crmRouter = router({
   reports: router({
     list: protectedProcedure
       .input(z.object({ type: z.string().optional() }).optional())
-      .query(async ({ input }: any) => {
+      .query(async ({ input, ctx }: any) => {
+        await assertPermission(ctx.user, "crm.view");
         return listCrmReports(input?.type);
       }),
 
@@ -247,7 +252,8 @@ export const crmRouter = router({
   email: router({
     getHistory: protectedProcedure
       .input(z.number())
-      .query(async ({ input }) => {
+      .query(async ({ input, ctx }: any) => {
+        await assertPermission(ctx.user, "crm.view");
         return listCrmEmailIntegration(input);
       }),
 

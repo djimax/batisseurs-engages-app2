@@ -2134,6 +2134,7 @@
 - [ ] Lot global : auditer et renforcer les permissions par ressource dans les modules critiques — CRM et finances couverts ; autres ressources restantes à auditer.
 - [x] Vérifier et couvrir les mutations CRM et finances sensibles par des tests d’autorisation admin/non-admin (contrats CRM admin-only et permissions finances.view/finances.manage, 39 tests ciblés réussis).
 - [x] Remplacer les garde-fous CRM admin-only par des permissions granulaires crm.view et crm.manage pour les écritures, avec permissions ajoutées au catalogue par défaut.
+- [x] Protéger les lectures CRM sensibles avec crm.view et vérifier la non-régression des listes et rapports (contacts, activités, pipeline, rapports et historique email ; 39 tests ciblés réussis).
 - [ ] Lot global : compléter les notifications d’événements clés et la couverture de tests.
 - [ ] Lot global : documenter l’architecture, les API tRPC et les rôles/permissions.
 - [ ] Lot global : évaluer les intégrations externes restantes et leurs blocages de facturation.
