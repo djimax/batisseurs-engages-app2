@@ -1,5 +1,7 @@
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import { readFileSync } from "node:fs";
+const crmRouterSource = readFileSync(new URL("./crm-router.ts", import.meta.url), "utf8");
+const mainRouterSource = readFileSync(new URL("./routers.ts", import.meta.url), "utf8");
 import {
   createCrmContact,
   getCrmContact,
@@ -17,6 +19,22 @@ import {
   createCrmEmailIntegration,
   listCrmEmailIntegration,
 } from "./db";
+
+describe("Critical resource authorization contract", () => {
+  it("protects every CRM write family behind the authenticated admin guard", () => {
+    expect(crmRouterSource.match(/Unauthorized: Admin only/g)?.length).toBeGreaterThanOrEqual(8);
+    expect(crmRouterSource).toContain("contacts:");
+    expect(crmRouterSource).toContain("activities:");
+    expect(crmRouterSource).toContain("pipeline:");
+    expect(crmRouterSource).toContain("reports:");
+    expect(crmRouterSource).toContain("email:");
+  });
+
+  it("keeps finance reads and writes behind distinct permissions", () => {
+    expect(mainRouterSource).toContain('assertPermission(ctx.user, "finances.view")');
+    expect(mainRouterSource).toContain('assertPermission(ctx.user, "finances.manage")');
+  });
+});
 
 describe("CRM System", () => {
   it("centralizes audit coverage for every CRM write family", () => {
