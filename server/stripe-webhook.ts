@@ -76,8 +76,26 @@ export async function stripeWebhookHandler(req: Request, res: Response) {
           const campaignRows = await db.select().from(campaigns).where(eq(campaigns.id, payment.campaignId)).limit(1);
           const campaign = campaignRows[0];
           if (campaign) {
-            const total = Number.parseFloat(campaign.montantCollecte || "0") + Number(amountInMajorUnits(amount, currency));
+            const previousTotal = Number.parseFloat(campaign.montantCollecte || "0");
+            const contribution = Number(amountInMajorUnits(amount, currency));
+            const total = previousTotal + (Number.isFinite(contribution) ? contribution : 0);
+            const objective = Number.parseFloat(campaign.objectif || "0");
+            const previousProgress = objective > 0 ? (previousTotal / objective) * 100 : 0;
+            const currentProgress = objective > 0 ? (total / objective) * 100 : 0;
             await db.update(campaigns).set({ montantCollecte: total.toFixed(2), updatedAt: paidAt() }).where(eq(campaigns.id, campaign.id));
+            if (campaign.createdBy && previousProgress < 80 && currentProgress >= 80) {
+              await createUserNotification({
+                userId: campaign.createdBy,
+                title: "Campagne à 80 % de son objectif",
+                message: `La campagne « ${campaign.title} » a atteint ${Math.min(100, Math.round(currentProgress))} % de son objectif grâce à ce paiement.`,
+                type: "success",
+                actionUrl: "/campaigns",
+                eventKey: "campaign_progress_threshold",
+                entityType: "campaign",
+                entityId: campaign.id,
+                dedupeKey: `campaign-progress:${campaign.id}:80`,
+              });
+            }
           }
         }
         await db.insert(transactions).values({

@@ -2140,5 +2140,6 @@
 - [x] Protéger les sous-ressources projets sensibles (tâches, jalons, commentaires et budgets) par projects.view/manage, y compris membres, tâches, commentaires, jalons, mises à jour et budgets.
 - [x] Protéger les lectures CRM sensibles avec crm.view et vérifier la non-régression des listes et rapports (contacts, activités, pipeline, rapports et historique email ; 39 tests ciblés réussis).
 - [ ] Lot global : compléter les notifications d’événements clés et la couverture de tests.
+- [x] Ajouter une notification in-app dédupliquée au créateur lorsqu’une campagne de collecte franchit au moins 80 % de son objectif, avec validation Stripe et 11 tests ciblés réussis.
 - [ ] Lot global : documenter l’architecture, les API tRPC et les rôles/permissions.
 - [ ] Lot global : évaluer les intégrations externes restantes et leurs blocages de facturation.

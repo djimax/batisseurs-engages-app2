@@ -31,6 +31,14 @@ describe("Stripe integration contract", () => {
     expect(webhookSource).toContain('Confirmation de paiement non envoyée');
   });
 
+  it("notifies the campaign creator exactly when the 80 percent threshold is crossed", () => {
+    const webhookSource = readFileSync(new URL("./stripe-webhook.ts", import.meta.url), "utf8");
+    expect(webhookSource).toContain("previousProgress < 80 && currentProgress >= 80");
+    expect(webhookSource).toContain('eventKey: "campaign_progress_threshold"');
+    expect(webhookSource).toContain('dedupeKey: `campaign-progress:${campaign.id}:80`');
+    expect(webhookSource).toContain('userId: campaign.createdBy');
+  });
+
   it("mounts the webhook with a raw body parser before JSON", () => {
     expect(indexSource).toContain('app.post("/api/stripe/webhook", express.raw({ type: "application/json" }), stripeWebhookHandler);');
     expect(indexSource.indexOf("stripeWebhookHandler")).toBeLessThan(indexSource.indexOf("express.json"));
