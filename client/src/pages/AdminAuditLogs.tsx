@@ -151,6 +151,13 @@ export default function AdminAuditLogs() {
                   <SelectItem value="REMOVE">Retrait</SelectItem>
                   <SelectItem value="LOGIN">Connexion</SelectItem>
                   <SelectItem value="EXPORT">Export</SelectItem>
+                  <SelectItem value="VIEW">Consultation</SelectItem>
+                  <SelectItem value="DOWNLOAD">Téléchargement</SelectItem>
+                  <SelectItem value="PRINT">Impression</SelectItem>
+                  <SelectItem value="REVIEW">Revue</SelectItem>
+                  <SelectItem value="ARCHIVE">Archivage</SelectItem>
+                  <SelectItem value="RESTORE">Restauration</SelectItem>
+                  <SelectItem value="HOLD">Conservation légale</SelectItem>
                 </SelectContent>
               </Select>
             </div>
