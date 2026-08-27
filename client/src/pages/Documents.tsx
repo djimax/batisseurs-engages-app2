@@ -124,6 +124,7 @@ export default function Documents() {
   const [exportingSignatureId, setExportingSignatureId] = useState<number | null>(null);
   const [savedViewName, setSavedViewName] = useState("");
   const [selectedSavedViewId, setSelectedSavedViewId] = useState("none");
+  const [selectedDocumentIds, setSelectedDocumentIds] = useState<number[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Form state for create/edit
@@ -242,6 +243,10 @@ export default function Documents() {
     onError: (error) => toast.error("Erreur d’approbation : " + error.message),
   });
 
+  const bulkArchiveDocuments = trpc.documents.bulkArchive.useMutation({
+    onSuccess: (result) => { utils.documents.list.invalidate(); setSelectedDocumentIds([]); toast.success(`${result.updated} document(s) traité(s)${result.refused.length ? `, ${result.refused.length} refusé(s)` : ""}`); },
+    onError: (error) => toast.error("Action groupée impossible : " + error.message),
+  });
   const deleteDocument = trpc.documents.delete.useMutation({
     onSuccess: () => {
       utils.documents.list.invalidate();
@@ -714,6 +719,7 @@ export default function Documents() {
         </div>
       ) : filteredDocuments.length > 0 ? (
         <>
+        {selectedDocumentIds.length > 0 && <div className="flex flex-wrap items-center gap-2 rounded-lg border bg-muted/30 p-3"><span className="text-sm font-medium">{selectedDocumentIds.length} sélectionné(s)</span><Button size="sm" variant="outline" disabled={bulkArchiveDocuments.isPending} onClick={() => bulkArchiveDocuments.mutate({ ids: selectedDocumentIds, archived: !showArchived })}>{showArchived ? "Restaurer" : "Archiver"}</Button><Button size="sm" variant="ghost" onClick={() => setSelectedDocumentIds([])}>Désélectionner</Button></div>}
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {filteredDocuments.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage).map((doc) => (
             <Card 
@@ -725,7 +731,8 @@ export default function Documents() {
               }}
             >
               <CardHeader className="pb-3">
-                <div className="flex items-start justify-between">
+                  <div className="flex items-start justify-between">
+                  <input aria-label={`Sélectionner ${doc.title}`} type="checkbox" checked={selectedDocumentIds.includes(doc.id)} onChange={(event) => { event.stopPropagation(); setSelectedDocumentIds((current) => event.target.checked ? [...current, doc.id] : current.filter((id) => id !== doc.id)); }} onClick={(event) => event.stopPropagation()} className="mt-2 h-4 w-4 rounded border-gray-300" />
                   <div className="flex items-center gap-3">
                     <div 
                       className="p-2 rounded-lg"

@@ -195,6 +195,24 @@ export const appRouter = router({
       await seedDefaultDocuments();
       return getDocumentStats();
     }),
+    bulkArchive: protectedProcedure
+      .input(z.object({ ids: z.array(z.number().int().positive()).min(1).max(100), archived: z.boolean() }))
+      .mutation(async ({ input, ctx }) => {
+        await assertPermission(ctx.user, "documents.manage");
+        let updated = 0;
+        const refused: number[] = [];
+        for (const id of input.ids) {
+          try {
+            await assertDocumentCapability(ctx.user, id, "canEdit");
+            const document = await getDocumentById(id);
+            if (!document) { refused.push(id); continue; }
+            await updateDocument(id, { isArchived: input.archived ? 1 : 0, updatedBy: ctx.user.id } as any);
+            await logAudit({ userId: ctx.user.id, action: input.archived ? "ARCHIVE" : "RESTORE", entityType: "document", entityId: id, entityName: document.title, description: input.archived ? "Archivage groupé" : "Restauration groupée", status: "success" });
+            updated += 1;
+          } catch { refused.push(id); }
+        }
+        return { updated, refused };
+      }),
     recordAccess: protectedProcedure
       .input(z.object({ id: z.number().int().positive(), action: z.enum(["VIEW", "DOWNLOAD", "PRINT", "EXPORT"]) }))
       .mutation(async ({ input, ctx }) => {

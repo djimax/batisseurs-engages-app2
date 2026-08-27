@@ -2081,3 +2081,7 @@
 - [x] Ajouter une trace d’accès documentaire avec utilisateur, document, action et horodatage.
 - [x] Relier les actions de la page Documents au journal d’accès sans exposer les URLs privées.
 - [x] Ajouter les tests du journal d’accès et vérifier les permissions de lecture (31 tests Documents réussis).
+- [x] Auditer la sélection et les mutations d’archivage/restauration existantes.
+- [x] Ajouter les mutations groupées avec permissions et audit par élément.
+- [x] Intégrer la sélection et les actions en masse dans Documents avec confirmation.
+- [x] Ajouter les tests des actions en masse et des éléments refusés (contrat de permission et refus partiel validés).

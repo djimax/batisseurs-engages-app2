@@ -210,6 +210,14 @@ describe("Documents Router", () => {
     expect(source).toContain('action: "ARCHIVE", entityType: "document"');
   });
 
+  it("protects bulk archive and restore operations per document", () => {
+    const source = readFileSync(new URL("./routers.ts", import.meta.url), "utf8");
+    expect(source).toContain("bulkArchive: protectedProcedure");
+    expect(source).toContain("z.array(z.number().int().positive()).min(1).max(100)");
+    expect(source).toContain("const refused: number[] = []");
+    expect(source).toContain('input.archived ? "ARCHIVE" : "RESTORE"');
+  });
+
   it("protects and audits document access actions", () => {
     const source = readFileSync(new URL("./routers.ts", import.meta.url), "utf8");
     expect(source).toContain("recordAccess: protectedProcedure");
