@@ -391,28 +391,35 @@ export default function Documents() {
   };
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file || !selectedDocument) return;
-
-    if (file.size > 10 * 1024 * 1024) {
-      toast.error("Le fichier ne doit pas dépasser 10 Mo");
-      return;
-    }
-
+    const files = Array.from(e.target.files ?? []);
+    if (!selectedDocument || files.length === 0) return;
+    const oversized = files.find((file) => file.size > 10 * 1024 * 1024);
+    if (oversized) { toast.error(`Le fichier « ${oversized.name} » dépasse 10 Mo`); return; }
     setIsUploadingFile(true);
-    
-    const reader = new FileReader();
-    reader.onload = async () => {
-      const base64 = (reader.result as string).split(",")[1];
-      uploadFile.mutate({
-        documentId: selectedDocument.id,
-        fileName: file.name,
-        fileType: file.type,
-        fileSize: file.size,
-        fileBase64: base64,
-      });
-    };
-    reader.readAsDataURL(file);
+    let uploaded = 0;
+    let failed = 0;
+    try {
+      for (const file of files) {
+        try {
+          const base64 = await new Promise<string>((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => resolve((reader.result as string).split(",")[1]);
+            reader.onerror = () => reject(new Error("Lecture du fichier impossible"));
+            reader.readAsDataURL(file);
+          });
+          await uploadFile.mutateAsync({ documentId: selectedDocument.id, fileName: file.name, fileType: file.type || "application/octet-stream", fileSize: file.size, fileBase64: base64 });
+          uploaded += 1;
+        } catch (error) {
+          failed += 1;
+          toast.error(`Échec de « ${file.name} » : ${error instanceof Error ? error.message : "Erreur inconnue"}`);
+        }
+      }
+      if (uploaded > 0 && failed === 0) toast.success(`${uploaded} fichier(s) importé(s)`);
+      else if (uploaded > 0) toast.info(`${uploaded} fichier(s) importé(s), ${failed} échec(s)`);
+    } finally {
+      setIsUploadingFile(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
   };
 
   const handleSignedPdfExport = async (requestId: number, title: string) => {
@@ -1060,7 +1067,7 @@ export default function Documents() {
                 )}
                 <input
                   ref={fileInputRef}
-                  type="file"
+                  type="file" multiple
                   className="hidden"
                   accept=".doc,.docx,.xls,.xlsx,.pdf,.png,.jpg,.jpeg"
                   onChange={handleFileUpload}

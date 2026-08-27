@@ -188,6 +188,7 @@ describe("Documents Router", () => {
       expect(uploaded.success).toBe(true);
       expect(version?.contentHash).toBe("2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824");
       expect(version?.fileSize).toBe(5);
+      await expect(caller.documents.uploadFile({ documentId: document.id, fileName: "preuve-copie.txt", fileType: "text/plain", fileSize: 5, fileBase64: "aGVsbG8=" })).rejects.toMatchObject({ code: "CONFLICT" });
     } finally {
       await caller.documents.delete({ id: document.id });
     }

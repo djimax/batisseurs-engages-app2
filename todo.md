@@ -2064,3 +2064,8 @@
 - [x] Ajouter les validations serveur, l’édition et l’affichage des métadonnées dans Documents (création, édition inline, affichage et audit validés).
 - [x] Ajouter des vues documentaires enregistrées avec filtres persistants et contrôle d’accès par utilisateur.
 - [x] Ajouter les tests Vitest et la vérification visuelle du premier lot de métadonnées et vues enregistrées (28 tests Documents validés ; affichage et contrôles UI vérifiés).
+- [x] Auditer le flux uploadFile existant, ses limites de taille et son contrôle de type.
+- [x] Ajouter une détection de doublons par empreinte SHA-256 avant création d’une nouvelle version.
+- [x] Permettre la sélection et le traitement de plusieurs fichiers avec progression individuelle.
+- [x] Afficher les erreurs partielles et les résultats d’import sans perdre les fichiers déjà acceptés.
+- [ ] Ajouter les tests Vitest du contrôle de doublons et du flux multi-fichiers (contrôle de doublon validé ; test navigateur multi-fichiers restant).

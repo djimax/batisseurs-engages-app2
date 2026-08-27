@@ -374,15 +374,18 @@ export const appRouter = router({
           throw new TRPCError({ code: "BAD_REQUEST", message: "La taille du fichier ne correspond pas à son contenu." });
         }
         
+        const contentHash = createHash("sha256").update(fileBuffer).digest("hex");
+        const previousVersions = await getDocumentVersions(documentId);
+        if (previousVersions.some((version) => version.contentHash === contentHash)) {
+          throw new TRPCError({ code: "CONFLICT", message: "Ce fichier est déjà présent dans l’historique du document." });
+        }
         // Generate a safe, non-enumerable file key
         const safeFileName = fileName.replace(/[^a-zA-Z0-9._-]/g, "_");
         const fileKey = `documents/${documentId}/${nanoid()}-${safeFileName}`;
         
-                // Upload to S3
+        // Upload to S3
         const { url } = await storagePut(fileKey, fileBuffer, fileType);
-        const previousVersions = await getDocumentVersions(documentId);
         const versionNumber = (previousVersions[0]?.versionNumber ?? 0) + 1;
-        const contentHash = createHash("sha256").update(fileBuffer).digest("hex");
         await createDocumentVersion({ documentId, versionNumber, fileUrl: url, fileKey, fileName, fileType, fileSize, contentHash, uploadedBy: ctx.user.id });
         // Update document with file info
 
