@@ -2103,6 +2103,7 @@
 - [x] Ajouter les procédures protégées de création, consultation et revue administrateur des demandes RGPD.
 - [x] Permettre à l’utilisateur de retirer une demande RGPD tant qu’elle est encore pending, avec confirmation et audit de l’annulation.
 - [x] Ajouter et réussir le test contractuel du retrait propriétaire d’une demande RGPD pending (18 tests ciblés).
+- [x] Afficher dans Settings l’état final d’une demande RGPD approuvée, refusée ou annulée avant de proposer une nouvelle action (9 tests Settings/RGPD ciblés réussis).
 - [x] Ajouter la table `data_deletion_requests` avec migration 0050 additive et défauts timestamp compatibles MySQL/TiDB.
 - [x] Valider le workflow RGPD : migration vierge réussie, TypeScript sans erreur et 48 tests ciblés réussis.
 - [x] Ajouter les tests contractuels de protection contre les demandes RGPD en doublon et de revue limitée aux administrateurs.
