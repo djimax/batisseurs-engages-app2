@@ -2145,3 +2145,4 @@
 - [x] Rédiger une documentation d’architecture et de flux de sécurité maintenue dans le dépôt (`docs/architecture-and-api.md`).
 - [x] Rédiger un catalogue des routeurs tRPC et de leurs permissions principales (`docs/trpc-permissions-catalog.md`).
 - [ ] Lot global : évaluer les intégrations externes restantes et leurs blocages de facturation.
+- [x] Consigner le statut des intégrations Stripe, Brevo, stockage S3 et Google Drive/OneDrive, avec alternatives opérationnelles (`docs/integrations-status.md`).
