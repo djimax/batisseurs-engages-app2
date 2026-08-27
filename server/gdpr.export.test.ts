@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
 
 const routerSource = readFileSync(new URL("./routers.ts", import.meta.url), "utf8");
+const settingsSource = readFileSync(new URL("../client/src/pages/Settings.tsx", import.meta.url), "utf8");
 
 describe("auth.exportMyData", () => {
   it("expose un export protégé limité aux données du compte", () => {
@@ -18,6 +19,15 @@ describe("auth.exportMyData", () => {
   });
 });
 
+
+describe("RGPD Settings UI contract", () => {
+  it("shows final statuses instead of reopening a treated request", () => {
+    expect(settingsSource).toContain("myDeletionRequest ?");
+    expect(settingsSource).toContain('myDeletionRequest.status === "approved"');
+    expect(settingsSource).toContain('myDeletionRequest.status === "rejected"');
+    expect(settingsSource).toContain("Aucune suppression automatique n’est exécutée");
+  });
+});
 
 describe("RGPD deletion request contract", () => {
   it("requires authentication and prevents duplicate pending requests", () => {
