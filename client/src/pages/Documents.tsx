@@ -196,6 +196,7 @@ export default function Documents() {
     onError: (error) => toast.error("Impossible de supprimer la vue : " + error.message),
   });
 
+  const recordDocumentAccess = trpc.documents.recordAccess.useMutation();
   const assignReview = trpc.documents.assignReview.useMutation({
     onSuccess: (document) => { if (document) setSelectedDocument(document); utils.documents.list.invalidate(); toast.success("Revue assignée"); },
     onError: (error) => toast.error("Assignation impossible : " + error.message),
@@ -447,6 +448,7 @@ export default function Documents() {
 
   const handleDownload = (doc: any) => {
     if (doc.fileUrl) {
+      recordDocumentAccess.mutate({ id: doc.id, action: "DOWNLOAD" });
       window.open(doc.fileUrl, "_blank");
     } else {
       toast.error("Aucun fichier attaché à ce document");
@@ -455,6 +457,7 @@ export default function Documents() {
 
   const handlePrint = (doc: any) => {
     if (doc.fileUrl) {
+      recordDocumentAccess.mutate({ id: doc.id, action: "PRINT" });
       const printWindow = window.open(doc.fileUrl, "_blank");
       if (printWindow) {
         printWindow.onload = () => {
@@ -1100,7 +1103,7 @@ export default function Documents() {
               {/* Version history */}
               <div>
                 <h4 className="text-sm font-medium mb-3">Historique des versions</h4>
-                {documentVersions.length === 0 ? <p className="text-sm text-muted-foreground">Aucune version enregistrée.</p> : <div className="space-y-2">{documentVersions.map((version) => <div key={version.id} className="flex flex-wrap items-center justify-between gap-3 rounded-lg border p-3"><div className="min-w-0"><p className="font-medium">Version {version.versionNumber} · {version.fileName}</p><p className="text-xs text-muted-foreground">{new Date(version.createdAt).toLocaleString("fr-FR")} · {(version.fileSize / 1024).toFixed(1)} Ko</p><p className="break-all text-[11px] text-muted-foreground">SHA-256 : {version.contentHash}</p></div><Button size="sm" variant="outline" onClick={() => window.open(version.fileUrl, "_blank")}><Download className="mr-1 h-4 w-4" />Ouvrir</Button></div>)}</div>}
+                {documentVersions.length === 0 ? <p className="text-sm text-muted-foreground">Aucune version enregistrée.</p> : <div className="space-y-2">{documentVersions.map((version) => <div key={version.id} className="flex flex-wrap items-center justify-between gap-3 rounded-lg border p-3"><div className="min-w-0"><p className="font-medium">Version {version.versionNumber} · {version.fileName}</p><p className="text-xs text-muted-foreground">{new Date(version.createdAt).toLocaleString("fr-FR")} · {(version.fileSize / 1024).toFixed(1)} Ko</p><p className="break-all text-[11px] text-muted-foreground">SHA-256 : {version.contentHash}</p></div><Button size="sm" variant="outline" onClick={() => { recordDocumentAccess.mutate({ id: selectedDocument.id, action: "VIEW" }); window.open(version.fileUrl, "_blank"); }}><Download className="mr-1 h-4 w-4" />Ouvrir</Button></div>)}</div>}
               </div>
 
               <Separator />

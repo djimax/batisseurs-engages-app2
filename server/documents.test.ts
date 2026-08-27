@@ -210,6 +210,14 @@ describe("Documents Router", () => {
     expect(source).toContain('action: "ARCHIVE", entityType: "document"');
   });
 
+  it("protects and audits document access actions", () => {
+    const source = readFileSync(new URL("./routers.ts", import.meta.url), "utf8");
+    expect(source).toContain("recordAccess: protectedProcedure");
+    expect(source).toContain('z.enum(["VIEW", "DOWNLOAD", "PRINT", "EXPORT"])');
+    expect(source).toContain('assertDocumentCapability(ctx.user, input.id, "canView")');
+    expect(source).toContain("Accès documentaire");
+  });
+
   it("indexes text uploads and includes content in protected document search", () => {
     const routerSource = readFileSync(new URL("./routers.ts", import.meta.url), "utf8");
     const dbSource = readFileSync(new URL("./db.ts", import.meta.url), "utf8");

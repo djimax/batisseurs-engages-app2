@@ -2077,3 +2077,7 @@
 - [x] Ajouter un index de contenu documentaire sans stocker les fichiers binaires en base (contenus textuels limités à 500 000 caractères).
 - [x] Relier la recherche plein texte aux filtres Documents avec résultats explicites.
 - [x] Ajouter les tests de recherche et de contrôle d’accès au contenu indexé (30 tests Documents réussis).
+- [x] Auditer les consultations, téléchargements, impressions et exports de Documents.
+- [x] Ajouter une trace d’accès documentaire avec utilisateur, document, action et horodatage.
+- [x] Relier les actions de la page Documents au journal d’accès sans exposer les URLs privées.
+- [x] Ajouter les tests du journal d’accès et vérifier les permissions de lecture (31 tests Documents réussis).

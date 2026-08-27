@@ -195,6 +195,15 @@ export const appRouter = router({
       await seedDefaultDocuments();
       return getDocumentStats();
     }),
+    recordAccess: protectedProcedure
+      .input(z.object({ id: z.number().int().positive(), action: z.enum(["VIEW", "DOWNLOAD", "PRINT", "EXPORT"]) }))
+      .mutation(async ({ input, ctx }) => {
+        await assertDocumentCapability(ctx.user, input.id, "canView");
+        const document = await getDocumentById(input.id);
+        if (!document) throw new TRPCError({ code: "NOT_FOUND", message: "Document introuvable" });
+        await logAudit({ userId: ctx.user.id, action: input.action, entityType: "document", entityId: input.id, entityName: document.title, description: `Accès documentaire : ${input.action}`, status: "success" });
+        return { success: true as const };
+      }),
     savedViews: protectedProcedure.query(async ({ ctx }) => {
       await assertPermission(ctx.user, "documents.view");
       return getDocumentSavedViews(ctx.user.id);
