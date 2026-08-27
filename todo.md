@@ -2117,6 +2117,7 @@
 - [x] Valider la requête SQL d’audit enrichie : TypeScript sans erreur et 46 tests ciblés réussis.
 - [x] Corriger la concordance des types d’entités et actions dans les filtres de l’historique d’audit réel (valeurs singulières alignées sur le serveur et actions d’accès ajoutées).
 - [x] Valider les filtres d’accès et de conservation par TypeScript et 46 tests Audit/Documents/Admin ciblés réussis.
+- [x] Ajouter les assertions contractuelles des permissions suppliers.view/manage, purchases.view/manage/approve (13 tests achats/autorisation réussis).
 - [x] Enrichir le journal d’audit global avec l’identité de l’utilisateur et un filtrage SQL borné (COALESCE de l’email enregistré et du compte, pagination SQL jusqu’à 500 lignes).
 - [x] Ajouter un test de non-régression du branchement AuditHistory sur les données réelles (48 tests ciblés réussis).
 - [x] Valider l’export CSV d’audit par TypeScript et 50 tests ciblés réussis.
@@ -2131,7 +2132,7 @@
 - [x] Afficher l’email résolu de l’utilisateur dans le tableau AuditHistory administrateur.
 - [x] Ajouter un export CSV du journal d’audit filtré, limité aux lignes actuellement consultées (UTF-8 avec BOM, échappement CSV, données admin visibles uniquement).
 - [x] Ajouter les actions d’accès et de conservation documentaire aux choix de filtre AuditHistory (VIEW, DOWNLOAD, PRINT, REVIEW, ARCHIVE, RESTORE et HOLD).
-- [ ] Lot global : auditer et renforcer les permissions par ressource dans les modules critiques — CRM et finances couverts ; autres ressources restantes à auditer.
+- [ ] Lot global : auditer et renforcer les permissions par ressource dans les modules critiques — CRM, finances et achats à documenter/couvrir ; autres ressources restantes à auditer.
 - [x] Vérifier et couvrir les mutations CRM et finances sensibles par des tests d’autorisation admin/non-admin (contrats CRM admin-only et permissions finances.view/finances.manage, 39 tests ciblés réussis).
 - [x] Remplacer les garde-fous CRM admin-only par des permissions granulaires crm.view et crm.manage pour les écritures, avec permissions ajoutées au catalogue par défaut.
 - [x] Protéger les lectures CRM sensibles avec crm.view et vérifier la non-régression des listes et rapports (contacts, activités, pipeline, rapports et historique email ; 39 tests ciblés réussis).

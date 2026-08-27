@@ -6,8 +6,15 @@ describe("purchases and suppliers module", () => {
     const auth = readFileSync(new URL("./authorization.ts", import.meta.url), "utf8");
     const router = readFileSync(new URL("./purchases-router.ts", import.meta.url), "utf8");
     expect(auth).toContain('suppliers.view');
+    expect(auth).toContain('suppliers.view');
+    expect(auth).toContain('suppliers.manage');
+    expect(auth).toContain('purchases.view');
+    expect(auth).toContain('purchases.manage');
     expect(auth).toContain('purchases.approve');
+    expect(router).toContain('assertPermission(ctx.user, "suppliers.view")');
     expect(router).toContain('assertPermission(ctx.user, "suppliers.manage")');
+    expect(router).toContain('assertPermission(ctx.user, "purchases.view")');
+    expect(router).toContain('assertPermission(ctx.user, "purchases.manage")');
     expect(router).toContain('purchases.approve');
     expect(router).toContain('logAudit');
   });
