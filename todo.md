@@ -2140,6 +2140,7 @@
 - [x] Protéger les sous-ressources projets sensibles (tâches, jalons, commentaires et budgets) par projects.view/manage, y compris membres, tâches, commentaires, jalons, mises à jour et budgets.
 - [x] Protéger les lectures CRM sensibles avec crm.view et vérifier la non-régression des listes et rapports (contacts, activités, pipeline, rapports et historique email ; 39 tests ciblés réussis).
 - [ ] Lot global : compléter les notifications d’événements clés et la couverture de tests.
+- [x] Corriger la régression de `updateUserRole` : la règle du dernier administrateur ne s’applique désormais qu’à une vraie rétrogradation d’un administrateur ; TypeScript et 12 tests de rôles réussis.
 - [x] Ajouter une notification in-app dédupliquée au créateur lorsqu’une campagne de collecte franchit au moins 80 % de son objectif, avec validation Stripe et 11 tests ciblés réussis.
 - [ ] Lot global : documenter l’architecture, les API tRPC et les rôles/permissions.
 - [x] Rédiger une documentation d’architecture et de flux de sécurité maintenue dans le dépôt (`docs/architecture-and-api.md`).

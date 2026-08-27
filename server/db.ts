@@ -1958,16 +1958,18 @@ export async function updateUserRole(userId: number, newRole: "admin" | "user") 
   const db = await getDb();
   if (!db) throw new Error("Database not available");
   
-  // Check if there's at least one admin
-  if (newRole === "user") {
+    const targetRows = await db.select({ role: users.role }).from(users).where(eq(users.id, userId)).limit(1);
+  const currentRole = targetRows[0]?.role;
+  if (!currentRole) throw new Error("Utilisateur introuvable");
+
+  // Check the last-admin invariant only when actually demoting an administrator.
+  if (newRole === "user" && currentRole === "admin") {
     const adminCount = await db.select({ count: sql<number>`count(*)` }).from(users).where(eq(users.role, "admin"));
-    const currentAdminCount = adminCount[0]?.count || 0;
-    
+    const currentAdminCount = Number(adminCount[0]?.count || 0);
     if (currentAdminCount <= 1) {
       throw new Error("Il doit y avoir au moins un administrateur");
     }
   }
-  
   await db.update(users).set({ role: newRole }).where(eq(users.id, userId));
 }
 
