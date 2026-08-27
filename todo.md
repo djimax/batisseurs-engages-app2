@@ -2093,3 +2093,5 @@
 - [x] Ajouter une lecture protégée du journal d’accès par document, limitée aux 100 derniers événements et réutilisant l’audit centralisé.
 - [x] Afficher les consultations, téléchargements, impressions et exports dans le détail documentaire.
 - [x] Valider le journal d’accès par TypeScript et 33 tests Documents.
+- [x] Ajouter l’édition sécurisée de retentionUntil et legalHold dans le détail Documents.
+- [x] Valider le formulaire de conservation par TypeScript et 33 tests Documents.

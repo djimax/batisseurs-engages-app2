@@ -125,6 +125,8 @@ export default function Documents() {
   const [savedViewName, setSavedViewName] = useState("");
   const [selectedSavedViewId, setSelectedSavedViewId] = useState("none");
   const [selectedDocumentIds, setSelectedDocumentIds] = useState<number[]>([]);
+  const [retentionDate, setRetentionDate] = useState("");
+  const [legalHold, setLegalHold] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Form state for create/edit
@@ -202,6 +204,10 @@ export default function Documents() {
   });
 
   const recordDocumentAccess = trpc.documents.recordAccess.useMutation();
+  const setDocumentRetention = trpc.documents.setRetention.useMutation({
+    onSuccess: (document) => { if (document) { setSelectedDocument(document); setRetentionDate(document.retentionUntil ? new Date(Number(document.retentionUntil)).toISOString().slice(0, 10) : ""); setLegalHold(Boolean(document.legalHold)); } utils.documents.list.invalidate(); toast.success("Politique de conservation enregistrée"); },
+    onError: (error) => toast.error("Conservation impossible : " + error.message),
+  });
   const assignReview = trpc.documents.assignReview.useMutation({
     onSuccess: (document) => { if (document) setSelectedDocument(document); utils.documents.list.invalidate(); toast.success("Revue assignée"); },
     onError: (error) => toast.error("Assignation impossible : " + error.message),
@@ -1003,8 +1009,17 @@ export default function Documents() {
                 <Button size="sm" variant="outline" disabled={updateDocument.isPending || !selectedDocument} onClick={() => selectedDocument && updateDocument.mutate({ id: selectedDocument.id, fiscalYear: selectedDocument.fiscalYear ?? null, funder: selectedDocument.funder?.trim() || null, confidentiality: selectedDocument.confidentiality ?? "internal" })}>Enregistrer les métadonnées</Button>
               </div>
 
+                            <Separator />
+              {/* Retention policy */}
+              <div className="space-y-3">
+                <div><h4 className="text-sm font-medium">Conservation documentaire</h4><p className="text-xs text-muted-foreground">Une exemption légale bloque la suppression, même si une date est dépassée.</p></div>
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <div className="space-y-1"><Label htmlFor="retention-until">Conserver jusqu’au</Label><Input id="retention-until" type="date" value={retentionDate || (selectedDocument?.retentionUntil ? new Date(Number(selectedDocument.retentionUntil)).toISOString().slice(0, 10) : "")} onChange={(e) => setRetentionDate(e.target.value)} /></div>
+                  <label className="flex items-center gap-2 rounded-md border px-3 text-sm"><input type="checkbox" checked={legalHold || Boolean(selectedDocument?.legalHold)} onChange={(e) => setLegalHold(e.target.checked)} />Exemption de conservation légale</label>
+                </div>
+                <Button size="sm" variant="outline" disabled={setDocumentRetention.isPending || !selectedDocument} onClick={() => selectedDocument && setDocumentRetention.mutate({ id: selectedDocument.id, retentionUntil: retentionDate ? new Date(`${retentionDate}T23:59:59.000Z`).getTime() : null, legalHold })}>{setDocumentRetention.isPending ? "Enregistrement…" : "Enregistrer la conservation"}</Button>
+              </div>
               <Separator />
-
               {/* Review workflow */}
               <div className="space-y-3">
                 <div><h4 className="text-sm font-medium">Circuit de revue</h4><p className="text-xs text-muted-foreground">Désignez un réviseur et suivez la date de retour attendue.</p></div>
