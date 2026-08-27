@@ -2149,3 +2149,4 @@
 - [x] Consigner le statut des intégrations Stripe, Brevo, stockage S3 et Google Drive/OneDrive, avec alternatives opérationnelles (`docs/integrations-status.md`).
 - [x] Réparer la course entre suites Vitest partageant la base de test (`fileParallelism: false`) et confirmer la régression complète : 57 suites, 392 tests réussis, TypeScript sans erreur.
 - [x] Notifier in-app le demandeur lors de l’approbation ou du rejet d’une demande d’achat, avec déduplication et 13 tests ciblés réussis.
+- [x] Rejouer la régression finale après les notifications d’achats : TypeScript sans erreur, 57 suites et 394 tests réussis.
