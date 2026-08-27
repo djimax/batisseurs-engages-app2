@@ -2132,9 +2132,11 @@
 - [x] Afficher l’email résolu de l’utilisateur dans le tableau AuditHistory administrateur.
 - [x] Ajouter un export CSV du journal d’audit filtré, limité aux lignes actuellement consultées (UTF-8 avec BOM, échappement CSV, données admin visibles uniquement).
 - [x] Ajouter les actions d’accès et de conservation documentaire aux choix de filtre AuditHistory (VIEW, DOWNLOAD, PRINT, REVIEW, ARCHIVE, RESTORE et HOLD).
-- [ ] Lot global : auditer et renforcer les permissions par ressource dans les modules critiques — CRM, finances et achats à documenter/couvrir ; autres ressources restantes à auditer.
+- [ ] Lot global : auditer et renforcer les permissions par ressource dans les modules critiques — CRM, finances, achats et opérations principales projets couverts ; autres ressources restantes à auditer.
 - [x] Vérifier et couvrir les mutations CRM et finances sensibles par des tests d’autorisation admin/non-admin (contrats CRM admin-only et permissions finances.view/finances.manage, 39 tests ciblés réussis).
 - [x] Remplacer les garde-fous CRM admin-only par des permissions granulaires crm.view et crm.manage pour les écritures, avec permissions ajoutées au catalogue par défaut.
+- [x] Protéger les opérations principales projets avec projects.view et projects.manage, y compris la liste, le détail, la création, la modification et la suppression.
+- [x] Corriger l’entrée optionnelle de la liste projets et confirmer TypeScript sans erreur.
 - [x] Protéger les lectures CRM sensibles avec crm.view et vérifier la non-régression des listes et rapports (contacts, activités, pipeline, rapports et historique email ; 39 tests ciblés réussis).
 - [ ] Lot global : compléter les notifications d’événements clés et la couverture de tests.
 - [ ] Lot global : documenter l’architecture, les API tRPC et les rôles/permissions.

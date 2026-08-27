@@ -2215,14 +2215,16 @@ export const appRouter = router({
   // ============ PROJECTS ============
   projects: router({
     list: protectedProcedure
-      .input(z.object({ limit: z.number().default(50), offset: z.number().default(0), status: z.string().optional() }))
-      .query(async ({ input }) => {
-        return await listProjects(input.limit, input.offset, input.status);
+      .input(z.object({ limit: z.number().optional(), offset: z.number().optional(), status: z.string().optional() }).optional())
+      .query(async ({ input, ctx }) => {
+        await assertPermission(ctx.user, "projects.view");
+        return await listProjects(input?.limit, input?.offset, input?.status);
       }),
 
     get: protectedProcedure
       .input(z.object({ id: z.number() }))
-      .query(async ({ input }) => {
+      .query(async ({ input, ctx }) => {
+        await assertPermission(ctx.user, "projects.view");
         return await getProject(input.id);
       }),
 
@@ -2237,6 +2239,7 @@ export const appRouter = router({
         leaderId: z.number(),
       }))
       .mutation(async ({ input, ctx }) => {
+        await assertPermission(ctx.user, "projects.manage");
         const project = await createProject({
           ...input,
           startDate: input.startDate ? input.startDate.toISOString() : undefined,
@@ -2268,6 +2271,7 @@ export const appRouter = router({
         leaderId: z.number().optional(),
       }))
       .mutation(async ({ input, ctx }) => {
+        await assertPermission(ctx.user, "projects.manage");
         const { id, ...data } = input;
         const convertedData = {
           ...data,
@@ -2291,6 +2295,7 @@ export const appRouter = router({
     delete: protectedProcedure
       .input(z.object({ id: z.number() }))
       .mutation(async ({ input, ctx }) => {
+        await assertPermission(ctx.user, "projects.manage");
         const project = await getProject(input.id);
         await deleteProject(input.id);
 
