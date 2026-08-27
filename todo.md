@@ -2142,9 +2142,9 @@
 - [ ] Lot global : compléter les notifications d’événements clés et la couverture de tests.
 - [x] Corriger la régression de `updateUserRole` : la règle du dernier administrateur ne s’applique désormais qu’à une vraie rétrogradation d’un administrateur ; TypeScript et 12 tests de rôles réussis.
 - [x] Ajouter une notification in-app dédupliquée au créateur lorsqu’une campagne de collecte franchit au moins 80 % de son objectif, avec validation Stripe et 11 tests ciblés réussis.
-- [ ] Lot global : documenter l’architecture, les API tRPC et les rôles/permissions.
+- [x] Lot global : documenter l’architecture, les API tRPC et les rôles/permissions ; références publiées dans `docs/`.
 - [x] Rédiger une documentation d’architecture et de flux de sécurité maintenue dans le dépôt (`docs/architecture-and-api.md`).
 - [x] Rédiger un catalogue des routeurs tRPC et de leurs permissions principales (`docs/trpc-permissions-catalog.md`).
-- [ ] Lot global : évaluer les intégrations externes restantes et leurs blocages de facturation.
+- [x] Lot global : évaluer les intégrations externes restantes et leurs blocages de facturation ; statut et alternatives documentés.
 - [x] Consigner le statut des intégrations Stripe, Brevo, stockage S3 et Google Drive/OneDrive, avec alternatives opérationnelles (`docs/integrations-status.md`).
 - [x] Réparer la course entre suites Vitest partageant la base de test (`fileParallelism: false`) et confirmer la régression complète : 57 suites, 392 tests réussis, TypeScript sans erreur.
