@@ -268,7 +268,8 @@ export async function getAllDocuments(filters?: {
     conditions.push(
       or(
         like(documents.title, `%${filters.search}%`),
-        like(documents.description, `%${filters.search}%`)
+        like(documents.description, `%${filters.search}%`),
+        like(documents.contentIndex, `%${filters.search}%`)
       )
     );
   }

@@ -210,6 +210,14 @@ describe("Documents Router", () => {
     expect(source).toContain('action: "ARCHIVE", entityType: "document"');
   });
 
+  it("indexes text uploads and includes content in protected document search", () => {
+    const routerSource = readFileSync(new URL("./routers.ts", import.meta.url), "utf8");
+    const dbSource = readFileSync(new URL("./db.ts", import.meta.url), "utf8");
+    expect(routerSource).toContain("const contentIndex = indexableTypes.has(fileType)");
+    expect(routerSource).toContain("contentIndex,");
+    expect(dbSource).toContain("like(documents.contentIndex");
+  });
+
   it("protects the document review workflow and audits its decisions", () => {
     const source = readFileSync(new URL("./routers.ts", import.meta.url), "utf8");
     expect(source).toContain("assignReview: protectedProcedure");

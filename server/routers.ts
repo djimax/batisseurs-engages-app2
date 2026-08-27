@@ -409,14 +409,17 @@ export const appRouter = router({
         await createDocumentVersion({ documentId, versionNumber, fileUrl: url, fileKey, fileName, fileType, fileSize, contentHash, uploadedBy: ctx.user.id });
         // Update document with file info
 
+        const indexableTypes = new Set(["text/plain", "text/csv", "application/json", "text/markdown", "application/xml", "text/xml"]);
+        const contentIndex = indexableTypes.has(fileType) ? fileBuffer.toString("utf8").slice(0, 500_000) : null;
         await updateDocument(documentId, {
           fileUrl: url,
           fileKey,
           fileName,
           fileType,
           fileSize,
+          contentIndex,
           updatedBy: ctx.user.id,
-        });
+        } as any);
         
                 await logActivity({
           userId: ctx.user.id,

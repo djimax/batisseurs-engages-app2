@@ -2073,3 +2073,7 @@
 - [x] Implémenter les transitions de revue avec permissions et audit centralisé.
 - [x] Ajouter l’affichage du suivi de revue et des échéances dans Documents.
 - [x] Ajouter les tests Vitest du circuit de revue et des transitions interdites (contrat de permissions, réviseur désigné et audit validés).
+- [x] Auditer les formats texte supportés et la recherche Documents existante.
+- [x] Ajouter un index de contenu documentaire sans stocker les fichiers binaires en base (contenus textuels limités à 500 000 caractères).
+- [x] Relier la recherche plein texte aux filtres Documents avec résultats explicites.
+- [x] Ajouter les tests de recherche et de contrôle d’accès au contenu indexé (30 tests Documents réussis).

@@ -337,6 +337,13 @@
       "when": 1787858966469,
       "tag": "0047_chunky_darkstar",
       "breakpoints": true
+    },
+    {
+      "idx": 48,
+      "version": "5",
+      "when": 1787859241047,
+      "tag": "0048_silky_butterfly",
+      "breakpoints": true
     }
   ]
 }

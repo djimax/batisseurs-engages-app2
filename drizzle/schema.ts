@@ -419,6 +419,7 @@ export const documents = mysqlTable("documents", {
 	funder: varchar({ length: 255 }),
 	confidentiality: mysqlEnum(['internal','restricted','confidential']).default('internal').notNull(),
 	businessOwnerId: int(),
+	contentIndex: text(),
 });
 
 export const documentSavedViews = mysqlTable("document_saved_views", {
