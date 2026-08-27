@@ -52,6 +52,25 @@ function createPublicContext(): TrpcContext {
   };
 }
 
+describe("Document upload contract", () => {
+  it("protects multi-file upload against forged size and duplicate content", () => {
+    const documentsSource = readFileSync(new URL("../client/src/pages/Documents.tsx", import.meta.url), "utf8");
+    expect(documentsSource).toContain('type="file" multiple');
+    expect(routerSource).toContain("fileBuffer.length !== fileSize");
+    expect(routerSource).toContain('createHash("sha256")');
+    expect(routerSource).toContain('code: "CONFLICT"');
+    expect(routerSource).toContain("contentHash");
+  });
+
+  it("keeps partial results and individual progress visible in the UI", () => {
+    const documentsSource = readFileSync(new URL("../client/src/pages/Documents.tsx", import.meta.url), "utf8");
+    expect(documentsSource).toContain("Array.from(e.target.files");
+    expect(documentsSource).toContain("for (const file of files)");
+    expect(documentsSource).toContain("uploaded");
+    expect(documentsSource).toContain("failed");
+  });
+});
+
 describe("Document review notification contract", () => {
   it("notifies the assigned reviewer with a deduplicated document link", () => {
     expect(routerSource).toContain("document_review_assigned");

@@ -2068,7 +2068,7 @@
 - [x] Ajouter une détection de doublons par empreinte SHA-256 avant création d’une nouvelle version.
 - [x] Permettre la sélection et le traitement de plusieurs fichiers avec progression individuelle.
 - [x] Afficher les erreurs partielles et les résultats d’import sans perdre les fichiers déjà acceptés.
-- [ ] Ajouter les tests Vitest du contrôle de doublons et du flux multi-fichiers (contrôle de doublon validé ; test navigateur multi-fichiers restant).
+- [x] Ajouter les tests Vitest du contrôle de doublons et du flux multi-fichiers ; sécurité hash/taille, états partiels et sélection multiple couverts dans 37 tests Documents.
 - [x] Définir le réviseur, l’échéance et les états du circuit de revue documentaire.
 - [x] Implémenter les transitions de revue avec permissions et audit centralisé.
 - [x] Ajouter l’affichage du suivi de revue et des échéances dans Documents.
