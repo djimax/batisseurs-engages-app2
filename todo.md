@@ -2041,7 +2041,7 @@
 - [x] Conserver l’audit documentaire/commentaires comme périmètre distinct tant que la couverture globale de l’application n’est pas démontrée.
 - [x] Couvrir l’audit CRM : contacts, activités, pipeline d’adhésion, rapports et historique email.
 - [x] Ajouter des tests d’assertion dédiés aux nouvelles entrées d’audit finances, adhésions et CRM.
-- [ ] Finaliser la couverture d’audit globale des modules critiques non encore vérifiés.
+- [x] Finaliser la couverture d’audit globale des modules critiques non encore vérifiés par un test contractuel des routeurs critiques et des états d’échec (`server/audit-coverage.test.ts`).
 - [x] Étendre l’audit de gouvernance aux assemblées, changements de statut, participants et présences.
 - [x] Compléter l’audit de gouvernance pour résolutions, procurations et votes, puis ajouter les tests associés.
 - [x] Ajouter une trace d’audit à la création des paiements Stripe et valider le contrat Stripe.
