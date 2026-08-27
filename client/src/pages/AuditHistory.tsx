@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { AlertCircle, Download, Filter, RefreshCw, Search } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { trpc } from "@/lib/trpc";
 
 interface AuditEntry {
   id: number;
@@ -23,17 +24,13 @@ interface AuditEntry {
 }
 
 export default function AuditHistory() {
-  const [auditLogs, setAuditLogs] = useState<AuditEntry[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const auditQuery = trpc.admin.getAuditLogs.useQuery({ limit: 500, offset: 0 });
+  const auditLogs = (auditQuery.data ?? []) as AuditEntry[];
+  const isLoading = auditQuery.isLoading;
   const [searchTerm, setSearchTerm] = useState("");
   const [filterAction, setFilterAction] = useState("all");
   const [filterEntity, setFilterEntity] = useState("all");
   const [filteredLogs, setFilteredLogs] = useState<AuditEntry[]>([]);
-
-  // Load audit logs from localStorage (simulated)
-  useEffect(() => {
-    loadAuditLogs();
-  }, []);
 
   // Filter logs based on search and filters
   useEffect(() => {
@@ -58,67 +55,6 @@ export default function AuditHistory() {
 
     setFilteredLogs(filtered);
   }, [auditLogs, searchTerm, filterAction, filterEntity]);
-
-  const loadAuditLogs = async () => {
-    setIsLoading(true);
-    try {
-      // Simulated data - in production, fetch from API
-      const mockLogs: AuditEntry[] = [
-        {
-          id: 1,
-          userEmail: "admin@batisseurs-engages.fr",
-          action: "CREATE",
-          entityType: "documents",
-          entityId: 1,
-          entityName: "Statuts de l'association",
-          description: "Created document: Statuts de l'association",
-          createdAt: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
-          status: "success",
-        },
-        {
-          id: 2,
-          userEmail: "admin@batisseurs-engages.fr",
-          action: "UPDATE",
-          entityType: "members",
-          entityId: 5,
-          entityName: "Jean Dupont",
-          description: "Updated member: Jean Dupont",
-          oldValue: JSON.stringify({ status: "inactive" }),
-          newValue: JSON.stringify({ status: "active" }),
-          createdAt: new Date(Date.now() - 4 * 60 * 60 * 1000).toISOString(),
-          status: "success",
-        },
-        {
-          id: 3,
-          userEmail: "admin@batisseurs-engages.fr",
-          action: "CREATE",
-          entityType: "users",
-          entityId: 2,
-          entityName: "marie.dupont@batisseurs-engages.fr",
-          description: "Created user: marie.dupont@batisseurs-engages.fr",
-          createdAt: new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString(),
-          status: "success",
-        },
-        {
-          id: 4,
-          userEmail: "admin@batisseurs-engages.fr",
-          action: "DELETE",
-          entityType: "documents",
-          entityId: 2,
-          entityName: "Ancien rapport",
-          description: "Deleted document: Ancien rapport",
-          createdAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
-          status: "success",
-        },
-      ];
-
-      setAuditLogs(mockLogs);
-    } catch (error) {
-      console.error("Failed to load audit logs:", error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
   const getActionColor = (action: string) => {
     switch (action) {
@@ -260,7 +196,7 @@ export default function AuditHistory() {
 
               <div className="flex items-end gap-2">
                 <Button
-                  onClick={loadAuditLogs}
+                  onClick={() => void auditQuery.refetch()}
                   variant="outline"
                   className="flex-1"
                   disabled={isLoading}

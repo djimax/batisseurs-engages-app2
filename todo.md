@@ -317,7 +317,7 @@
 - [x] Audit documentaire et commentaires centralisés (CREATE, UPDATE, DELETE, ARCHIVE, RESTORE et commentaires)
 - [ ] Conformité RGPD (export de données, suppression)
 - [ ] Sauvegarde automatique des données
-- [ ] Historique des accès utilisateurs
+- [x] Historique des accès utilisateurs (journal d’audit réel dans AuditHistory et journal d’accès détaillé par document).
 
 
 ## Phase 10 - Améliorations Inspirées de HelloAsso (EN COURS)
@@ -2100,3 +2100,5 @@
 - [x] Ajouter un export RGPD sécurisé des données personnelles de l’utilisateur connecté (profil, fiche membre, documents créés, notes et audit propre ; URLs S3 privées exclues).
 - [x] Ajouter et réussir le test contractuel de l’export RGPD (35 tests ciblés au total).
 - [x] Rejouer la vérification complète du projet : TypeScript sans erreur, 55 suites et 378 tests réussis.
+- [x] Remplacer les données simulées d’AuditHistory par la procédure tRPC admin.getAuditLogs, avec rafraîchissement et filtres conservés.
+- [x] Valider AuditHistory, Documents et export RGPD : TypeScript sans erreur et 46 tests ciblés réussis.
