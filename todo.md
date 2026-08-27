@@ -1361,7 +1361,7 @@
 ### 4. Notifications en Temps Réel
 - [ ] Implémenter WebSocket pour les notifications en temps réel
 - [ ] Créer un système de notifications avec types (info, warning, error, success)
-- [ ] Ajouter les notifications pour les événements clés (adhésion, projet, document)
+- [ ] Ajouter les notifications pour les événements clés (adhésion, projet, document) — événement document d’assignation au réviseur livré ; adhésion et projet restent à couvrir.
 - [ ] Implémenter les préférences de notification par utilisateur
 - [ ] Créer une page de centre de notifications
 - [ ] Ajouter les notifications par email pour les événements importants
@@ -2122,6 +2122,7 @@
 - [x] Valider l’affichage de l’identité résolue par TypeScript et 17 tests audit/RGPD ciblés réussis.
 - [x] Valider la notification Stripe de paiement confirmé par TypeScript et 23 tests Stripe/notifications ciblés réussis.
 - [x] Ajouter au test Stripe les assertions du ciblage membre, des préférences et de la clé de déduplication de la notification in-app (8 tests Stripe/notifications réussis).
+- [x] Ajouter une notification in-app au réviseur lorsqu’une revue documentaire lui est assignée, avec lien vers le document et déduplication par assignation.
 - [x] Rejouer la régression complète après RGPD, audit et notifications Stripe : TypeScript sans erreur, 56 suites et 382 tests réussis.
 - [x] Afficher l’email résolu de l’utilisateur dans le tableau AuditHistory administrateur.
 - [x] Ajouter un export CSV du journal d’audit filtré, limité aux lignes actuellement consultées (UTF-8 avec BOM, échappement CSV, données admin visibles uniquement).

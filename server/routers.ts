@@ -401,6 +401,19 @@ export const appRouter = router({
         if (!document) throw new TRPCError({ code: "NOT_FOUND", message: "Document introuvable" });
         await updateDocument(input.id, { reviewerId: input.reviewerId, reviewDueDate: input.reviewDueDate?.toISOString() ?? null, updatedBy: ctx.user.id } as any);
         await logAudit({ userId: ctx.user.id, action: "ASSIGN_REVIEW", entityType: "document", entityId: input.id, entityName: document.title, description: "Révision documentaire assignée", newValue: JSON.stringify({ reviewerId: input.reviewerId, reviewDueDate: input.reviewDueDate?.toISOString() ?? null }), status: "success" });
+        if (input.reviewerId) {
+          await createUserNotification({
+            userId: input.reviewerId,
+            title: "Revue documentaire assignée",
+            message: `Le document « ${document.title} » vous a été assigné pour revue${input.reviewDueDate ? ` avant le ${input.reviewDueDate.toLocaleDateString("fr-FR")}` : ""}.`,
+            type: "info",
+            actionUrl: `/documents/${input.id}`,
+            eventKey: "document_review_assigned",
+            entityType: "document",
+            entityId: input.id,
+            dedupeKey: `document-review-assigned:${input.id}:${input.reviewerId}:${input.reviewDueDate?.toISOString() ?? "none"}`,
+          });
+        }
         return getDocumentById(input.id);
       }),
     submitReview: protectedProcedure
