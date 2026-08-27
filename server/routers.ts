@@ -2314,19 +2314,22 @@ export const appRouter = router({
     // Project Members
     addMember: protectedProcedure
       .input(z.object({ projectId: z.number(), memberId: z.number(), role: z.enum(["project-lead", "member", "observer"]).default("member") }))
-      .mutation(async ({ input }) => {
+      .mutation(async ({ input, ctx }) => {
+        await assertPermission(ctx.user, "projects.manage");
         return await addProjectMember(input);
       }),
 
     getMembers: protectedProcedure
       .input(z.object({ projectId: z.number() }))
-      .query(async ({ input }) => {
+      .query(async ({ input, ctx }) => {
+        await assertPermission(ctx.user, "projects.view");
         return await getProjectMembers(input.projectId);
       }),
 
     removeMember: protectedProcedure
       .input(z.object({ id: z.number() }))
-      .mutation(async ({ input }) => {
+      .mutation(async ({ input, ctx }) => {
+        await assertPermission(ctx.user, "projects.manage");
         return await removeProjectMember(input.id);
       }),
 
@@ -2341,7 +2344,8 @@ export const appRouter = router({
         assignedTo: z.number().optional(),
         dueDate: z.date().optional(),
       }))
-      .mutation(async ({ input }) => {
+      .mutation(async ({ input, ctx }) => {
+        await assertPermission(ctx.user, "projects.manage");
         const convertedInput = {
           ...input,
           dueDate: input.dueDate ? input.dueDate.toISOString() : undefined,
@@ -2351,7 +2355,8 @@ export const appRouter = router({
 
     getTasks: protectedProcedure
       .input(z.object({ projectId: z.number() }))
-      .query(async ({ input }) => {
+      .query(async ({ input, ctx }) => {
+        await assertPermission(ctx.user, "projects.view");
         return await getProjectTasks(input.projectId);
       }),
 
@@ -2365,7 +2370,8 @@ export const appRouter = router({
         assignedTo: z.number().optional(),
         dueDate: z.date().optional(),
       }))
-      .mutation(async ({ input }) => {
+            .mutation(async ({ input, ctx }) => {
+        await assertPermission(ctx.user, "projects.manage");
         const { id, ...data } = input;
         const convertedData = {
           ...data,
@@ -2373,22 +2379,24 @@ export const appRouter = router({
         };
         return await updateProjectTask(id, convertedData as any);
       }),
-
     deleteTask: protectedProcedure
       .input(z.object({ id: z.number() }))
-      .mutation(async ({ input }) => {
+      .mutation(async ({ input, ctx }) => {
+        await assertPermission(ctx.user, "projects.manage");
         return await deleteProjectTask(input.id);
       }),
 
     getTaskComments: protectedProcedure
       .input(z.object({ taskId: z.number() }))
-      .query(async ({ input }) => {
+      .query(async ({ input, ctx }) => {
+        await assertPermission(ctx.user, "projects.view");
         return await getProjectTaskComments(input.taskId);
       }),
 
     addTaskComment: protectedProcedure
       .input(z.object({ projectId: z.number(), taskId: z.number(), content: z.string().trim().min(1).max(5000) }))
       .mutation(async ({ input, ctx }) => {
+        await assertPermission(ctx.user, "projects.manage");
         return await createProjectTaskComment({
           ...input,
           authorId: ctx.user?.id || 0,
@@ -2397,13 +2405,15 @@ export const appRouter = router({
 
     deleteTaskComment: protectedProcedure
       .input(z.object({ id: z.number() }))
-      .mutation(async ({ input }) => {
+      .mutation(async ({ input, ctx }) => {
+        await assertPermission(ctx.user, "projects.manage");
         return await deleteProjectTaskComment(input.id);
       }),
 
     report: protectedProcedure
       .input(z.object({ projectId: z.number() }))
-      .query(async ({ input }) => {
+      .query(async ({ input, ctx }) => {
+        await assertPermission(ctx.user, "projects.view");
         return await getProjectReport(input.projectId);
       }),
 
@@ -2416,7 +2426,8 @@ export const appRouter = router({
         dueDate: z.date(),
         status: z.enum(["pending", "in-progress", "completed", "delayed"]).default("pending"),
       }))
-      .mutation(async ({ input }) => {
+      .mutation(async ({ input, ctx }) => {
+        await assertPermission(ctx.user, "projects.manage");
         const convertedInput = {
           ...input,
           dueDate: input.dueDate.toISOString(),
@@ -2426,7 +2437,8 @@ export const appRouter = router({
 
     getMilestones: protectedProcedure
       .input(z.object({ projectId: z.number() }))
-      .query(async ({ input }) => {
+      .query(async ({ input, ctx }) => {
+        await assertPermission(ctx.user, "projects.view");
         return await getProjectMilestones(input.projectId);
       }),
 
@@ -2438,7 +2450,8 @@ export const appRouter = router({
         dueDate: z.date().optional(),
         status: z.enum(["pending", "in-progress", "completed", "delayed"]).optional(),
       }))
-      .mutation(async ({ input }) => {
+            .mutation(async ({ input, ctx }) => {
+        await assertPermission(ctx.user, "projects.manage");
         const { id, ...data } = input;
         const convertedData = {
           ...data,
@@ -2446,10 +2459,10 @@ export const appRouter = router({
         };
         return await updateProjectMilestone(id, convertedData as any);
       }),
-
     deleteMilestone: protectedProcedure
       .input(z.object({ id: z.number() }))
-      .mutation(async ({ input }) => {
+      .mutation(async ({ input, ctx }) => {
+        await assertPermission(ctx.user, "projects.manage");
         return await deleteProjectMilestone(input.id);
       }),
 
@@ -2461,6 +2474,7 @@ export const appRouter = router({
         content: z.string(),
       }))
       .mutation(async ({ input, ctx }) => {
+        await assertPermission(ctx.user, "projects.manage");
         return await createProjectUpdate({
           ...input,
           createdBy: ctx.user?.id || 0,
@@ -2469,14 +2483,16 @@ export const appRouter = router({
 
     getUpdates: protectedProcedure
       .input(z.object({ projectId: z.number() }))
-      .query(async ({ input }) => {
+      .query(async ({ input, ctx }) => {
+        await assertPermission(ctx.user, "projects.view");
         return await getProjectUpdates(input.projectId);
       }),
 
     // Project Budget
     getBudgetItems: protectedProcedure
       .input(z.object({ projectId: z.number() }))
-      .query(async ({ input }) => {
+      .query(async ({ input, ctx }) => {
+        await assertPermission(ctx.user, "projects.view");
         return await getProjectBudgetItems(input.projectId);
       }),
 
@@ -2487,7 +2503,8 @@ export const appRouter = router({
         amount: z.string(),
         description: z.string().optional(),
       }))
-      .mutation(async ({ input }) => {
+      .mutation(async ({ input, ctx }) => {
+        await assertPermission(ctx.user, "projects.manage");
         return await createProjectBudgetItem(input);
       }),
 
@@ -2499,14 +2516,15 @@ export const appRouter = router({
         spent: z.string().optional(),
         description: z.string().optional(),
       }))
-      .mutation(async ({ input }) => {
+            .mutation(async ({ input, ctx }) => {
+        await assertPermission(ctx.user, "projects.manage");
         const { id, ...data } = input;
         return await updateProjectBudgetItem(id, data);
       }),
-
     deleteBudgetItem: protectedProcedure
       .input(z.object({ id: z.number() }))
-      .mutation(async ({ input }) => {
+      .mutation(async ({ input, ctx }) => {
+        await assertPermission(ctx.user, "projects.manage");
         return await deleteProjectBudgetItem(input.id);
       }),
   }),
