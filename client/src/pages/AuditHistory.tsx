@@ -77,11 +77,17 @@ export default function AuditHistory() {
 
   const getEntityIcon = (entityType: string) => {
     const icons: Record<string, string> = {
+      document: "📄",
       documents: "📄",
+      member: "👤",
       members: "👤",
+      finance: "💰",
       finances: "💰",
+      user: "🔐",
       users: "🔐",
+      event: "📅",
       events: "📅",
+      campaign: "📢",
       campaigns: "📢",
       auth: "🔑",
     };
@@ -172,6 +178,10 @@ export default function AuditHistory() {
                     <SelectItem value="LOGIN">Connexion</SelectItem>
                     <SelectItem value="EXPORT">Export</SelectItem>
                     <SelectItem value="IMPORT">Import</SelectItem>
+                    <SelectItem value="VIEW">Consultation</SelectItem>
+                    <SelectItem value="DOWNLOAD">Téléchargement</SelectItem>
+                    <SelectItem value="PRINT">Impression</SelectItem>
+                    <SelectItem value="RETENTION_UPDATE">Conservation</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -184,12 +194,12 @@ export default function AuditHistory() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">Tous les types</SelectItem>
-                    <SelectItem value="documents">Documents</SelectItem>
-                    <SelectItem value="members">Membres</SelectItem>
-                    <SelectItem value="finances">Finances</SelectItem>
-                    <SelectItem value="users">Utilisateurs</SelectItem>
-                    <SelectItem value="events">Événements</SelectItem>
-                    <SelectItem value="campaigns">Campagnes</SelectItem>
+                    <SelectItem value="document">Documents</SelectItem>
+                    <SelectItem value="member">Membres</SelectItem>
+                    <SelectItem value="finance">Finances</SelectItem>
+                    <SelectItem value="user">Utilisateurs</SelectItem>
+                    <SelectItem value="event">Événements</SelectItem>
+                    <SelectItem value="campaign">Campagnes</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
