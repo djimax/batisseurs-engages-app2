@@ -111,6 +111,15 @@ export const appRouter = router({
       if (!db) return undefined;
       return db.select().from(dataDeletionRequests).where(eq(dataDeletionRequests.userId, ctx.user.id)).orderBy(desc(dataDeletionRequests.createdAt)).limit(1).then((rows) => rows[0]);
     }),
+    cancelDataDeletionRequest: protectedProcedure.mutation(async ({ ctx }) => {
+      const db = await getDb();
+      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Base de données indisponible" });
+      const existing = await db.select().from(dataDeletionRequests).where(and(eq(dataDeletionRequests.userId, ctx.user.id), eq(dataDeletionRequests.status, "pending"))).orderBy(desc(dataDeletionRequests.createdAt)).limit(1);
+      if (!existing[0]) throw new TRPCError({ code: "NOT_FOUND", message: "Aucune demande RGPD en attente" });
+      await db.update(dataDeletionRequests).set({ status: "cancelled" }).where(eq(dataDeletionRequests.id, existing[0].id));
+      await logAudit({ userId: ctx.user.id, action: "UPDATE", entityType: "data_deletion_request", entityId: existing[0].id, description: "Demande de suppression RGPD annulée par son auteur", status: "success" });
+      return { success: true } as const;
+    }),
     logout: publicProcedure.mutation(({ ctx }) => {
       const cookieOptions = getSessionCookieOptions(ctx.req);
       ctx.res.clearCookie(COOKIE_NAME, { ...cookieOptions, maxAge: -1 });
