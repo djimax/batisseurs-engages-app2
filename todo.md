@@ -2099,3 +2099,4 @@
 - [x] Ajouter un filtre Documents pour retrouver les documents sous conservation légale ou avec une date de rétention active.
 - [x] Ajouter un export RGPD sécurisé des données personnelles de l’utilisateur connecté (profil, fiche membre, documents créés, notes et audit propre ; URLs S3 privées exclues).
 - [x] Ajouter et réussir le test contractuel de l’export RGPD (35 tests ciblés au total).
+- [x] Rejouer la vérification complète du projet : TypeScript sans erreur, 55 suites et 378 tests réussis.
