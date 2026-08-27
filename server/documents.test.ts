@@ -289,6 +289,24 @@ describe("Documents Router", () => {
     expect(result.id).toBeDefined();
   });
 
+  it("persists and exposes document business metadata", async () => {
+    const caller = appRouter.createCaller(createAuthContext());
+    const categories = await caller.categories.list();
+    if (categories.length === 0) return;
+    const title = `Metadata document ${Date.now()}`;
+    const created = await caller.documents.create({ title, categoryId: categories[0].id, fiscalYear: 2026, funder: "Fondation test", confidentiality: "restricted" });
+    try {
+      expect(created.fiscalYear).toBe(2026);
+      expect(created.funder).toBe("Fondation test");
+      expect(created.confidentiality).toBe("restricted");
+      const read = await caller.documents.getById({ id: created.id });
+      expect(read?.fiscalYear).toBe(2026);
+      expect(read?.confidentiality).toBe("restricted");
+    } finally {
+      await caller.documents.delete({ id: created.id });
+    }
+  });
+
   it("should update document status (protected)", async () => {
     const ctx = createAuthContext();
     const caller = appRouter.createCaller(ctx);

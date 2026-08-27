@@ -2052,3 +2052,15 @@
 - [x] Définir le périmètre Google Drive : sélection de fichiers, import de métadonnées et synchronisation documentaire (synchronisation bidirectionnelle différée).
 - [ ] Implémenter et tester le premier flux Google Drive dans le module Documents.
 - [x] Documenter les prérequis, permissions OAuth et limites de l’intégration Google Drive.
+- [ ] Définir le modèle de métadonnées d’import Google Drive et le lien vers un document local.
+- [ ] Ajouter une procédure serveur sécurisée pour importer un fichier Drive autorisé vers S3 et créer sa version documentaire.
+- [ ] Ajouter la détection de doublons par identifiant Drive et empreinte du fichier.
+- [ ] Ajouter l’interface d’import Google Drive dans Documents avec états de chargement, succès et erreur.
+- [ ] Ajouter les tests Vitest du contrat d’import, des permissions et de l’idempotence.
+- [ ] Résoudre ou contourner l’erreur Google Cloud Billing `OR_BACR2_44` avant de poursuivre les identifiants OAuth Drive.
+- [ ] Ne pas stocker ni demander de données bancaires dans la conversation ; vérifier uniquement l’état de facturation dans Google Cloud.
+- [x] Auditer le schéma, les procédures et l’interface Documents pour définir les métadonnées personnalisées sans doublon.
+- [x] Ajouter les métadonnées documentaires : exercice, antenne, projet, financeur, confidentialité et propriétaire métier (schéma, création et affichage initial validés).
+- [x] Ajouter les validations serveur, l’édition et l’affichage des métadonnées dans Documents (création, édition inline, affichage et audit validés).
+- [ ] Ajouter des vues documentaires enregistrées avec filtres persistants et contrôle d’accès par utilisateur.
+- [ ] Ajouter les tests Vitest et la vérification visuelle du premier lot de métadonnées et vues enregistrées (test d’intégration métadonnées validé ; vues enregistrées restant à couvrir).

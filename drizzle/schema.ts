@@ -411,6 +411,12 @@ export const documents = mysqlTable("documents", {
 	approvedAt: timestamp({ mode: 'string' }),
 	approvalComment: text(),
 	isArchived: int().default(0),
+	fiscalYear: int(),
+	antenneId: int(),
+	projectId: int(),
+	funder: varchar({ length: 255 }),
+	confidentiality: mysqlEnum(['internal','restricted','confidential']).default('internal').notNull(),
+	businessOwnerId: int(),
 });
 
 export const documentVersions = mysqlTable("document_versions", {

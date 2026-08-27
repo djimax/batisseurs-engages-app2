@@ -132,6 +132,12 @@ export default function Documents() {
     priority: "medium" as "low" | "medium" | "high" | "urgent",
     status: "pending" as "pending" | "in-progress" | "completed",
     dueDate: "",
+    fiscalYear: "",
+    antenneId: "",
+    projectId: "",
+    funder: "",
+    confidentiality: "internal" as "internal" | "restricted" | "confidential",
+    businessOwnerId: "",
   });
 
   const { data: categories } = trpc.categories.list.useQuery();
@@ -308,6 +314,12 @@ export default function Documents() {
       priority: "medium",
       status: "pending",
       dueDate: "",
+      fiscalYear: "",
+      antenneId: "",
+      projectId: "",
+      funder: "",
+      confidentiality: "internal",
+      businessOwnerId: "",
     });
   };
 
@@ -332,7 +344,16 @@ export default function Documents() {
       toast.error("Veuillez remplir tous les champs obligatoires");
       return;
     }
-    createDocument.mutate({ ...formData, dueDate: formData.dueDate ? new Date(`${formData.dueDate}T23:59:59.000Z`) : undefined });
+    createDocument.mutate({
+      ...formData,
+      dueDate: formData.dueDate ? new Date(`${formData.dueDate}T23:59:59.000Z`) : undefined,
+      fiscalYear: formData.fiscalYear ? Number(formData.fiscalYear) : null,
+      antenneId: formData.antenneId ? Number(formData.antenneId) : null,
+      projectId: formData.projectId ? Number(formData.projectId) : null,
+      funder: formData.funder.trim() || null,
+      confidentiality: formData.confidentiality,
+      businessOwnerId: formData.businessOwnerId ? Number(formData.businessOwnerId) : null,
+    });
   };
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -713,6 +734,7 @@ export default function Documents() {
                   {doc.description || "Aucune description"}
                 </p>
                 {doc.dueDate ? <p className={`mb-3 text-xs font-medium ${new Date(doc.dueDate).getTime() < Date.now() ? "text-destructive" : "text-muted-foreground"}`}>{new Date(doc.dueDate).getTime() < Date.now() ? "Échéance dépassée" : `Échéance : ${new Date(doc.dueDate).toLocaleDateString("fr-FR")}`}</p> : null}
+                {(doc.fiscalYear || doc.funder || doc.confidentiality !== "internal") && <div className="mb-3 flex flex-wrap gap-1.5 text-[11px] text-muted-foreground">{doc.fiscalYear && <Badge variant="outline">Ex. {doc.fiscalYear}</Badge>}{doc.funder && <Badge variant="outline" className="max-w-[180px] truncate">{doc.funder}</Badge>}{doc.confidentiality !== "internal" && <Badge variant="secondary">{doc.confidentiality === "restricted" ? "Restreint" : "Confidentiel"}</Badge>}</div>}
                 <div className="flex items-center justify-between">
                   <div className="flex gap-2">
                     {getStatusBadge(doc.status)}
@@ -806,6 +828,11 @@ export default function Documents() {
             <div className="space-y-2">
               <Label htmlFor="dueDate">Date d’échéance</Label>
               <Input id="dueDate" type="date" value={formData.dueDate} onChange={(e) => setFormData({ ...formData, dueDate: e.target.value })} />
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                <div className="space-y-2"><Label htmlFor="fiscalYear">Exercice</Label><Input id="fiscalYear" type="number" min="2000" max="2200" placeholder="2026" value={formData.fiscalYear} onChange={(e) => setFormData({ ...formData, fiscalYear: e.target.value })} /></div>
+                <div className="space-y-2"><Label htmlFor="funder">Financeur</Label><Input id="funder" maxLength={255} placeholder="Ex. Fondation partenaire" value={formData.funder} onChange={(e) => setFormData({ ...formData, funder: e.target.value })} /></div>
+              </div>
+              <div className="space-y-2"><Label>Niveau de confidentialité</Label><Select value={formData.confidentiality} onValueChange={(v: any) => setFormData({ ...formData, confidentiality: v })}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="internal">Interne</SelectItem><SelectItem value="restricted">Restreint</SelectItem><SelectItem value="confidential">Confidentiel</SelectItem></SelectContent></Select></div>
               <p className="text-xs text-muted-foreground">Optionnel, pour suivre les documents à finaliser ou renouveler.</p>
             </div>
             <div className="grid grid-cols-2 gap-4">
@@ -887,6 +914,19 @@ export default function Documents() {
                 <p className="text-sm text-muted-foreground">
                   {selectedDocument?.description || "Aucune description"}
                 </p>
+              </div>
+
+              <Separator />
+
+              {/* Business metadata */}
+              <div className="space-y-3">
+                <div><h4 className="text-sm font-medium">Métadonnées métier</h4><p className="text-xs text-muted-foreground">Ces informations facilitent le classement et les recherches futures.</p></div>
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                  <div className="space-y-1"><Label htmlFor="detail-fiscal-year">Exercice</Label><Input id="detail-fiscal-year" type="number" min="2000" max="2200" value={selectedDocument?.fiscalYear ?? ""} onChange={(e) => setSelectedDocument({ ...selectedDocument, fiscalYear: e.target.value ? Number(e.target.value) : null })} /></div>
+                  <div className="space-y-1"><Label htmlFor="detail-funder">Financeur</Label><Input id="detail-funder" maxLength={255} value={selectedDocument?.funder ?? ""} onChange={(e) => setSelectedDocument({ ...selectedDocument, funder: e.target.value })} /></div>
+                </div>
+                <div className="space-y-1"><Label>Niveau de confidentialité</Label><Select value={selectedDocument?.confidentiality ?? "internal"} onValueChange={(value) => setSelectedDocument({ ...selectedDocument, confidentiality: value })}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="internal">Interne</SelectItem><SelectItem value="restricted">Restreint</SelectItem><SelectItem value="confidential">Confidentiel</SelectItem></SelectContent></Select></div>
+                <Button size="sm" variant="outline" disabled={updateDocument.isPending || !selectedDocument} onClick={() => selectedDocument && updateDocument.mutate({ id: selectedDocument.id, fiscalYear: selectedDocument.fiscalYear ?? null, funder: selectedDocument.funder?.trim() || null, confidentiality: selectedDocument.confidentiality ?? "internal" })}>Enregistrer les métadonnées</Button>
               </div>
 
               <Separator />

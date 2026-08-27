@@ -204,12 +204,24 @@ export const appRouter = router({
         status: z.enum(["pending", "in-progress", "completed"]).optional(),
         priority: z.enum(["low", "medium", "high", "urgent"]).optional(),
         dueDate: z.date().optional(),
+        fiscalYear: z.number().int().min(2000).max(2200).nullable().optional(),
+        antenneId: z.number().int().positive().nullable().optional(),
+        projectId: z.number().int().positive().nullable().optional(),
+        funder: z.string().trim().max(255).nullable().optional(),
+        confidentiality: z.enum(["internal", "restricted", "confidential"]).optional(),
+        businessOwnerId: z.number().int().positive().nullable().optional(),
       }))
       .mutation(async ({ input, ctx }) => {
         await assertPermission(ctx.user, "documents.manage");
         const result = await createDocument({
           ...input,
           dueDate: input.dueDate ? input.dueDate.toISOString() : undefined,
+          fiscalYear: input.fiscalYear ?? null,
+          antenneId: input.antenneId ?? null,
+          projectId: input.projectId ?? null,
+          funder: input.funder ?? null,
+          confidentiality: input.confidentiality ?? "internal",
+          businessOwnerId: input.businessOwnerId ?? null,
           createdBy: ctx.user.id,
         } as any);
         await logActivity({
@@ -219,7 +231,7 @@ export const appRouter = router({
           entityId: result.id as number,
           details: `Document "${input.title}" créé`,
         });
-        await logAudit({ userId: ctx.user.id, action: "CREATE", entityType: "document", entityId: result.id as number, entityName: input.title, description: `Document "${input.title}" créé`, newValue: JSON.stringify({ categoryId: input.categoryId, priority: input.priority ?? "medium", dueDate: input.dueDate?.toISOString() ?? null }), status: "success" });
+        await logAudit({ userId: ctx.user.id, action: "CREATE", entityType: "document", entityId: result.id as number, entityName: input.title, description: `Document "${input.title}" créé`, newValue: JSON.stringify({ categoryId: input.categoryId, priority: input.priority ?? "medium", dueDate: input.dueDate?.toISOString() ?? null, fiscalYear: input.fiscalYear ?? null, antenneId: input.antenneId ?? null, projectId: input.projectId ?? null, funder: input.funder ?? null, confidentiality: input.confidentiality ?? "internal", businessOwnerId: input.businessOwnerId ?? null }), status: "success" });
         await notifyOwner({
           title: "Nouveau document créé",
           content: `Le document "${input.title}" a été créé par ${ctx.user.name || "un utilisateur"}.`,
@@ -237,6 +249,12 @@ export const appRouter = router({
         priority: z.enum(["low", "medium", "high", "urgent"]).optional(),
         dueDate: z.date().nullable().optional(),
         isArchived: z.boolean().optional(),
+        fiscalYear: z.number().int().min(2000).max(2200).nullable().optional(),
+        antenneId: z.number().int().positive().nullable().optional(),
+        projectId: z.number().int().positive().nullable().optional(),
+        funder: z.string().trim().max(255).nullable().optional(),
+        confidentiality: z.enum(["internal", "restricted", "confidential"]).optional(),
+        businessOwnerId: z.number().int().positive().nullable().optional(),
       }))
       .mutation(async ({ input, ctx }) => {
         await assertPermission(ctx.user, "documents.manage");
@@ -255,7 +273,7 @@ export const appRouter = router({
           entityId: id,
           details: `Document mis à jour`,
         });
-        await logAudit({ userId: ctx.user.id, action: "UPDATE", entityType: "document", entityId: id, description: "Document mis à jour", newValue: JSON.stringify({ ...data, dueDate: data.dueDate?.toISOString() ?? null }), status: "success" });
+        await logAudit({ userId: ctx.user.id, action: "UPDATE", entityType: "document", entityId: id, description: "Document mis à jour", newValue: JSON.stringify({ ...data, dueDate: data.dueDate?.toISOString() ?? null, fiscalYear: data.fiscalYear ?? null, antenneId: data.antenneId ?? null, projectId: data.projectId ?? null, funder: data.funder ?? null, confidentiality: data.confidentiality ?? null, businessOwnerId: data.businessOwnerId ?? null }), status: "success" });
         return result;
       }),
     approve: protectedProcedure
