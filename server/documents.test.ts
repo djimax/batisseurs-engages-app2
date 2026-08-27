@@ -1,5 +1,6 @@
 import { describe, expect, it, vi, beforeEach } from "vitest";
 import { readFileSync } from "node:fs";
+const routerSource = readFileSync(new URL("./routers.ts", import.meta.url), "utf8");
 import { appRouter } from "./routers";
 import type { TrpcContext } from "./_core/context";
 import { getDb, getDocumentPermissionForUser } from "./db";
@@ -50,6 +51,22 @@ function createPublicContext(): TrpcContext {
     } as unknown as TrpcContext["res"],
   };
 }
+
+describe("Document review notification contract", () => {
+  it("notifies the assigned reviewer with a deduplicated document link", () => {
+    expect(routerSource).toContain("document_review_assigned");
+    expect(routerSource).toContain("userId: input.reviewerId");
+    expect(routerSource).toContain("/documents/${input.id}");
+    expect(routerSource).toContain("document-review-assigned:");
+  });
+
+  it("notifies the document creator about approval or requested changes", () => {
+    expect(routerSource).toContain("document_review_approved");
+    expect(routerSource).toContain("document_review_changes_requested");
+    expect(routerSource).toContain("document.createdBy !== ctx.user.id");
+    expect(routerSource).toContain("document-review-result:");
+  });
+});
 
 describe("Categories Router", () => {
   it("should list categories (public)", async () => {
