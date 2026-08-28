@@ -557,6 +557,22 @@ export const events = mysqlTable("events", {
 	updatedAt: timestamp({ mode: 'string' }).defaultNow().onUpdateNow().notNull(),
 });
 
+export const eventRegistrations = mysqlTable("event_registrations", {
+	id: int().autoincrement().notNull(),
+	eventId: int().notNull(),
+	memberId: int().notNull(),
+	status: mysqlEnum(['registered','attended','cancelled']).default('registered').notNull(),
+	registeredAt: timestamp({ mode: 'string' }).notNull(),
+	attendedAt: timestamp({ mode: 'string' }),
+	note: text(),
+	createdBy: int().notNull(),
+	updatedAt: timestamp({ mode: 'string' }).defaultNow().onUpdateNow().notNull(),
+}, (table) => [
+	uniqueIndex("event_registrations_event_member_unique").on(table.eventId, table.memberId),
+	index("event_registrations_event_idx").on(table.eventId),
+	index("event_registrations_member_idx").on(table.memberId),
+]);
+
 export const globalSettings = mysqlTable("global_settings", {
 	id: int().autoincrement().notNull(),
 	associationName: varchar({ length: 255 }).default('Les Bâtisseurs Engagés').notNull(),

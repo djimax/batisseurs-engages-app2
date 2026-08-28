@@ -365,6 +365,20 @@
       "when": 1787862287869,
       "tag": "0051_numerous_red_hulk",
       "breakpoints": true
+    },
+    {
+      "idx": 52,
+      "version": "5",
+      "when": 1787915423886,
+      "tag": "0052_dear_the_leader",
+      "breakpoints": true
+    },
+    {
+      "idx": 53,
+      "version": "5",
+      "when": 1787915462583,
+      "tag": "0053_new_lockheed",
+      "breakpoints": true
     }
   ]
 }

@@ -1,0 +1,1 @@
+ALTER TABLE `event_registrations` MODIFY COLUMN `registeredAt` timestamp NOT NULL;

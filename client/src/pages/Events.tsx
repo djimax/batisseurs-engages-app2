@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { Plus, Calendar, MapPin, Users, Clock, Trash2, Edit2 } from "lucide-react";
+import { Plus, Calendar, MapPin, Users, Clock, Trash2, Edit2, ClipboardCheck } from "lucide-react";
 import { toast } from "sonner";
 import { trpc } from "@/lib/trpc";
 
@@ -44,6 +44,22 @@ export default function Events() {
   });
   const deleteEvent = trpc.events.delete.useMutation({
     onSuccess: async () => { await utils.events.list.invalidate(); toast.success("Événement supprimé"); },
+    onError: (error) => toast.error(error.message),
+  });
+  const [registrationEventId, setRegistrationEventId] = useState<number | null>(null);
+  const [registrationMemberId, setRegistrationMemberId] = useState<number | null>(null);
+  const membersQuery = trpc.members.list.useQuery();
+  const registrationsQuery = trpc.events.registrations.useQuery({ id: registrationEventId ?? 1 }, { enabled: registrationEventId !== null });
+  const registerMember = trpc.events.register.useMutation({
+    onSuccess: async () => { await registrationsQuery.refetch(); toast.success("Membre inscrit à l’événement"); setRegistrationMemberId(null); },
+    onError: (error) => toast.error(error.message),
+  });
+  const cancelRegistration = trpc.events.cancelRegistration.useMutation({
+    onSuccess: async () => { await registrationsQuery.refetch(); toast.success("Inscription annulée"); },
+    onError: (error) => toast.error(error.message),
+  });
+  const markAttendance = trpc.events.markAttendance.useMutation({
+    onSuccess: async () => { await registrationsQuery.refetch(); toast.success("Présence mise à jour"); },
     onError: (error) => toast.error(error.message),
   });
   const events = useMemo<Event[]>(() => (storedEvents ?? []).map((event) => ({
@@ -275,6 +291,15 @@ export default function Events() {
 
                 <div className="flex gap-2 pt-3 border-t">
                   <Button
+                    variant="outline"
+                    size="sm"
+                    className="gap-2"
+                    onClick={() => { setRegistrationEventId(event.id); setRegistrationMemberId(null); }}
+                  >
+                    <ClipboardCheck className="h-4 w-4" />
+                    Inscriptions
+                  </Button>
+                  <Button
                     variant="ghost"
                     size="sm"
                     className="flex-1 gap-2"
@@ -297,6 +322,27 @@ export default function Events() {
           ))}
         </div>
       )}
+
+      <Dialog open={registrationEventId !== null} onOpenChange={(open) => { if (!open) setRegistrationEventId(null); }}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Inscriptions et présence</DialogTitle>
+            <DialogDescription>Inscrivez un membre puis confirmez sa présence le jour de l’activité.</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="flex flex-col gap-2 sm:flex-row">
+              <select aria-label="Membre à inscrire" className="h-10 flex-1 rounded-md border bg-background px-3 text-sm" value={registrationMemberId ?? ""} onChange={(event) => setRegistrationMemberId(Number(event.target.value) || null)}>
+                <option value="">Sélectionner un membre actif</option>
+                {(membersQuery.data ?? []).filter((member) => member.status === "active").map((member) => <option key={member.id} value={member.id}>{member.firstName} {member.lastName}</option>)}
+              </select>
+              <Button disabled={!registrationEventId || !registrationMemberId || registerMember.isPending} onClick={() => registrationEventId && registrationMemberId && registerMember.mutate({ eventId: registrationEventId, memberId: registrationMemberId })}>Inscrire</Button>
+            </div>
+            <div className="space-y-2">
+              {(registrationsQuery.data ?? []).length === 0 ? <p className="rounded-md border border-dashed p-6 text-center text-sm text-muted-foreground">Aucune inscription pour le moment.</p> : (registrationsQuery.data ?? []).map(({ registration, member }) => <div key={registration.id} className="flex flex-wrap items-center justify-between gap-3 rounded-md border p-3"><div><p className="font-medium">{member.firstName} {member.lastName}</p><p className="text-xs text-muted-foreground">Statut : {registration.status === "attended" ? "Présent" : registration.status === "cancelled" ? "Annulé" : "Inscrit"}</p></div><div className="flex gap-2"><Button size="sm" variant="outline" disabled={registration.status === "attended" || markAttendance.isPending} onClick={() => markAttendance.mutate({ registrationId: registration.id, status: "attended" })}>Présent</Button>{registration.status !== "cancelled" && <Button size="sm" variant="ghost" disabled={cancelRegistration.isPending} onClick={() => cancelRegistration.mutate({ registrationId: registration.id })}>Annuler</Button>}</div></div>)}
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       <Dialog open={isOpen} onOpenChange={setIsOpen}>
         <DialogContent className="max-w-lg">
