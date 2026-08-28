@@ -2150,3 +2150,7 @@
 - [x] Réparer la course entre suites Vitest partageant la base de test (`fileParallelism: false`) et confirmer la régression complète : 57 suites, 392 tests réussis, TypeScript sans erreur.
 - [x] Notifier in-app le demandeur lors de l’approbation ou du rejet d’une demande d’achat, avec déduplication et 13 tests ciblés réussis.
 - [x] Rejouer la régression finale après les notifications d’achats : TypeScript sans erreur, 57 suites et 394 tests réussis.
+- [x] Créer et valider la compétence réutilisable `association-platform-builder` via `quick_validate.py`.
+- [x] Ajouter un canal WebSocket authentifié sur `/api/notifications/ws`, filtré par session utilisateur et origine autorisée.
+- [x] Ajouter reconnexion exponentielle bornée, déduplication par identifiant, mise à jour immédiate du cache et repli polling tRPC à 15 secondes.
+- [x] Tester le WebSocket, l’isolation utilisateur, le montage serveur, la reconnexion, la déduplication et le repli polling ; TypeScript et 8 tests ciblés réussis.

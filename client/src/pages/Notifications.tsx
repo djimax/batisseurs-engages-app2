@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Bell, CheckCheck, ExternalLink, Mail, Settings2 } from "lucide-react";
+import { Bell, CheckCheck, ExternalLink, Mail, Radio, Settings2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -8,12 +8,14 @@ import { LoadingState } from "@/components/LoadingState";
 import { getErrorMessage } from "@/lib/uxFeedback";
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
+import { useNotificationRealtime } from "@/hooks/useNotificationRealtime";
 
 const TYPE_LABELS: Record<string, string> = { info: "Information", warning: "Alerte", error: "Erreur", success: "Succès" };
 
 export default function Notifications() {
   const [unreadOnly, setUnreadOnly] = useState(false);
   const utils = trpc.useUtils();
+  const realtime = useNotificationRealtime();
   const query = trpc.notifications.list.useQuery({ unreadOnly, limit: 50 });
   const preferences = trpc.notifications.preferences.useQuery();
   const markRead = trpc.notifications.markRead.useMutation({ onSuccess: () => utils.notifications.list.invalidate(), onError: (error) => toast.error(getErrorMessage(error, "Impossible de marquer la notification")) });
@@ -29,7 +31,7 @@ export default function Notifications() {
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-end justify-between gap-3">
-        <div><h1 className="text-3xl font-bold tracking-tight">Notifications</h1><p className="mt-2 text-muted-foreground">Retrouvez vos alertes et gérez vos préférences de communication.</p></div>
+        <div><div className="flex flex-wrap items-center gap-3"><h1 className="text-3xl font-bold tracking-tight">Notifications</h1><Badge variant="outline" className="gap-1.5"><Radio className={`h-3.5 w-3.5 ${realtime.isLive ? "text-emerald-600" : "text-amber-600"}`} />{realtime.isLive ? "Temps réel actif" : realtime.status === "polling" ? "Synchronisation de secours" : "Connexion en cours"}</Badge></div><p className="mt-2 text-muted-foreground">Retrouvez vos alertes et gérez vos préférences de communication sans recharger la page.</p></div>
         <div className="flex gap-2"><Button variant={unreadOnly ? "default" : "outline"} onClick={() => setUnreadOnly((value) => !value)}><Bell className="mr-2 h-4 w-4" />Non lues ({unreadCount})</Button><Button variant="outline" onClick={() => markAllRead.mutate()} disabled={unreadCount === 0 || markAllRead.isPending}><CheckCheck className="mr-2 h-4 w-4" />Tout marquer lu</Button></div>
       </div>
 

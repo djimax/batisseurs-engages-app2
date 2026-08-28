@@ -1,5 +1,6 @@
 import { and, desc, eq, sql } from "drizzle-orm";
 import { getDb } from "./db";
+import { publishNotification } from "./notification-realtime";
 import { adhesions, members, notificationPreferences, notifications } from "../drizzle/schema";
 
 export type NotificationType = "info" | "warning" | "error" | "success";
@@ -62,7 +63,9 @@ export async function createUserNotification(input: {
   });
   const notificationId = Number(inserted[0].insertId);
   const created = await db.select().from(notifications).where(eq(notifications.id, notificationId)).limit(1);
-  return { created: true as const, notification: created[0] ?? null, reason: "created" as const };
+  const notification = created[0] ?? null;
+  if (notification) publishNotification({ ...notification, isRead: notification.isRead ?? 0 });
+  return { created: true as const, notification, reason: "created" as const };
 }
 
 export async function listUserNotifications(input: {

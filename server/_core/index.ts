@@ -10,6 +10,7 @@ import { serveStatic, setupVite } from "./vite";
 import { membershipRemindersHandler } from "../membership-reminders-handler";
 import { documentRemindersHandler } from "../document-reminders-handler";
 import { stripeWebhookHandler } from "../stripe-webhook";
+import { attachNotificationWebSocket } from "../notification-realtime";
 
 function isPortAvailable(port: number): Promise<boolean> {
   return new Promise(resolve => {
@@ -33,6 +34,7 @@ async function findAvailablePort(startPort: number = 3000): Promise<number> {
 async function startServer() {
   const app = express();
   const server = createServer(app);
+  attachNotificationWebSocket(server);
   // Stripe signature verification requires the raw request body before JSON parsing.
   app.post("/api/stripe/webhook", express.raw({ type: "application/json" }), stripeWebhookHandler);
   // Configure body parser with larger size limit for file uploads
