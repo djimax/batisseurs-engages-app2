@@ -2156,3 +2156,4 @@
 - [x] Tester le WebSocket, l’isolation utilisateur, le montage serveur, la reconnexion, la déduplication et le repli polling ; TypeScript et 8 tests ciblés réussis.
 - [x] Rejouer la suite complète après le WebSocket : TypeScript sans erreur, 58 suites et 398 tests réussis.
 - [x] Étendre les événements de terrain avec inscription des membres et suivi de présence auditable, sans modifier les événements existants ; TypeScript et 5 tests événements réussis.
+- [x] Rejouer la suite complète après le module inscriptions événements : TypeScript sans erreur, 58 suites et 400 tests réussis.
