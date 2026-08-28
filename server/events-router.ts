@@ -6,6 +6,7 @@ import { and, eq } from "drizzle-orm";
 import { z } from "zod";
 import { assertPermission, userHasPermission } from "./authorization";
 import { logAudit } from "./audit";
+import { createUserNotification } from "./notification-center";
 
 export const EventInput = z.object({
   title: z.string().trim().min(1).max(255),
@@ -81,7 +82,7 @@ export const eventsRouter = router({
   register: protectedProcedure.input(RegistrationInput).mutation(async ({ input, ctx }) => {
     await assertPermission(ctx.user, "structures.view");
     const db = await requireDb();
-    const event = await db.select({ id: events.id }).from(events).where(eq(events.id, input.eventId)).limit(1);
+    const event = await db.select({ id: events.id, title: events.title }).from(events).where(eq(events.id, input.eventId)).limit(1);
     if (!event[0]) throw new TRPCError({ code: "NOT_FOUND", message: "Événement introuvable" });
     const member = await db.select().from(members).where(eq(members.id, input.memberId)).limit(1);
     if (!member[0]) throw new TRPCError({ code: "NOT_FOUND", message: "Membre introuvable" });
@@ -97,11 +98,13 @@ export const eventsRouter = router({
     if (existing[0]) {
       await db.update(eventRegistrations).set({ status: "registered", registeredAt: new Date().toISOString(), attendedAt: null, createdBy: ctx.user.id }).where(eq(eventRegistrations.id, existing[0].id));
       await logAudit({ userId: ctx.user.id, action: "REGISTER", entityType: "event_registration", entityId: existing[0].id, description: "Inscription réactivée" });
+      if (member[0].userId) await createUserNotification({ userId: member[0].userId, title: "Inscription confirmée", message: `Votre inscription à l’événement « ${event[0].title} » est confirmée.`, type: "success", actionUrl: "/events", eventKey: "event.registration", entityType: "event_registration", entityId: existing[0].id, dedupeKey: `event-registration:${existing[0].id}:${new Date().toISOString()}` });
       return { id: existing[0].id };
     }
     const [result] = await db.insert(eventRegistrations).values({ ...input, registeredAt: new Date().toISOString(), createdBy: ctx.user.id });
     const id = Number(result.insertId);
     await logAudit({ userId: ctx.user.id, action: "REGISTER", entityType: "event_registration", entityId: id });
+    if (member[0].userId) await createUserNotification({ userId: member[0].userId, title: "Inscription confirmée", message: `Votre inscription à l’événement « ${event[0].title} » est confirmée.`, type: "success", actionUrl: "/events", eventKey: "event.registration", entityType: "event_registration", entityId: id, dedupeKey: `event-registration:${id}:registered` });
     return { id };
   }),
 
