@@ -2154,3 +2154,4 @@
 - [x] Ajouter un canal WebSocket authentifié sur `/api/notifications/ws`, filtré par session utilisateur et origine autorisée.
 - [x] Ajouter reconnexion exponentielle bornée, déduplication par identifiant, mise à jour immédiate du cache et repli polling tRPC à 15 secondes.
 - [x] Tester le WebSocket, l’isolation utilisateur, le montage serveur, la reconnexion, la déduplication et le repli polling ; TypeScript et 8 tests ciblés réussis.
+- [x] Rejouer la suite complète après le WebSocket : TypeScript sans erreur, 58 suites et 398 tests réussis.
