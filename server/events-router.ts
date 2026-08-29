@@ -111,8 +111,10 @@ export const eventsRouter = router({
   cancelRegistration: protectedProcedure.input(RegistrationId).mutation(async ({ input, ctx }) => {
     await assertPermission(ctx.user, "structures.view");
     const db = await requireDb();
-    const rows = await db.select({ registration: eventRegistrations, member: members })
-      .from(eventRegistrations).innerJoin(members, eq(eventRegistrations.memberId, members.id))
+    const rows = await db.select({ registration: eventRegistrations, member: members, event: events })
+      .from(eventRegistrations)
+      .innerJoin(members, eq(eventRegistrations.memberId, members.id))
+      .innerJoin(events, eq(eventRegistrations.eventId, events.id))
       .where(eq(eventRegistrations.id, input.registrationId)).limit(1);
     const row = rows[0];
     if (!row) throw new TRPCError({ code: "NOT_FOUND", message: "Inscription introuvable" });
@@ -120,15 +122,27 @@ export const eventsRouter = router({
     if (!canManageRegistrations && row.member.userId !== ctx.user.id) throw new TRPCError({ code: "FORBIDDEN", message: "Vous ne pouvez annuler que votre propre inscription." });
     await db.update(eventRegistrations).set({ status: "cancelled", attendedAt: null }).where(eq(eventRegistrations.id, input.registrationId));
     await logAudit({ userId: ctx.user.id, action: "CANCEL", entityType: "event_registration", entityId: input.registrationId });
+    if (row.member.userId) await createUserNotification({ userId: row.member.userId, title: "Inscription annulée", message: `Votre inscription à l’événement « ${row.event.title} » a été annulée.`, type: "warning", actionUrl: "/events", eventKey: "event.registration.cancelled", entityType: "event_registration", entityId: input.registrationId, dedupeKey: `event-registration:${input.registrationId}:cancelled:${Date.now()}` });
     return { id: input.registrationId };
   }),
 
   markAttendance: protectedProcedure.input(AttendanceInput).mutation(async ({ input, ctx }) => {
     await assertPermission(ctx.user, "structures.manage");
     const db = await requireDb();
+    const rows = await db.select({ registration: eventRegistrations, member: members, event: events })
+      .from(eventRegistrations)
+      .innerJoin(members, eq(eventRegistrations.memberId, members.id))
+      .innerJoin(events, eq(eventRegistrations.eventId, events.id))
+      .where(eq(eventRegistrations.id, input.registrationId)).limit(1);
+    const row = rows[0];
+    if (!row) throw new TRPCError({ code: "NOT_FOUND", message: "Inscription introuvable" });
     const [result] = await db.update(eventRegistrations).set({ status: input.status, attendedAt: input.status === "attended" ? new Date().toISOString() : null }).where(eq(eventRegistrations.id, input.registrationId));
     if (result.affectedRows === 0) throw new TRPCError({ code: "NOT_FOUND", message: "Inscription introuvable" });
     await logAudit({ userId: ctx.user.id, action: "ATTENDANCE", entityType: "event_registration", entityId: input.registrationId, newValue: input.status });
+    if (row.member.userId) {
+      const label = input.status === "attended" ? "présence confirmée" : input.status === "cancelled" ? "inscription annulée" : "statut d’inscription rétabli";
+      await createUserNotification({ userId: row.member.userId, title: "Mise à jour de votre événement", message: `Votre ${label} pour « ${row.event.title} ».`, type: input.status === "attended" ? "success" : "info", actionUrl: "/events", eventKey: "event.registration.status", entityType: "event_registration", entityId: input.registrationId, dedupeKey: `event-registration:${input.registrationId}:status:${input.status}:${Date.now()}` });
+    }
     return { id: input.registrationId, status: input.status };
   }),
 });
