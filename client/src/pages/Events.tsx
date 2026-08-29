@@ -62,6 +62,15 @@ export default function Events() {
     onSuccess: async () => { await registrationsQuery.refetch(); toast.success("Présence mise à jour"); },
     onError: (error) => toast.error(error.message),
   });
+  const registrationSummary = useMemo(() => {
+    const rows = registrationsQuery.data ?? [];
+    return {
+      total: rows.length,
+      registered: rows.filter(({ registration }) => registration.status === "registered").length,
+      attended: rows.filter(({ registration }) => registration.status === "attended").length,
+      cancelled: rows.filter(({ registration }) => registration.status === "cancelled").length,
+    };
+  }, [registrationsQuery.data]);
   const events = useMemo<Event[]>(() => (storedEvents ?? []).map((event) => ({
     ...event,
     startDate: new Date(event.startDate),
@@ -375,7 +384,7 @@ export default function Events() {
           </DialogHeader>
           <div className="space-y-4">
             <div className="flex items-center justify-between gap-2">
-              <p className="text-sm text-muted-foreground">{(registrationsQuery.data ?? []).length} inscription(s)</p>
+              <div><p className="text-sm text-muted-foreground">{registrationSummary.total} inscription(s)</p><p className="text-xs text-muted-foreground">{registrationSummary.registered} inscrit(s) · {registrationSummary.attended} présent(s) · {registrationSummary.cancelled} annulé(s)</p></div>
               <Button variant="outline" size="sm" disabled={!registrationsQuery.data?.length} onClick={exportRegistrationsCsv}><Download className="mr-2 h-4 w-4" />Exporter CSV</Button>
             </div>
             <div className="flex flex-col gap-2 sm:flex-row">

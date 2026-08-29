@@ -2164,3 +2164,5 @@
 - [x] Rejouer la suite complète après l’export iCalendar : TypeScript sans erreur, 58 suites et 401 tests réussis.
 - [x] Ajouter l’export CSV des inscrits et présences depuis le dialogue de gestion d’un événement, avec BOM UTF-8 et échappement CSV ; TypeScript et 6 tests événements réussis.
 - [x] Rejouer la suite complète après l’export CSV événementiel : TypeScript sans erreur, 58 suites et 401 tests réussis.
+- [x] Ajouter un récapitulatif des inscriptions par événement (inscrits, présents, annulés) dans le dialogue de présence ; TypeScript et 6 tests événements réussis.
+- [x] Rejouer la suite complète après le récapitulatif événementiel : TypeScript sans erreur, 58 suites et 401 tests réussis.
