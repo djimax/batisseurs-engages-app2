@@ -250,6 +250,7 @@ export default function Events() {
               <Button
                 key={f}
                 variant={filter === f ? "default" : "outline"}
+                aria-pressed={filter === f}
                 onClick={() => setFilter(f)}
                 size="sm"
               >
@@ -269,6 +270,7 @@ export default function Events() {
               <Button
                 key={option.value}
                 variant={sortBy === option.value ? "default" : "outline"}
+                aria-pressed={sortBy === option.value}
                 onClick={() => setSortBy(option.value)}
                 size="sm"
               >
