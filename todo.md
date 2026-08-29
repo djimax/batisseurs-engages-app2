@@ -2173,3 +2173,5 @@
 - [x] Rejouer la suite complète après la gestion des types d’événements : TypeScript sans erreur, 58 suites et 401 tests réussis.
 - [x] Ajouter un filtre par type d’événement dans le calendrier (réunion, formation, activité, événement, autre) ; TypeScript et 6 tests événements réussis.
 - [x] Rejouer la suite complète après le filtre par type d’événement : TypeScript sans erreur, 58 suites et 401 tests réussis.
+- [x] Améliorer les libellés accessibles des contrôles de filtrage et de tri du calendrier avec labels, fieldsets et légendes explicites ; TypeScript et 6 tests événements réussis.
+- [x] Rejouer la suite complète après les améliorations d’accessibilité du calendrier : TypeScript sans erreur, 58 suites et 401 tests réussis.

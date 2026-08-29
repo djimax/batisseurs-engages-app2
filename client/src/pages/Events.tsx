@@ -236,13 +236,16 @@ export default function Events() {
       {/* Filters */}
       <div className="flex flex-col gap-4">
         <div className="flex flex-col sm:flex-row gap-4">
+          <label className="sr-only" htmlFor="event-search">Rechercher dans les événements</label>
           <Input
-            placeholder="Rechercher un evenement..."
+            id="event-search"
+            placeholder="Rechercher un événement..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="flex-1"
           />
-          <div className="flex gap-2 flex-wrap">
+          <fieldset className="flex gap-2 flex-wrap">
+            <legend className="sr-only">Filtrer par période</legend>
             {(["all", "past", "present", "future"] as FilterType[]).map((f) => (
               <Button
                 key={f}
@@ -256,11 +259,11 @@ export default function Events() {
                 {f === "future" && "A venir"}
               </Button>
             ))}
-          </div>
-          <select aria-label="Filtrer par type" className="h-9 rounded-md border bg-background px-3 text-sm" value={eventTypeFilter} onChange={(event) => setEventTypeFilter(event.target.value)}><option value="all">Tous les types</option>{Object.entries(EVENT_TYPE_LABELS).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select>
+          </fieldset>
+          <label className="sr-only" htmlFor="event-type-filter">Filtrer par type d’événement</label><select id="event-type-filter" aria-label="Filtrer par type" className="h-9 rounded-md border bg-background px-3 text-sm" value={eventTypeFilter} onChange={(event) => setEventTypeFilter(event.target.value)}><option value="all">Tous les types</option>{Object.entries(EVENT_TYPE_LABELS).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select>
         </div>
-        <div>
-          <label className="text-sm font-medium mb-2 block">Trier par</label>
+        <fieldset>
+          <legend className="text-sm font-medium mb-2 block">Trier par</legend>
           <div className="flex gap-2 flex-wrap">
             {SORT_OPTIONS.map((option) => (
               <Button
@@ -273,7 +276,7 @@ export default function Events() {
               </Button>
             ))}
           </div>
-        </div>
+        </fieldset>
       </div>
 
       {/* Events Grid */}
