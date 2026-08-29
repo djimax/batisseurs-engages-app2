@@ -2160,3 +2160,5 @@
 - [x] Notifier le membre inscrit lorsqu’une inscription à un événement est créée ou réactivée, avec lien vers le calendrier ; TypeScript et 13 tests ciblés réussis.
 - [x] Rejouer la suite complète après la notification d’inscription événementielle : TypeScript sans erreur, 58 suites et 400 tests réussis.
 - [x] Notifier le membre lorsqu’une inscription est annulée ou que sa présence est pointée, avec déduplication et lien vers l’événement ; TypeScript et 13 tests ciblés réussis.
+- [x] Ajouter un export iCalendar (.ics) par événement, avec échappement ICS et dates UTC, pour synchroniser les activités associatives avec les calendriers externes ; TypeScript et 6 tests événements réussis.
+- [x] Rejouer la suite complète après l’export iCalendar : TypeScript sans erreur, 58 suites et 401 tests réussis.

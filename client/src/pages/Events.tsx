@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { Plus, Calendar, MapPin, Users, Clock, Trash2, Edit2, ClipboardCheck } from "lucide-react";
+import { Plus, Calendar, MapPin, Users, Clock, Trash2, Edit2, ClipboardCheck, Download } from "lucide-react";
 import { toast } from "sonner";
 import { trpc } from "@/lib/trpc";
 
@@ -148,6 +148,23 @@ export default function Events() {
     });
   };
 
+  const exportEventIcs = (event: Event) => {
+    const escapeIcs = (value: string) => value.replace(/\\/g, "\\\\").replace(/([,;])/g, "\\$1").replace(/\r?\n/g, "\\n");
+    const toIcsDate = (date: Date) => date.toISOString().replace(/[-:]/g, "").replace(/\.\d{3}Z$/, "Z");
+    const lines = [
+      "BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//Les Bâtisseurs Engagés//Calendrier//FR", "CALSCALE:GREGORIAN", "BEGIN:VEVENT",
+      `UID:event-${event.id}@lesbatisseursengages`, `DTSTAMP:${toIcsDate(new Date())}`, `DTSTART:${toIcsDate(event.startDate)}`, `DTEND:${toIcsDate(event.endDate)}`,
+      `SUMMARY:${escapeIcs(event.title)}`, event.description ? `DESCRIPTION:${escapeIcs(event.description)}` : "", event.location ? `LOCATION:${escapeIcs(event.location)}` : "", "END:VEVENT", "END:VCALENDAR",
+    ].filter(Boolean).join("\r\n");
+    const blob = new Blob([`${lines}\r\n`], { type: "text/calendar;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `${event.title.toLowerCase().replace(/[^a-z0-9]+/gi, "-").replace(/^-|-$/g, "") || "evenement"}.ics`;
+    link.click();
+    URL.revokeObjectURL(url);
+  };
+
   const handleSubmit = () => {
     const startDate = new Date(formData.startDate);
     const endDate = new Date(formData.endDate);
@@ -290,6 +307,16 @@ export default function Events() {
                 </div>
 
                 <div className="flex gap-2 pt-3 border-t">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="gap-2"
+                    onClick={() => exportEventIcs(event)}
+                    title="Ajouter à un calendrier"
+                  >
+                    <Download className="h-4 w-4" />
+                    .ics
+                  </Button>
                   <Button
                     variant="outline"
                     size="sm"

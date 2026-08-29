@@ -31,6 +31,13 @@ describe("events module contract", () => {
     expect(eventsPageSource).toContain("Présent");
   });
 
+  it("offers a safe iCalendar export for each event", () => {
+    expect(eventsPageSource).toContain("text/calendar;charset=utf-8");
+    expect(eventsPageSource).toContain("BEGIN:VCALENDAR");
+    expect(eventsPageSource).toContain("DTSTART:");
+    expect(eventsPageSource).toContain("Ajouter à un calendrier");
+  });
+
   it("rejects invalid periods and accepts a valid event", () => {
     const valid = EventInput.safeParse({
       title: "Assemblée locale",
