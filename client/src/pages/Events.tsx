@@ -69,6 +69,7 @@ export default function Events() {
       registered: rows.filter(({ registration }) => registration.status === "registered").length,
       attended: rows.filter(({ registration }) => registration.status === "attended").length,
       cancelled: rows.filter(({ registration }) => registration.status === "cancelled").length,
+      attendanceRate: rows.filter(({ registration }) => registration.status !== "cancelled").length === 0 ? 0 : Math.round((rows.filter(({ registration }) => registration.status === "attended").length / rows.filter(({ registration }) => registration.status !== "cancelled").length) * 100),
     };
   }, [registrationsQuery.data]);
   const events = useMemo<Event[]>(() => (storedEvents ?? []).map((event) => ({
@@ -384,7 +385,7 @@ export default function Events() {
           </DialogHeader>
           <div className="space-y-4">
             <div className="flex items-center justify-between gap-2">
-              <div><p className="text-sm text-muted-foreground">{registrationSummary.total} inscription(s)</p><p className="text-xs text-muted-foreground">{registrationSummary.registered} inscrit(s) · {registrationSummary.attended} présent(s) · {registrationSummary.cancelled} annulé(s)</p></div>
+              <div><p className="text-sm text-muted-foreground">{registrationSummary.total} inscription(s)</p><p className="text-xs text-muted-foreground">{registrationSummary.registered} inscrit(s) · {registrationSummary.attended} présent(s) · {registrationSummary.cancelled} annulé(s) · {registrationSummary.attendanceRate}% de présence</p></div>
               <Button variant="outline" size="sm" disabled={!registrationsQuery.data?.length} onClick={exportRegistrationsCsv}><Download className="mr-2 h-4 w-4" />Exporter CSV</Button>
             </div>
             <div className="flex flex-col gap-2 sm:flex-row">
