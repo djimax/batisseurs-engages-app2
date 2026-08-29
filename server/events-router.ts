@@ -64,10 +64,20 @@ export const eventsRouter = router({
   delete: protectedProcedure.input(EventId).mutation(async ({ input, ctx }) => {
     await assertPermission(ctx.user, "structures.manage");
     const db = await requireDb();
+    const eventRows = await db.select({ id: events.id, title: events.title }).from(events).where(eq(events.id, input.id)).limit(1);
+    const event = eventRows[0];
+    if (!event) throw new TRPCError({ code: "NOT_FOUND", message: "Événement introuvable" });
+    const registrations = await db.select({ registration: eventRegistrations, member: members })
+      .from(eventRegistrations).innerJoin(members, eq(eventRegistrations.memberId, members.id))
+      .where(eq(eventRegistrations.eventId, input.id));
+    await Promise.all(registrations.filter(({ member }) => member.userId).map(({ registration, member }) => createUserNotification({
+      userId: member.userId!, title: "Événement supprimé", message: `L’événement « ${event.title} » a été supprimé.`, type: "warning", actionUrl: "/events", eventKey: "event.deleted", entityType: "event", entityId: input.id, dedupeKey: `event-deleted:${input.id}:${registration.id}`,
+    })));
+    await db.delete(eventRegistrations).where(eq(eventRegistrations.eventId, input.id));
     const [result] = await db.delete(events).where(eq(events.id, input.id));
     if (result.affectedRows === 0) throw new TRPCError({ code: "NOT_FOUND", message: "Événement introuvable" });
-    await logAudit({ userId: ctx.user.id, action: "DELETE", entityType: "event", entityId: input.id });
-    return { id: input.id };
+    await logAudit({ userId: ctx.user.id, action: "DELETE", entityType: "event", entityId: input.id, description: `${registrations.length} inscription(s) supprimée(s)` });
+    return { id: input.id, registrationsDeleted: registrations.length };
   }),
 
   registrations: protectedProcedure.input(EventId).query(async ({ input, ctx }) => {

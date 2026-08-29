@@ -2166,3 +2166,5 @@
 - [x] Rejouer la suite complète après l’export CSV événementiel : TypeScript sans erreur, 58 suites et 401 tests réussis.
 - [x] Ajouter un récapitulatif des inscriptions par événement (inscrits, présents, annulés) dans le dialogue de présence ; TypeScript et 6 tests événements réussis.
 - [x] Rejouer la suite complète après le récapitulatif événementiel : TypeScript sans erreur, 58 suites et 401 tests réussis.
+- [x] Garantir la cohérence lors de la suppression d’un événement : notifier les inscrits, supprimer leurs inscriptions et auditer l’opération ; TypeScript et 10 tests ciblés réussis.
+- [x] Rejouer la suite complète après la cohérence de suppression événementielle : TypeScript sans erreur, 58 suites et 401 tests réussis.
