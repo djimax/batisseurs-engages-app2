@@ -2169,3 +2169,4 @@
 - [x] Garantir la cohérence lors de la suppression d’un événement : notifier les inscrits, supprimer leurs inscriptions et auditer l’opération ; TypeScript et 10 tests ciblés réussis.
 - [x] Rejouer la suite complète après la cohérence de suppression événementielle : TypeScript sans erreur, 58 suites et 401 tests réussis.
 - [x] Afficher le taux de présence calculé dans le récapitulatif des inscriptions événementielles, hors inscriptions annulées ; TypeScript et 6 tests événements réussis.
+- [x] Permettre la sélection du type d’événement (réunion, formation, activité, événement, autre) dans le formulaire et l’afficher sur les cartes ; TypeScript et 6 tests événements réussis.

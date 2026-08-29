@@ -21,6 +21,7 @@ interface Event {
 }
 
 type FilterType = "all" | "past" | "present" | "future";
+const EVENT_TYPE_LABELS: Record<string, string> = { reunion: "Réunion", formation: "Formation", activite: "Activité", evenement: "Événement", autre: "Autre" };
 
 const SORT_OPTIONS = [
   { value: "date-asc", label: "Date (Plus anciens)" },
@@ -83,7 +84,7 @@ export default function Events() {
   const [sortBy, setSortBy] = useState<string>("date-asc");
   const [isOpen, setIsOpen] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
-  const [formData, setFormData] = useState({ title: "", description: "", location: "", startDate: "", endDate: "", organizer: "", attendees: 0 });
+  const [formData, setFormData] = useState({ title: "", description: "", location: "", eventType: "autre" as "reunion" | "formation" | "activite" | "evenement" | "autre", startDate: "", endDate: "", organizer: "", attendees: 0 });
 
   // Stabilize `now` reference to prevent infinite useMemo recalculations
   const now = useMemo(() => new Date(), []);
@@ -203,7 +204,7 @@ export default function Events() {
       title: formData.title.trim(),
       description: formData.description.trim() || undefined,
       location: formData.location.trim() || undefined,
-      eventType: "autre" as const,
+      eventType: formData.eventType,
       startDate: startDate.toISOString(),
       endDate: endDate.toISOString(),
       color: "#1a4d2e",
@@ -224,7 +225,7 @@ export default function Events() {
             Gérez les événements passés, présents et futurs de l'association
           </p>
         </div>
-        <Button className="gap-2" onClick={() => { setEditingId(null); setFormData({ title: "", description: "", location: "", startDate: "", endDate: "", organizer: "", attendees: 0 }); setIsOpen(true); }}>
+        <Button className="gap-2" onClick={() => { setEditingId(null); setFormData({ title: "", description: "", location: "", eventType: "autre", startDate: "", endDate: "", organizer: "", attendees: 0 }); setIsOpen(true); }}>
           <Plus className="h-4 w-4" />
           Nouvel événement
         </Button>
@@ -294,9 +295,7 @@ export default function Events() {
                 <div className="flex items-start justify-between gap-2">
                   <div className="flex-1">
                     <CardTitle className="text-lg">{event.title}</CardTitle>
-                    <span className={`inline-block text-xs px-2 py-1 rounded-full mt-2 ${getStatusColor(event)}`}>
-                      {getEventStatus(event)}
-                    </span>
+                    <div className="mt-2 flex flex-wrap gap-2"><span className={`inline-block text-xs px-2 py-1 rounded-full ${getStatusColor(event)}`}>{getEventStatus(event)}</span><span className="inline-block rounded-full bg-muted px-2 py-1 text-xs text-muted-foreground">{EVENT_TYPE_LABELS[event.eventType] ?? event.eventType}</span></div>
                   </div>
                 </div>
               </CardHeader>
@@ -357,7 +356,7 @@ export default function Events() {
                     variant="ghost"
                     size="sm"
                     className="flex-1 gap-2"
-                    onClick={() => { const current = events.find((item) => item.id === event.id); if (!current) return; setEditingId(current.id); setFormData({ title: current.title, description: current.description ?? "", location: current.location ?? "", startDate: current.startDate.toISOString().slice(0, 16), endDate: current.endDate.toISOString().slice(0, 16), organizer: current.organizer ?? "", attendees: current.attendees ?? 0 }); setIsOpen(true); }}
+                    onClick={() => { const current = events.find((item) => item.id === event.id); if (!current) return; setEditingId(current.id); setFormData({ title: current.title, description: current.description ?? "", location: current.location ?? "", eventType: current.eventType as "reunion" | "formation" | "activite" | "evenement" | "autre", startDate: current.startDate.toISOString().slice(0, 16), endDate: current.endDate.toISOString().slice(0, 16), organizer: current.organizer ?? "", attendees: current.attendees ?? 0 }); setIsOpen(true); }}
                   >
                     <Edit2 className="h-4 w-4" />
                     Modifier
@@ -410,6 +409,7 @@ export default function Events() {
           </DialogHeader>
           <div className="grid gap-4">
             <Input placeholder="Titre de l’événement" value={formData.title} onChange={(event) => setFormData({ ...formData, title: event.target.value })} />
+            <select aria-label="Type d’événement" className="h-10 rounded-md border bg-background px-3 text-sm" value={formData.eventType} onChange={(event) => setFormData({ ...formData, eventType: event.target.value as typeof formData.eventType })}>{Object.entries(EVENT_TYPE_LABELS).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select>
             <Input placeholder="Description" value={formData.description} onChange={(event) => setFormData({ ...formData, description: event.target.value })} />
             <div className="grid gap-3 sm:grid-cols-2">
               <Input placeholder="Lieu" value={formData.location} onChange={(event) => setFormData({ ...formData, location: event.target.value })} />
