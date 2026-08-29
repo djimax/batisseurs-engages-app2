@@ -2162,3 +2162,5 @@
 - [x] Notifier le membre lorsqu’une inscription est annulée ou que sa présence est pointée, avec déduplication et lien vers l’événement ; TypeScript et 13 tests ciblés réussis.
 - [x] Ajouter un export iCalendar (.ics) par événement, avec échappement ICS et dates UTC, pour synchroniser les activités associatives avec les calendriers externes ; TypeScript et 6 tests événements réussis.
 - [x] Rejouer la suite complète après l’export iCalendar : TypeScript sans erreur, 58 suites et 401 tests réussis.
+- [x] Ajouter l’export CSV des inscrits et présences depuis le dialogue de gestion d’un événement, avec BOM UTF-8 et échappement CSV ; TypeScript et 6 tests événements réussis.
+- [x] Rejouer la suite complète après l’export CSV événementiel : TypeScript sans erreur, 58 suites et 401 tests réussis.

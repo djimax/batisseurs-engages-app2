@@ -165,6 +165,23 @@ export default function Events() {
     URL.revokeObjectURL(url);
   };
 
+  const exportRegistrationsCsv = () => {
+    const rows = registrationsQuery.data ?? [];
+    if (!rows.length) { toast.info("Aucune inscription à exporter"); return; }
+    const escapeCsv = (value: string | number) => `"${String(value).replace(/"/g, '""')}"`;
+    const csv = [
+      ["Prénom", "Nom", "Email", "Statut", "Inscrit le", "Présence confirmée le"],
+      ...rows.map(({ registration, member }) => [member.firstName, member.lastName, member.email ?? "", registration.status, registration.registeredAt ?? "", registration.attendedAt ?? ""]),
+    ].map((row) => row.map(escapeCsv).join(",")).join("\r\n");
+    const blob = new Blob([`\uFEFF${csv}\r\n`], { type: "text/csv;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `inscriptions-evenement-${registrationEventId ?? ""}.csv`;
+    link.click();
+    URL.revokeObjectURL(url);
+  };
+
   const handleSubmit = () => {
     const startDate = new Date(formData.startDate);
     const endDate = new Date(formData.endDate);
@@ -357,6 +374,10 @@ export default function Events() {
             <DialogDescription>Inscrivez un membre puis confirmez sa présence le jour de l’activité.</DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
+            <div className="flex items-center justify-between gap-2">
+              <p className="text-sm text-muted-foreground">{(registrationsQuery.data ?? []).length} inscription(s)</p>
+              <Button variant="outline" size="sm" disabled={!registrationsQuery.data?.length} onClick={exportRegistrationsCsv}><Download className="mr-2 h-4 w-4" />Exporter CSV</Button>
+            </div>
             <div className="flex flex-col gap-2 sm:flex-row">
               <select aria-label="Membre à inscrire" className="h-10 flex-1 rounded-md border bg-background px-3 text-sm" value={registrationMemberId ?? ""} onChange={(event) => setRegistrationMemberId(Number(event.target.value) || null)}>
                 <option value="">Sélectionner un membre actif</option>
