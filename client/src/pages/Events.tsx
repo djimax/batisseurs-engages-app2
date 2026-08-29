@@ -80,6 +80,7 @@ export default function Events() {
     color: event.color ?? "#1a4d2e",
   })), [storedEvents]);
   const [filter, setFilter] = useState<FilterType>("all");
+  const [eventTypeFilter, setEventTypeFilter] = useState("all");
   const [searchTerm, setSearchTerm] = useState("");
   const [sortBy, setSortBy] = useState<string>("date-asc");
   const [isOpen, setIsOpen] = useState(false);
@@ -102,12 +103,13 @@ export default function Events() {
       else if (filter === "future") dateMatch = isFuture;
 
       // Filtrer par recherche
+      const typeMatch = eventTypeFilter === "all" || event.eventType === eventTypeFilter;
       const searchMatch =
         event.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
         event.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         event.location?.toLowerCase().includes(searchTerm.toLowerCase());
 
-      return dateMatch && searchMatch;
+      return dateMatch && typeMatch && searchMatch;
     });
 
     // Tri
@@ -129,7 +131,7 @@ export default function Events() {
           return 0;
       }
     });
-  }, [events, filter, searchTerm, sortBy]);
+  }, [events, filter, eventTypeFilter, searchTerm, sortBy]);
 
   const handleDelete = (id: number) => {
     if (!window.confirm("Supprimer définitivement cet événement ?")) return;
@@ -240,7 +242,7 @@ export default function Events() {
             onChange={(e) => setSearchTerm(e.target.value)}
             className="flex-1"
           />
-          <div className="flex gap-2">
+          <div className="flex gap-2 flex-wrap">
             {(["all", "past", "present", "future"] as FilterType[]).map((f) => (
               <Button
                 key={f}
@@ -255,6 +257,7 @@ export default function Events() {
               </Button>
             ))}
           </div>
+          <select aria-label="Filtrer par type" className="h-9 rounded-md border bg-background px-3 text-sm" value={eventTypeFilter} onChange={(event) => setEventTypeFilter(event.target.value)}><option value="all">Tous les types</option>{Object.entries(EVENT_TYPE_LABELS).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select>
         </div>
         <div>
           <label className="text-sm font-medium mb-2 block">Trier par</label>

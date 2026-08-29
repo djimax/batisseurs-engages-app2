@@ -2171,3 +2171,5 @@
 - [x] Afficher le taux de présence calculé dans le récapitulatif des inscriptions événementielles, hors inscriptions annulées ; TypeScript et 6 tests événements réussis.
 - [x] Permettre la sélection du type d’événement (réunion, formation, activité, événement, autre) dans le formulaire et l’afficher sur les cartes ; TypeScript et 6 tests événements réussis.
 - [x] Rejouer la suite complète après la gestion des types d’événements : TypeScript sans erreur, 58 suites et 401 tests réussis.
+- [x] Ajouter un filtre par type d’événement dans le calendrier (réunion, formation, activité, événement, autre) ; TypeScript et 6 tests événements réussis.
+- [x] Rejouer la suite complète après le filtre par type d’événement : TypeScript sans erreur, 58 suites et 401 tests réussis.
