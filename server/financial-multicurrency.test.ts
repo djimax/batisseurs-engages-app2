@@ -35,6 +35,14 @@ describe("Financial multi-currency helpers", () => {
     expect(adhesionSource).toContain('action: "RENEW"');
   });
 
+  it("exposes the protected comparative report procedure", () => {
+    const routerSource = readFileSync(new URL("./routers.ts", import.meta.url), "utf8");
+    expect(routerSource).toContain("report: protectedProcedure");
+    expect(routerSource).toContain('assertPermission(ctx.user, "finances.view")');
+    expect(routerSource).toContain("compareYear");
+    expect(routerSource).toContain("buildFinancialReport");
+  });
+
   it("builds a monthly report with EUR/XOF equivalences and annual comparison", () => {
     const entries = [
       { type: "cotisation" as const, amount: 100, currency: "EUR" as const, date: "2026-01-05T00:00:00.000Z" },

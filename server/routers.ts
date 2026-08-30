@@ -48,7 +48,7 @@ import { notifyOwner } from "./_core/notification";
 import { nanoid } from "nanoid";
 import { createHash } from "node:crypto";
 import { membersAdhesionsRouter } from "./members-adhesions-router";
-import { buildDonationDocumentHtml, convertFinancialAmount, createTaxReceipt, FINANCIAL_CURRENCIES, formatFinancialAmount, listTaxReceipts, parseFinancialAmount } from "./financial";
+import { buildDonationDocumentHtml, buildFinancialReport, convertFinancialAmount, createTaxReceipt, FINANCIAL_CURRENCIES, formatFinancialAmount, listTaxReceipts, parseFinancialAmount } from "./financial";
 import { antennasRouter, groupesRouter } from "./antennes-groupes-router";
 import { canAssignMemberGrade, MEMBER_GRADE_LEVELS } from "../shared/memberProgression";
 import { governanceRouter } from "./governance-router";
@@ -1472,6 +1472,21 @@ export const appRouter = router({
       await assertPermission(ctx.user, "finances.view");
       return getFinancialStats();
     }),
+
+    report: protectedProcedure
+      .input(z.object({
+        year: z.number().int().min(2000).max(2100),
+        compareYear: z.number().int().min(2000).max(2100).optional(),
+      }))
+      .query(async ({ input, ctx }) => {
+        await assertPermission(ctx.user, "finances.view");
+        const [cotisations, dons, depenses] = await Promise.all([getCotisations(), getDons(), getDepenses()]);
+        return buildFinancialReport([
+          ...cotisations.map((row) => ({ type: "cotisation" as const, amount: Number(row.montant), currency: row.currency === "EUR" ? "EUR" as const : "XOF" as const, date: String(row.datePayment ?? row.createdAt ?? row.dateDebut) })),
+          ...dons.map((row) => ({ type: "don" as const, amount: Number(row.montant), currency: row.currency === "EUR" ? "EUR" as const : "XOF" as const, date: String(row.date ?? row.createdAt) })),
+          ...depenses.map((row) => ({ type: "depense" as const, amount: Number(row.montant), currency: row.currency === "EUR" ? "EUR" as const : "XOF" as const, date: String(row.date ?? row.createdAt) })),
+        ], input.year, input.compareYear);
+      }),
 
     cotisations: protectedProcedure.query(async ({ ctx }) => {
       await assertPermission(ctx.user, "finances.view");
