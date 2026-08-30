@@ -258,6 +258,9 @@ export const governanceRouter = router({
       await db.update(assemblyProxies).set({ status: input.status }).where(eq(assemblyProxies.id, input.proxyId));
       await db.update(assemblyParticipants).set({ attendance: input.status === "approved" ? "represented" : "invited" }).where(and(eq(assemblyParticipants.assemblyId, proxy[0].assemblyId), eq(assemblyParticipants.memberId, proxy[0].representedMemberId)));
       await logAudit({ userId: ctx.user.id, action: "UPDATE", entityType: "assembly_proxy", entityId: input.proxyId, description: `Procuration ${input.status}`, newValue: JSON.stringify({ status: input.status }), status: "success" });
+      const proxyMembers = await db.select({ id: members.id, userId: members.userId }).from(members).where(inArray(members.id, [proxy[0].representedMemberId, proxy[0].proxyMemberId]));
+      const decisionLabel = input.status === "approved" ? "approuvée" : "rejetée";
+      await Promise.all(proxyMembers.filter((member) => member.userId !== null).map((member) => createUserNotification({ userId: member.userId!, type: input.status === "approved" ? "success" : "warning", title: `Procuration ${decisionLabel}`, message: `La procuration pour l’assemblée #${proxy[0].assemblyId} a été ${decisionLabel}.`, actionUrl: `/governance/${proxy[0].assemblyId}`, dedupeKey: `proxy-decision:${input.proxyId}:${input.status}:${member.userId}` })));
       return { ...proxy[0], status: input.status };
     }),
 

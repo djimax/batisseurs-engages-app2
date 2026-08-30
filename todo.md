@@ -2185,3 +2185,5 @@
 - [x] Rejouer la suite complète après la notification des résultats de vote : TypeScript sans erreur, 58 suites et 402 tests réussis.
 - [x] Ajouter des assertions contractuelles dédiées aux notifications d’assemblée et de résolution dans les tests gouvernance ; TypeScript et 9 tests réussis.
 - [x] Rejouer la suite complète après les contrats de notification gouvernance : TypeScript sans erreur, 58 suites et 403 tests réussis.
+- [x] Notifier le membre représenté et le mandataire après approbation ou rejet d’une procuration, avec lien vers l’assemblée et déduplication ; TypeScript et 9 tests gouvernance réussis.
+- [x] Rejouer la suite complète après les notifications de procuration : TypeScript sans erreur, 58 suites et 403 tests réussis.
