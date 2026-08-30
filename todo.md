@@ -2183,3 +2183,5 @@
 - [x] Rejouer la suite complète après les notifications d’assemblée : TypeScript sans erreur, 58 suites et 402 tests réussis.
 - [x] Notifier les participants concernés lorsqu’une résolution est clôturée, avec résultat agrégé et lien vers l’assemblée ; TypeScript et 8 tests gouvernance réussis.
 - [x] Rejouer la suite complète après la notification des résultats de vote : TypeScript sans erreur, 58 suites et 402 tests réussis.
+- [x] Ajouter des assertions contractuelles dédiées aux notifications d’assemblée et de résolution dans les tests gouvernance ; TypeScript et 9 tests réussis.
+- [x] Rejouer la suite complète après les contrats de notification gouvernance : TypeScript sans erreur, 58 suites et 403 tests réussis.

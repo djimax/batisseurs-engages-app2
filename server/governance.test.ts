@@ -20,6 +20,16 @@ describe("governance", () => {
     expect(source).toContain('entityType: "assembly_vote"');
   });
 
+  it("déduplique les notifications de statut et de résultats", () => {
+    const source = readFileSync(new URL("./governance-router.ts", import.meta.url), "utf8");
+    expect(source).toContain('dedupeKey: `assembly-status:');
+    expect(source).toContain('dedupeKey: `resolution-closed:');
+    expect(source).toContain('actionUrl: `/governance/');
+    expect(source).toContain('counts.for');
+    expect(source).toContain('counts.against');
+    expect(source).toContain('counts.abstain');
+  });
+
   describe("calculateQuorum", () => {
     it("atteint le quorum quand la présence dépasse le seuil", () => {
       expect(calculateQuorum(10, 6, 50)).toMatchObject({
