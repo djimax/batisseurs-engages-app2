@@ -2187,3 +2187,5 @@
 - [x] Rejouer la suite complète après les contrats de notification gouvernance : TypeScript sans erreur, 58 suites et 403 tests réussis.
 - [x] Notifier le membre représenté et le mandataire après approbation ou rejet d’une procuration, avec lien vers l’assemblée et déduplication ; TypeScript et 9 tests gouvernance réussis.
 - [x] Rejouer la suite complète après les notifications de procuration : TypeScript sans erreur, 58 suites et 403 tests réussis.
+- [x] Ajouter une zone aria-live dans le centre de notifications pour annoncer la connexion temps réel et le mode de repli polling ; TypeScript et 8 tests ciblés réussis.
+- [x] Rejouer la suite complète après l’annonce aria-live du temps réel : TypeScript sans erreur, 58 suites et 403 tests réussis.
