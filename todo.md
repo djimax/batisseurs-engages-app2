@@ -2189,3 +2189,5 @@
 - [x] Rejouer la suite complète après les notifications de procuration : TypeScript sans erreur, 58 suites et 403 tests réussis.
 - [x] Ajouter une zone aria-live dans le centre de notifications pour annoncer la connexion temps réel et le mode de repli polling ; TypeScript et 8 tests ciblés réussis.
 - [x] Rejouer la suite complète après l’annonce aria-live du temps réel : TypeScript sans erreur, 58 suites et 403 tests réussis.
+- [x] Ajouter un libellé accessible explicite au bouton « Tout marquer lu » et exposer son état de traitement via `aria-label` et `aria-busy` ; TypeScript et 8 tests ciblés réussis.
+- [x] Rejouer la suite complète après l’amélioration accessible de « Tout marquer lu » : TypeScript sans erreur, 58 suites et 403 tests réussis.
