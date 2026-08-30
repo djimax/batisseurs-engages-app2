@@ -121,6 +121,10 @@ export default function Finance() {
   const [dons, setDons] = useState<Don[]>([]);
   const [depenses, setDepenses] = useState<Depense[]>([]);
   const [activeTab, setActiveTab] = useState(() => new URLSearchParams(window.location.search).get("tab") === "paiements" ? "paiements" : "cotisations");
+  const [reportYear, setReportYear] = useState(() => new Date().getUTCFullYear());
+  const [compareYear, setCompareYear] = useState(() => new Date().getUTCFullYear() - 1);
+  const reportInput = useMemo(() => ({ year: reportYear, compareYear }), [reportYear, compareYear]);
+  const { data: financialReport, isFetching: isReportFetching } = trpc.finances.report.useQuery(reportInput);
   const [sortBy, setSortBy] = useState<string>("date-newest");
   const [newFeeRule, setNewFeeRule] = useState({ category: "standard" as typeof MEMBERSHIP_CATEGORIES[number]["value"], currency: "EUR" as "EUR" | "XOF", amount: "", validFrom: new Date().toISOString().slice(0, 10) });
   useEffect(() => {
@@ -408,10 +412,11 @@ export default function Finance() {
 
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-2 sm:grid-cols-3 lg:grid-cols-6">
+        <TabsList className="grid w-full grid-cols-2 sm:grid-cols-3 lg:grid-cols-7">
           <TabsTrigger value="cotisations">Cotisations</TabsTrigger>
           <TabsTrigger value="dons">Dons</TabsTrigger>
           <TabsTrigger value="depenses">Dépenses</TabsTrigger>
+          <TabsTrigger value="rapport">Rapport</TabsTrigger>
           <TabsTrigger value="graphiques">Graphiques</TabsTrigger>
           <TabsTrigger value="recus">Reçus</TabsTrigger>
           <TabsTrigger value="paiements">Paiements Stripe</TabsTrigger>
@@ -853,6 +858,31 @@ export default function Finance() {
                   </div>
                 </div>;
               })}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Rapport Tab */}
+        <TabsContent value="rapport" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Rapport financier comparatif</CardTitle>
+              <CardDescription>Les montants sont présentés dans leur devise d’origine et avec leur équivalence indicative en EUR et F CFA.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="space-y-2"><Label htmlFor="report-year">Année</Label><Input id="report-year" type="number" min={2000} max={2100} value={reportYear} onChange={(event) => setReportYear(Number(event.target.value) || new Date().getUTCFullYear())} /></div>
+                <div className="space-y-2"><Label htmlFor="compare-year">Comparer à</Label><Input id="compare-year" type="number" min={2000} max={2100} value={compareYear} onChange={(event) => setCompareYear(Number(event.target.value) || reportYear - 1)} /></div>
+              </div>
+              {isReportFetching ? <p className="text-sm text-muted-foreground" role="status">Actualisation du rapport…</p> : financialReport ? <>
+                <div className="grid gap-4 md:grid-cols-3">
+                  <Card className="bg-emerald-50/60"><CardHeader className="pb-2"><CardDescription>Recettes</CardDescription><CardTitle>{financialReport.total.incomeXof.toLocaleString("fr-FR")} F CFA</CardTitle></CardHeader><CardContent className="pt-0 text-sm text-muted-foreground">{financialReport.total.incomeEur.toLocaleString("fr-FR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €</CardContent></Card>
+                  <Card className="bg-rose-50/60"><CardHeader className="pb-2"><CardDescription>Dépenses</CardDescription><CardTitle>{financialReport.total.expensesXof.toLocaleString("fr-FR")} F CFA</CardTitle></CardHeader><CardContent className="pt-0 text-sm text-muted-foreground">{financialReport.total.expensesEur.toLocaleString("fr-FR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €</CardContent></Card>
+                  <Card className="bg-primary/5"><CardHeader className="pb-2"><CardDescription>Solde</CardDescription><CardTitle>{financialReport.total.balanceXof.toLocaleString("fr-FR")} F CFA</CardTitle></CardHeader><CardContent className="pt-0 text-sm text-muted-foreground">{financialReport.total.balanceEur.toLocaleString("fr-FR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €</CardContent></Card>
+                </div>
+                {financialReport.comparison && <p className="text-sm text-muted-foreground">Variation du solde par rapport à {financialReport.comparison.year} : {financialReport.comparison.variationXof === null ? "référence indisponible" : `${financialReport.comparison.variationXof > 0 ? "+" : ""}${financialReport.comparison.variationXof.toLocaleString("fr-FR")} %`} en F CFA, soit {financialReport.comparison.variationEur === null ? "référence indisponible" : `${financialReport.comparison.variationEur > 0 ? "+" : ""}${financialReport.comparison.variationEur.toLocaleString("fr-FR")} %`} en €.</p>}
+                <div className="overflow-x-auto"><table className="w-full text-sm"><thead><tr className="border-b text-left"><th className="p-2">Période</th><th className="p-2">Recettes (F CFA)</th><th className="p-2">Dépenses (F CFA)</th><th className="p-2">Solde (F CFA)</th></tr></thead><tbody>{financialReport.monthly.map((row) => <tr key={row.period} className="border-b"><td className="p-2">{row.period}</td><td className="p-2">{row.incomeXof.toLocaleString("fr-FR")}</td><td className="p-2">{row.expensesXof.toLocaleString("fr-FR")}</td><td className="p-2 font-medium">{row.balanceXof.toLocaleString("fr-FR")}</td></tr>)}</tbody></table></div>
+              </> : <p className="text-sm text-muted-foreground">Aucune donnée disponible pour cette période.</p>}
             </CardContent>
           </Card>
         </TabsContent>

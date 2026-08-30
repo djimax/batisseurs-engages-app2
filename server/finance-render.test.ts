@@ -5,6 +5,15 @@ const financeSource = readFileSync(new URL("../client/src/pages/Finance.tsx", im
 const settingsSource = readFileSync(new URL("../client/src/pages/Settings.tsx", import.meta.url), "utf8");
 
 describe("Finance render stability", () => {
+  it("exposes the comparative financial report tab and controls", () => {
+    expect(financeSource).toContain('value="rapport">Rapport</TabsTrigger>');
+    expect(financeSource).toContain('<TabsContent value="rapport"');
+    expect(financeSource).toContain("trpc.finances.report.useQuery");
+    expect(financeSource).toContain('id="report-year"');
+    expect(financeSource).toContain('id="compare-year"');
+    expect(financeSource).toContain("Solde");
+  });
+
   it("exposes a dedicated Stripe payments tab in Finance", () => {
     expect(financeSource).toContain('value="paiements">Paiements Stripe</TabsTrigger>');
     expect(financeSource).toContain('<TabsContent value="paiements"');
