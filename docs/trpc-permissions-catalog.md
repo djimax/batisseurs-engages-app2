@@ -8,7 +8,7 @@ Ce document décrit les domaines fonctionnels principaux. Les noms correspondent
 | Signatures | demandes et preuves | création, annulation, administration, signature assignée | `signatures.view` | `signatures.manage` / `signatures.sign` |
 | Membres | annuaire et fiches | création, modification et gestion | `members.view` | `members.manage` |
 | CRM | contacts, activités, pipeline, rapports, historique email | création, modification, suppression | `crm.view` | `crm.manage` |
-| Finances | cotisations, dons, dépenses, transactions, campagnes | opérations financières et paiements | `finances.view` | `finances.manage` |
+| Finances | cotisations, dons, dépenses, transactions, campagnes, rapport mensuel/annuel comparatif | opérations financières et paiements | `finances.view` | `finances.manage` |
 | Fournisseurs | fournisseurs, demandes et devis | création, modification | `suppliers.view`, `purchases.view` | `suppliers.manage`, `purchases.manage` |
 | Achats | demandes, devis et statuts | création, modification, approbation/rejet | `purchases.view` | `purchases.manage`, `purchases.approve` |
 | Projets | projets, membres, tâches, commentaires, rapports, jalons, mises à jour, budgets | création, modification, suppression des ressources | `projects.view` | `projects.manage` |
@@ -20,6 +20,8 @@ Ce document décrit les domaines fonctionnels principaux. Les noms correspondent
 ## Règles d’implémentation
 
 Les procédures protégées doivent recevoir `ctx` et appeler `assertPermission(ctx.user, permission)` avant l’accès aux données. Les mutations ne doivent pas se contenter d’un contrôle visuel côté React. Lorsqu’un périmètre est pertinent, `assertScope` complète la permission avec le type et le niveau d’accès.
+
+La procédure `finances.report` accepte `year` et `compareYear` (années comprises entre 2000 et 2100), agrège les cotisations, dons et dépenses, et exige `finances.view`. Les montants sont exposés dans leur devise et avec leurs équivalences EUR/XOF selon le taux de référence configuré.
 
 Les notifications sont créées côté serveur par `createUserNotification`. Toute notification issue d’un webhook ou d’un événement rejouable doit définir une `dedupeKey` stable. Les événements de paiement Stripe doivent rester idempotents grâce à la table des événements Stripe et ne doivent jamais dépendre d’un état local du navigateur.
 
