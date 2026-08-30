@@ -4,6 +4,7 @@ import { getDb } from "./db";
 import { members, cotisations, adhesions } from "../drizzle/schema";
 import { eq, and } from "drizzle-orm";
 import { logAudit } from "./audit";
+import { assertPermission } from "./authorization";
 
 /**
  * Procédures tRPC pour gérer les membres avec leurs adhésions
@@ -16,7 +17,8 @@ export const membersAdhesionsRouter = router({
    */
   getWithAdhesions: protectedProcedure
     .input(z.object({ memberId: z.number() }))
-    .query(async ({ input }) => {
+    .query(async ({ ctx, input }) => {
+      await assertPermission(ctx.user, "members.view");
       const db = await getDb();
       if (!db) throw new Error("Database not available");
 
@@ -67,7 +69,8 @@ export const membersAdhesionsRouter = router({
   /**
    * Récupère tous les membres avec leur statut d'adhésion
    */
-  listWithAdhesionStatus: protectedProcedure.query(async () => {
+  listWithAdhesionStatus: protectedProcedure.query(async ({ ctx }) => {
+    await assertPermission(ctx.user, "members.view");
     const db = await getDb();
     if (!db) return [];
 
@@ -122,6 +125,7 @@ export const membersAdhesionsRouter = router({
       })
     )
     .mutation(async ({ input, ctx }) => {
+      await assertPermission(ctx.user, "members.manage");
       const db = await getDb();
       if (!db) throw new Error("Database not available");
 
@@ -154,6 +158,7 @@ export const membersAdhesionsRouter = router({
       })
     )
     .mutation(async ({ input, ctx }) => {
+      await assertPermission(ctx.user, "members.manage");
       const db = await getDb();
       if (!db) throw new Error("Database not available");
 
@@ -177,7 +182,8 @@ export const membersAdhesionsRouter = router({
   /**
    * Récupère les adhésions expirées
    */
-  getExpiredAdhesions: protectedProcedure.query(async () => {
+  getExpiredAdhesions: protectedProcedure.query(async ({ ctx }) => {
+    await assertPermission(ctx.user, "members.view");
     const db = await getDb();
     if (!db) return [];
 
@@ -192,7 +198,8 @@ export const membersAdhesionsRouter = router({
   /**
    * Récupère toutes les adhésions avec les détails des membres
    */
-  listWithMembers: protectedProcedure.query(async () => {
+  listWithMembers: protectedProcedure.query(async ({ ctx }) => {
+    await assertPermission(ctx.user, "members.view");
     const db = await getDb();
     if (!db) return [];
 
@@ -226,7 +233,8 @@ export const membersAdhesionsRouter = router({
   /**
    * Récupère les statistiques d'adhésion
    */
-  getAdhesionStats: protectedProcedure.query(async () => {
+  getAdhesionStats: protectedProcedure.query(async ({ ctx }) => {
+    await assertPermission(ctx.user, "members.view");
     const db = await getDb();
     if (!db) {
       return {
