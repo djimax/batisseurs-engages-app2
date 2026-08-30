@@ -76,6 +76,15 @@ describe("purchases and suppliers module", () => {
     expect(router).toContain("Approbation refusée");
   });
 
+  it("notifies the requester on approval or rejection with deduplication", () => {
+    const router = readFileSync(new URL("./purchases-router.ts", import.meta.url), "utf8");
+    expect(router).toContain("createUserNotification");
+    expect(router).toContain('input.status === "approved" ? "Demande d’achat approuvée" : "Demande d’achat rejetée"');
+    expect(router).toContain('eventKey: `purchase_request_${input.status}`');
+    expect(router).toContain("purchase-request-status:");
+    expect(router).toContain('actionUrl: "/purchases"');
+  });
+
   it("keeps an auditable approval lifecycle", () => {
     const schema = readFileSync(new URL("../drizzle/schema.ts", import.meta.url), "utf8");
     const router = readFileSync(new URL("./purchases-router.ts", import.meta.url), "utf8");
