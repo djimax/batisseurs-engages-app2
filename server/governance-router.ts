@@ -227,6 +227,13 @@ export const governanceRouter = router({
       const db = await requireDb();
       await db.update(assemblyResolutions).set({ status: input.status, closedAt: input.status === "closed" ? new Date().toISOString() : resolution.closedAt }).where(eq(assemblyResolutions.id, input.resolutionId));
       await logAudit({ userId: ctx.user.id, action: "UPDATE", entityType: "assembly_resolution", entityId: input.resolutionId, description: `Statut de résolution mis à jour : ${input.status}`, newValue: JSON.stringify({ status: input.status }), status: "success" });
+      if (input.status === "closed") {
+        const resolutionVotes = await db.select({ choice: assemblyVotes.choice }).from(assemblyVotes).where(eq(assemblyVotes.resolutionId, input.resolutionId));
+        const counts = { for: 0, against: 0, abstain: 0 };
+        for (const vote of resolutionVotes) counts[vote.choice] += 1;
+        const recipients = await db.select({ userId: members.userId }).from(assemblyParticipants).innerJoin(members, eq(assemblyParticipants.memberId, members.id)).where(eq(assemblyParticipants.assemblyId, assembly.id));
+        await Promise.all(recipients.filter((recipient) => recipient.userId !== null).map((recipient) => createUserNotification({ userId: recipient.userId!, type: "info", title: "Résolution clôturée", message: `La résolution « ${resolution.title} » est clôturée : ${counts.for} pour, ${counts.against} contre, ${counts.abstain} abstention(s).`, actionUrl: `/governance/${assembly.id}`, dedupeKey: `resolution-closed:${input.resolutionId}:${recipient.userId}` })));
+      }
       return getResolutionOrThrow(input.resolutionId);
     }),
 
