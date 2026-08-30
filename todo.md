@@ -2195,3 +2195,4 @@
 - [x] Rejouer la suite complète après la sécurisation des adhésions : TypeScript sans erreur, 59 suites et 405 tests réussis.
 - [x] Ajouter un contrat de test vérifiant `members.view` pour la lecture des bénévoles et `members.edit` pour profil et affectations.
 - [x] Ajouter des assertions contractuelles sur les notifications d’approbation et de rejet des demandes d’achat.
+- [x] Ajouter un helper de rapport financier mensuel/annuel comparatif EUR/XOF, avec totaux par type, équivalences et variation annuelle.

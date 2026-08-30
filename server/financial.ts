@@ -111,3 +111,98 @@ export async function getTaxReceiptById(id: number) {
   const rows = await db.select().from(taxReceipts).where(eq(taxReceipts.id, id)).limit(1);
   return rows[0];
 }
+
+export type FinancialReportEntry = {
+  type: "cotisation" | "don" | "depense";
+  amount: number;
+  currency: FinancialCurrency;
+  date: string;
+};
+
+export type FinancialReportPeriod = {
+  period: string;
+  income: number;
+  expenses: number;
+  balance: number;
+  incomeXof: number;
+  expensesXof: number;
+  balanceXof: number;
+  incomeEur: number;
+  expensesEur: number;
+  balanceEur: number;
+};
+
+/** Build a deterministic monthly report; XOF and EUR totals are both exposed. */
+export type FinancialReport = {
+  year: number;
+  monthly: FinancialReportPeriod[];
+  total: FinancialReportPeriod;
+  comparison: { year: number; totalXof: number; totalEur: number; variationXof: number | null; variationEur: number | null } | null;
+};
+
+export function buildFinancialReport(entries: FinancialReportEntry[], year: number, compareYear?: number): FinancialReport {
+  const periods = new Map<string, FinancialReportPeriod>();
+  const createPeriod = (period: string): FinancialReportPeriod => ({
+    period,
+    income: 0,
+    expenses: 0,
+    balance: 0,
+    incomeXof: 0,
+    expensesXof: 0,
+    balanceXof: 0,
+    incomeEur: 0,
+    expensesEur: 0,
+    balanceEur: 0,
+  });
+
+  for (const entry of entries) {
+    const date = new Date(entry.date);
+    if (!Number.isFinite(date.getTime()) || date.getUTCFullYear() !== year) continue;
+    const period = `${year}-${String(date.getUTCMonth() + 1).padStart(2, "0")}`;
+    const row = periods.get(period) ?? createPeriod(period);
+    const amount = parseFinancialAmount(entry.amount);
+    const isExpense = entry.type === "depense";
+    const amountXof = convertFinancialAmount(amount, entry.currency, "XOF");
+    const amountEur = convertFinancialAmount(amount, entry.currency, "EUR");
+    if (isExpense) {
+      row.expenses = Math.round((row.expenses + amount) * 100) / 100;
+      row.expensesXof = Math.round((row.expensesXof + amountXof) * 100) / 100;
+      row.expensesEur = Math.round((row.expensesEur + amountEur) * 100) / 100;
+    } else {
+      row.income = Math.round((row.income + amount) * 100) / 100;
+      row.incomeXof = Math.round((row.incomeXof + amountXof) * 100) / 100;
+      row.incomeEur = Math.round((row.incomeEur + amountEur) * 100) / 100;
+    }
+    row.balance = Math.round((row.income - row.expenses) * 100) / 100;
+    row.balanceXof = Math.round((row.incomeXof - row.expensesXof) * 100) / 100;
+    row.balanceEur = Math.round((row.incomeEur - row.expensesEur) * 100) / 100;
+    periods.set(period, row);
+  }
+
+  const monthly = Array.from(periods.values()).sort((a, b) => a.period.localeCompare(b.period));
+  const total = monthly.reduce((acc, row) => ({
+    period: "total",
+    income: Math.round((acc.income + row.income) * 100) / 100,
+    expenses: Math.round((acc.expenses + row.expenses) * 100) / 100,
+    balance: Math.round((acc.balance + row.balance) * 100) / 100,
+    incomeXof: Math.round((acc.incomeXof + row.incomeXof) * 100) / 100,
+    expensesXof: Math.round((acc.expensesXof + row.expensesXof) * 100) / 100,
+    balanceXof: Math.round((acc.balanceXof + row.balanceXof) * 100) / 100,
+    incomeEur: Math.round((acc.incomeEur + row.incomeEur) * 100) / 100,
+    expensesEur: Math.round((acc.expensesEur + row.expensesEur) * 100) / 100,
+    balanceEur: Math.round((acc.balanceEur + row.balanceEur) * 100) / 100,
+  }), createPeriod("total"));
+
+  let comparison: { year: number; totalXof: number; totalEur: number; variationXof: number | null; variationEur: number | null } | null = null;
+  if (compareYear !== undefined) {
+    const previous = buildFinancialReport(entries, compareYear).total;
+    comparison = {
+      year: compareYear,
+      totalXof: previous.balanceXof,
+      totalEur: previous.balanceEur,
+      variationXof: previous.balanceXof === 0 ? null : Math.round(((total.balanceXof - previous.balanceXof) / Math.abs(previous.balanceXof)) * 10000) / 100,
+      variationEur: previous.balanceEur === 0 ? null : Math.round(((total.balanceEur - previous.balanceEur) / Math.abs(previous.balanceEur)) * 10000) / 100,
+    };
+  }
+  return { year, monthly, total, comparison };
+}

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
-import { EURO_TO_XOF, buildDonationDocumentHtml, convertFinancialAmount, formatFinancialAmount, parseFinancialAmount } from "./financial";
+import { EURO_TO_XOF, buildDonationDocumentHtml, buildFinancialReport, convertFinancialAmount, formatFinancialAmount, parseFinancialAmount } from "./financial";
 
 describe("Financial multi-currency helpers", () => {
   it("parses and rounds positive amounts", () => {
@@ -33,6 +33,22 @@ describe("Financial multi-currency helpers", () => {
     expect(routerSource).toContain('entityType: "depense"');
     expect(adhesionSource).toContain('action: "CREATE"');
     expect(adhesionSource).toContain('action: "RENEW"');
+  });
+
+  it("builds a monthly report with EUR/XOF equivalences and annual comparison", () => {
+    const entries = [
+      { type: "cotisation" as const, amount: 100, currency: "EUR" as const, date: "2026-01-05T00:00:00.000Z" },
+      { type: "don" as const, amount: 65595.7, currency: "XOF" as const, date: "2026-01-20T00:00:00.000Z" },
+      { type: "depense" as const, amount: 50, currency: "EUR" as const, date: "2026-01-25T00:00:00.000Z" },
+      { type: "cotisation" as const, amount: 100, currency: "EUR" as const, date: "2025-01-05T00:00:00.000Z" },
+    ];
+    const report = buildFinancialReport(entries, 2026, 2025);
+    expect(report.monthly).toHaveLength(1);
+    expect(report.total.incomeEur).toBe(200);
+    expect(report.total.expensesEur).toBe(50);
+    expect(report.total.balanceEur).toBe(150);
+    expect(report.total.balanceXof).toBe(98393.55);
+    expect(report.comparison).toEqual({ year: 2025, totalXof: 65595.7, totalEur: 100, variationXof: 50, variationEur: 50 });
   });
 
   it("builds a printable donation document with original and equivalent amounts", () => {
