@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { readFileSync } from "node:fs";
 import { appRouter } from "./routers";
 import type { TrpcContext } from "./_core/context";
 
@@ -24,6 +25,12 @@ function createAdminContext(): TrpcContext {
 }
 
 describe("Volunteer coordination", () => {
+  it("uses dedicated member permissions for reads and edits", () => {
+    const source = readFileSync(new URL("./routers.ts", import.meta.url), "utf8");
+    expect(source).toContain('assertPermission(ctx.user, "members.view")');
+    expect(source).toContain('assertPermission(ctx.user, "members.edit")');
+  });
+
   it("lists volunteers and supports skill and availability filters", async () => {
     const caller = appRouter.createCaller(createAdminContext());
     const all = await caller.volunteers.list({});

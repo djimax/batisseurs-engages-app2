@@ -2193,3 +2193,4 @@
 - [x] Rejouer la suite complète après l’amélioration accessible de « Tout marquer lu » : TypeScript sans erreur, 58 suites et 403 tests réussis.
 - [x] Sécuriser le routeur des adhésions avec `members.view` pour les lectures et `members.manage` pour les créations/renouvellements, puis ajouter l’audit contractuel ; TypeScript et 2 tests contractuels réussis.
 - [x] Rejouer la suite complète après la sécurisation des adhésions : TypeScript sans erreur, 59 suites et 405 tests réussis.
+- [x] Ajouter un contrat de test vérifiant `members.view` pour la lecture des bénévoles et `members.edit` pour profil et affectations.
