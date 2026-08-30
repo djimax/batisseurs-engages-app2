@@ -11,6 +11,15 @@ describe("governance", () => {
     expect(source).toContain('entityType: "assembly_vote"');
   });
 
+  it("protège les lectures, écritures et votes par permissions dédiées", () => {
+    const source = readFileSync(new URL("./governance-router.ts", import.meta.url), "utf8");
+    expect(source).toContain('assertPermission(ctx.user, "governance.view")');
+    expect(source).toContain('assertPermission(ctx.user, "governance.manage")');
+    expect(source).toContain('assertPermission(ctx.user, "governance.vote")');
+    expect(source).toContain('entityType: "assembly_attendance"');
+    expect(source).toContain('entityType: "assembly_vote"');
+  });
+
   describe("calculateQuorum", () => {
     it("atteint le quorum quand la présence dépasse le seuil", () => {
       expect(calculateQuorum(10, 6, 50)).toMatchObject({

@@ -13,6 +13,7 @@ import { getDb } from "./db";
 import { assertPermission } from "./authorization";
 import { protectedProcedure, router } from "./_core/trpc";
 import { logAudit } from "./audit";
+import { createUserNotification } from "./notification-center";
 
 export const assemblyCreateSchema = z.object({
   title: z.string().trim().min(3).max(255),
@@ -164,6 +165,11 @@ export const governanceRouter = router({
         await db.update(assemblyResolutions).set({ status: "closed", closedAt: new Date().toISOString() }).where(and(eq(assemblyResolutions.assemblyId, input.assemblyId), eq(assemblyResolutions.status, "open")));
       }
       await logAudit({ userId: ctx.user.id, action: "UPDATE", entityType: "assembly", entityId: input.assemblyId, description: `Statut d’assemblée mis à jour : ${input.status}`, newValue: JSON.stringify({ status: input.status }), status: "success" });
+      if (input.status === "open" || input.status === "closed") {
+        const recipients = await db.select({ userId: members.userId }).from(assemblyParticipants).innerJoin(members, eq(assemblyParticipants.memberId, members.id)).where(eq(assemblyParticipants.assemblyId, input.assemblyId));
+        const label = input.status === "open" ? "ouverte" : "clôturée";
+        await Promise.all(recipients.filter((recipient) => recipient.userId !== null).map((recipient) => createUserNotification({ userId: recipient.userId!, type: "info", title: `Assemblée ${label}`, message: `L’assemblée « ${assembly.title} » est maintenant ${label}.`, actionUrl: `/governance/${input.assemblyId}`, dedupeKey: `assembly-status:${input.assemblyId}:${input.status}:${recipient.userId}` })));
+      }
       return getAssemblyOrThrow(input.assemblyId);
     }),
 

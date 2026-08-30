@@ -2177,3 +2177,7 @@
 - [x] Rejouer la suite complète après les améliorations d’accessibilité du calendrier : TypeScript sans erreur, 58 suites et 401 tests réussis.
 - [x] Ajouter aria-pressed aux boutons de période et de tri du calendrier afin d’exposer leur état actif aux technologies d’assistance ; TypeScript et 6 tests événements réussis.
 - [x] Rejouer la suite complète après l’ajout de aria-pressed : TypeScript sans erreur, 58 suites et 401 tests réussis.
+- [x] Auditer les permissions et l’audit des mutations de gouvernance (assemblées, résolutions, votes) et ajouter les contrats de non-régression ; TypeScript et 8 tests dédiés réussis.
+- [x] Rejouer la suite complète après l’audit gouvernance : TypeScript sans erreur, 58 suites et 402 tests réussis.
+- [x] Notifier les participants d’une assemblée lors de son ouverture ou de sa clôture, avec déduplication et lien vers la gouvernance ; TypeScript et 8 tests gouvernance réussis.
+- [x] Rejouer la suite complète après les notifications d’assemblée : TypeScript sans erreur, 58 suites et 402 tests réussis.
