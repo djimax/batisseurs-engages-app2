@@ -12,6 +12,9 @@ describe("Finance render stability", () => {
     expect(financeSource).toContain('id="report-year"');
     expect(financeSource).toContain('id="compare-year"');
     expect(financeSource).toContain("Solde");
+    expect(financeSource).toContain("exportFinancialReportCsv");
+    expect(financeSource).toContain("text/csv;charset=utf-8");
+    expect(financeSource).toContain("rapport-financier-");
   });
 
   it("exposes a dedicated Stripe payments tab in Finance", () => {

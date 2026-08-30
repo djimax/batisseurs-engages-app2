@@ -2198,3 +2198,4 @@
 - [x] Ajouter un helper de rapport financier mensuel/annuel comparatif EUR/XOF, avec totaux par type, équivalences et variation annuelle.
 - [x] Exposer le rapport financier comparatif via une procédure tRPC protégée par `finances.view`, avec année et année de comparaison validées.
 - [x] Ajouter un onglet Rapport dans Finance avec sélection d’année, comparaison et synthèse EUR/XOF.
+- [x] Ajouter l’export CSV du rapport financier comparatif, avec encodage UTF-8 et devise explicite.

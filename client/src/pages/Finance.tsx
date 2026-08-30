@@ -74,6 +74,27 @@ const MEMBERSHIP_CATEGORIES = [
 
 const escapeHtml = (value: string) => value.replace(/[&<>'"]/g, (character) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "'": "&#39;", '"': "&quot;" }[character] ?? character));
 
+type FinancialReportData = {
+  monthly: Array<{ period: string; incomeXof: number; expensesXof: number; balanceXof: number; incomeEur: number; expensesEur: number; balanceEur: number }>;
+  total: { incomeXof: number; expensesXof: number; balanceXof: number; incomeEur: number; expensesEur: number; balanceEur: number };
+};
+
+const exportFinancialReportCsv = (report: FinancialReportData, year: number) => {
+  const rows = [
+    ["Période", "Recettes (F CFA)", "Dépenses (F CFA)", "Solde (F CFA)", "Recettes (€)", "Dépenses (€)", "Solde (€)"],
+    ...report.monthly.map((row) => [row.period, row.incomeXof, row.expensesXof, row.balanceXof, row.incomeEur, row.expensesEur, row.balanceEur]),
+    ["Total", report.total.incomeXof, report.total.expensesXof, report.total.balanceXof, report.total.incomeEur, report.total.expensesEur, report.total.balanceEur],
+  ];
+  const csv = rows.map((row) => row.map((value) => `"${String(value).replace(/"/g, '""')}"`).join(",")).join("\\r\\n");
+  const url = URL.createObjectURL(new Blob([`\\uFEFF${csv}`], { type: "text/csv;charset=utf-8" }));
+  const anchor = document.createElement("a");
+  anchor.href = url;
+  anchor.download = `rapport-financier-${year}.csv`;
+  anchor.click();
+  URL.revokeObjectURL(url);
+  toast.success("Rapport CSV téléchargé");
+};
+
 const openPrintableDocument = (html: string) => {
   const printableWindow = window.open("", "_blank", "noopener,noreferrer");
   if (!printableWindow) {
@@ -870,9 +891,12 @@ export default function Finance() {
               <CardDescription>Les montants sont présentés dans leur devise d’origine et avec leur équivalence indicative en EUR et F CFA.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
-              <div className="grid gap-4 sm:grid-cols-2">
-                <div className="space-y-2"><Label htmlFor="report-year">Année</Label><Input id="report-year" type="number" min={2000} max={2100} value={reportYear} onChange={(event) => setReportYear(Number(event.target.value) || new Date().getUTCFullYear())} /></div>
-                <div className="space-y-2"><Label htmlFor="compare-year">Comparer à</Label><Input id="compare-year" type="number" min={2000} max={2100} value={compareYear} onChange={(event) => setCompareYear(Number(event.target.value) || reportYear - 1)} /></div>
+              <div className="flex flex-wrap items-end justify-between gap-4">
+                <div className="grid flex-1 gap-4 sm:grid-cols-2">
+                  <div className="space-y-2"><Label htmlFor="report-year">Année</Label><Input id="report-year" type="number" min={2000} max={2100} value={reportYear} onChange={(event) => setReportYear(Number(event.target.value) || new Date().getUTCFullYear())} /></div>
+                  <div className="space-y-2"><Label htmlFor="compare-year">Comparer à</Label><Input id="compare-year" type="number" min={2000} max={2100} value={compareYear} onChange={(event) => setCompareYear(Number(event.target.value) || reportYear - 1)} /></div>
+                </div>
+                {financialReport && <Button type="button" variant="outline" onClick={() => exportFinancialReportCsv(financialReport, reportYear)}>Exporter CSV</Button>}
               </div>
               {isReportFetching ? <p className="text-sm text-muted-foreground" role="status">Actualisation du rapport…</p> : financialReport ? <>
                 <div className="grid gap-4 md:grid-cols-3">
