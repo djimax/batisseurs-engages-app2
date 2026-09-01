@@ -29,6 +29,15 @@ describe("Critical resource authorization contract", () => {
     expect(crmRouterSource).not.toContain("Placeholder for engagement metrics calculation");
   });
 
+  it("uses server metrics instead of hardcoded engagement values", () => {
+    const dashboardSource = readFileSync(new URL("../client/src/pages/CRMDashboard.tsx", import.meta.url), "utf8");
+    expect(dashboardSource).toContain("trpc.crm.reports.getEngagementMetrics.useQuery");
+    expect(dashboardSource).toContain("engagementMetricsQuery.data?.engagementRate");
+    expect(dashboardSource).toContain("engagementMetricsQuery.data?.averageScore");
+    expect(dashboardSource).not.toContain(">78%</p>");
+    expect(dashboardSource).not.toContain(">7.2/10</p>");
+  });
+
   it("protects every CRM write family behind the authenticated admin guard", () => {
     expect(crmRouterSource.match(/assertPermission\(ctx\.user, "crm\.manage"\)/g)?.length).toBeGreaterThanOrEqual(8);
     expect(crmRouterSource).toContain("contacts:");

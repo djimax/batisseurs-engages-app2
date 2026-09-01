@@ -18,6 +18,7 @@ export function CRMDashboard() {
   const activitiesQuery = trpc.crm.activities.list.useQuery(1); // Placeholder contact ID
   const pipelineQuery = trpc.crm.pipeline.list.useQuery({});
   const reportsQuery = trpc.crm.reports.list.useQuery({});
+  const engagementMetricsQuery = trpc.crm.reports.getEngagementMetrics.useQuery();
 
   if (!user || user.role !== "admin") {
     return (
@@ -229,16 +230,18 @@ export function CRMDashboard() {
                 <Card className="bg-blue-50">
                   <CardContent className="pt-6">
                     <p className="text-sm text-gray-600">Taux d'Engagement</p>
-                    <p className="text-2xl font-bold mt-2">78%</p>
+                    <p className="text-2xl font-bold mt-2">{engagementMetricsQuery.isLoading ? "…" : `${engagementMetricsQuery.data?.engagementRate ?? 0}%`}</p>
                   </CardContent>
                 </Card>
                 <Card className="bg-green-50">
                   <CardContent className="pt-6">
                     <p className="text-sm text-gray-600">Score Moyen</p>
-                    <p className="text-2xl font-bold mt-2">7.2/10</p>
+                    <p className="text-2xl font-bold mt-2">{engagementMetricsQuery.isLoading ? "…" : `${engagementMetricsQuery.data?.averageScore ?? 0}/100`}</p>
                   </CardContent>
                 </Card>
               </div>
+
+              {engagementMetricsQuery.isError ? <p className="text-sm text-destructive" role="alert">Les métriques d’engagement ne sont pas disponibles.</p> : null}
 
               {reportsQuery.isLoading ? (
                 <div className="text-center py-8">Chargement des rapports...</div>
