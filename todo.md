@@ -2202,3 +2202,4 @@
 - [x] Documenter `finances.report`, ses paramètres d’année et son exigence `finances.view` dans le catalogue tRPC.
 - [x] Vérifier et harmoniser les permissions de lecture et de gestion du module CRM, avec un contrat de test dédié.
 - [x] Remplacer le placeholder des métriques d’engagement CRM par un calcul réel à partir des contacts, avec tests de cohérence.
+- [x] Supprimer l’identifiant de contact fictif du chargement des activités CRM et afficher un état vide tant qu’aucun contact n’est sélectionné.

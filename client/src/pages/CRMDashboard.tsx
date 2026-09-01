@@ -15,7 +15,8 @@ export function CRMDashboard() {
 
   // Fetch CRM data
   const contactsQuery = trpc.crm.contacts.list.useQuery({ search: searchTerm });
-  const activitiesQuery = trpc.crm.activities.list.useQuery(1); // Placeholder contact ID
+  const activityContactId = contactsQuery.data?.[0]?.id ?? 0;
+  const activitiesQuery = trpc.crm.activities.list.useQuery(activityContactId, { enabled: activityContactId > 0 });
   const pipelineQuery = trpc.crm.pipeline.list.useQuery({});
   const reportsQuery = trpc.crm.reports.list.useQuery({});
   const engagementMetricsQuery = trpc.crm.reports.getEngagementMetrics.useQuery();
@@ -162,7 +163,9 @@ export function CRMDashboard() {
               <CardDescription>Historique des interactions avec les contacts</CardDescription>
             </CardHeader>
             <CardContent>
-              {activitiesQuery.isLoading ? (
+              {activityContactId === 0 ? (
+                <div className="text-center py-8 text-gray-500">Sélectionnez ou recherchez un contact pour afficher ses activités.</div>
+              ) : activitiesQuery.isLoading ? (
                 <div className="text-center py-8">Chargement des activités...</div>
               ) : activitiesQuery.data && activitiesQuery.data.length > 0 ? (
                 <div className="space-y-2">

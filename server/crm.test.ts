@@ -29,6 +29,14 @@ describe("Critical resource authorization contract", () => {
     expect(crmRouterSource).not.toContain("Placeholder for engagement metrics calculation");
   });
 
+  it("loads activities only for an available contact", () => {
+    const dashboardSource = readFileSync(new URL("../client/src/pages/CRMDashboard.tsx", import.meta.url), "utf8");
+    expect(dashboardSource).toContain("const activityContactId = contactsQuery.data?.[0]?.id ?? 0;");
+    expect(dashboardSource).toContain("enabled: activityContactId > 0");
+    expect(dashboardSource).toContain("Sélectionnez ou recherchez un contact");
+    expect(dashboardSource).not.toContain("useQuery(1); // Placeholder contact ID");
+  });
+
   it("uses server metrics instead of hardcoded engagement values", () => {
     const dashboardSource = readFileSync(new URL("../client/src/pages/CRMDashboard.tsx", import.meta.url), "utf8");
     expect(dashboardSource).toContain("trpc.crm.reports.getEngagementMetrics.useQuery");
