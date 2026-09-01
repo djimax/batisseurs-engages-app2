@@ -237,7 +237,7 @@ export const crmRouter = router({
 
     getEngagementMetrics: protectedProcedure
       .query(async ({ ctx }: any) => {
-        await assertPermission(ctx.user, "crm.manage");
+        await assertPermission(ctx.user, "crm.view");
         // Placeholder for engagement metrics calculation
         return {
           totalContacts: 0,

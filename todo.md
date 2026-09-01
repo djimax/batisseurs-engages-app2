@@ -2200,3 +2200,4 @@
 - [x] Ajouter un onglet Rapport dans Finance avec sélection d’année, comparaison et synthèse EUR/XOF.
 - [x] Ajouter l’export CSV du rapport financier comparatif, avec encodage UTF-8 et devise explicite.
 - [x] Documenter `finances.report`, ses paramètres d’année et son exigence `finances.view` dans le catalogue tRPC.
+- [x] Vérifier et harmoniser les permissions de lecture et de gestion du module CRM, avec un contrat de test dédié.
