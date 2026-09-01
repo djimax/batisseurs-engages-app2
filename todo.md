@@ -2206,3 +2206,4 @@
 - [x] Remplacer l’affichage des identifiants techniques dans le pipeline CRM par le nom du contact lorsque celui-ci est disponible.
 - [x] Vérifier et supprimer les données de présentation codées en dur dans la page Adhésions, en la reliant aux données réelles si nécessaire.
 - [x] Ajouter au rapport financier les totaux par type de flux (cotisations, dons, dépenses) en EUR et F CFA.
+- [x] Afficher dans l’onglet Rapport le breakdown des cotisations, dons et dépenses en F CFA et €.

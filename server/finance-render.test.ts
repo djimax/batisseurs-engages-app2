@@ -15,6 +15,9 @@ describe("Finance render stability", () => {
     expect(financeSource).toContain("exportFinancialReportCsv");
     expect(financeSource).toContain("text/csv;charset=utf-8");
     expect(financeSource).toContain("rapport-financier-");
+    expect(financeSource).toContain('(["cotisation", "don", "depense"] as const)');
+    expect(financeSource).toContain("item.amountXof");
+    expect(financeSource).toContain("item.amountEur");
   });
 
   it("exposes a dedicated Stripe payments tab in Finance", () => {
