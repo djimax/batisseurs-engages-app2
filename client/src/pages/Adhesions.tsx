@@ -26,8 +26,9 @@ export default function Adhesions() {
     dateExpiration: new Date(new Date().getFullYear() + 1, 11, 31).toISOString().split('T')[0],
   });
   
-  // Récupérer la liste des membres
+  // Récupérer la liste des membres et des adhésions réelles
   const { data: members = [] } = trpc.members.list.useQuery();
+  const { data: storedAdhesions = [], isLoading: isAdhesionsLoading } = trpc.membersAdhesions.listWithMembers.useQuery();
   const utils = trpc.useUtils();
   
   // Filtrer les membres selon la recherche
@@ -56,39 +57,23 @@ export default function Adhesions() {
     },
   });
 
-  // Placeholder data
-  const adhesions = [
-    {
-      id: 1,
-      memberName: "Jean Dupont",
-      annee: 2025,
-      montant: "50",
-      dateAdhesion: new Date("2025-01-15"),
-      dateExpiration: new Date("2025-12-31"),
-      status: "active",
-      daysLeft: 320,
-    },
-    {
-      id: 2,
-      memberName: "Marie Martin",
-      annee: 2025,
-      montant: "50",
-      dateAdhesion: new Date("2025-01-10"),
-      dateExpiration: new Date("2025-12-31"),
-      status: "active",
-      daysLeft: 325,
-    },
-    {
-      id: 3,
-      memberName: "Pierre Bernard",
-      annee: 2024,
-      montant: "50",
-      dateAdhesion: new Date("2024-01-15"),
-      dateExpiration: new Date("2024-12-31"),
-      status: "expired",
-      daysLeft: -17,
-    },
-  ];
+  const adhesions = useMemo(() => storedAdhesions.map((adhesion) => {
+    const dateAdhesion = new Date(adhesion.dateAdhesion);
+    const dateExpiration = new Date(adhesion.dateExpiration);
+    const daysLeft = Math.ceil((dateExpiration.getTime() - Date.now()) / 86_400_000);
+    const memberName = adhesion.member ? `${adhesion.member.firstName} ${adhesion.member.lastName}` : `Membre #${adhesion.memberId}`;
+    return {
+      ...adhesion,
+      memberName,
+      annee: adhesion.annee,
+      montant: String(adhesion.montant),
+      dateAdhesion,
+      dateExpiration,
+      status: adhesion.status,
+      daysLeft,
+      currency: "EUR" as const,
+    };
+  }), [storedAdhesions]);
 
   const handleSubmit = () => {
     if (!formData.memberId || !formData.montant) {
@@ -257,7 +242,7 @@ export default function Adhesions() {
 
       {/* Adhesions List */}
       <div className="space-y-3">
-        {adhesions
+        {isAdhesionsLoading ? <Card><CardContent className="py-10 text-center text-muted-foreground">Chargement des adhésions…</CardContent></Card> : adhesions
           .filter(a => a.annee.toString() === selectedYear)
           .filter(a => statusFilter === "all" || a.status === statusFilter)
           .filter(a => a.memberName.toLowerCase().includes(searchQuery.toLowerCase()))
@@ -279,7 +264,7 @@ export default function Adhesions() {
 
                 <div className="flex items-center gap-6">
                   <div className="text-right">
-                    <p className="font-semibold text-lg"><AmountDisplay amount={parseFloat(adhesion.montant || "0")} sourceCurrency="EUR" /></p>
+                    <p className="font-semibold text-lg"><AmountDisplay amount={parseFloat(adhesion.montant || "0")} sourceCurrency={adhesion.currency} /></p>
                     <p className="text-xs text-muted-foreground">Montant</p>
                   </div>
 
