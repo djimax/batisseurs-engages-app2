@@ -2201,3 +2201,4 @@
 - [x] Ajouter l’export CSV du rapport financier comparatif, avec encodage UTF-8 et devise explicite.
 - [x] Documenter `finances.report`, ses paramètres d’année et son exigence `finances.view` dans le catalogue tRPC.
 - [x] Vérifier et harmoniser les permissions de lecture et de gestion du module CRM, avec un contrat de test dédié.
+- [x] Remplacer le placeholder des métriques d’engagement CRM par un calcul réel à partir des contacts, avec tests de cohérence.

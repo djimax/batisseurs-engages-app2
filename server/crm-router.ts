@@ -238,12 +238,18 @@ export const crmRouter = router({
     getEngagementMetrics: protectedProcedure
       .query(async ({ ctx }: any) => {
         await assertPermission(ctx.user, "crm.view");
-        // Placeholder for engagement metrics calculation
+        const contacts = await listCrmContacts();
+        const totalContacts = contacts.length;
+        const activeContacts = contacts.filter((contact) => contact.status === "active").length;
+        const scoredContacts = contacts.filter((contact) => typeof contact.engagementScore === "number");
+        const averageScore = scoredContacts.length === 0
+          ? 0
+          : Math.round((scoredContacts.reduce((sum, contact) => sum + Number(contact.engagementScore), 0) / scoredContacts.length) * 100) / 100;
         return {
-          totalContacts: 0,
-          activeContacts: 0,
-          engagementRate: 0,
-          averageScore: 0,
+          totalContacts,
+          activeContacts,
+          engagementRate: totalContacts === 0 ? 0 : Math.round((activeContacts / totalContacts) * 10000) / 100,
+          averageScore,
         };
       }),
   }),

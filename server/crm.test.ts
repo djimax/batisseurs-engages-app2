@@ -23,7 +23,10 @@ import {
 describe("Critical resource authorization contract", () => {
   it("protects engagement metrics with the read permission", () => {
     expect(crmRouterSource).toContain("getEngagementMetrics");
-    expect(crmRouterSource).toContain('assertPermission(ctx.user, "crm.view");\n        // Placeholder for engagement metrics calculation');
+    expect(crmRouterSource).toContain('assertPermission(ctx.user, "crm.view");');
+    expect(crmRouterSource).toContain("const totalContacts = contacts.length;");
+    expect(crmRouterSource).toContain("const activeContacts = contacts.filter");
+    expect(crmRouterSource).not.toContain("Placeholder for engagement metrics calculation");
   });
 
   it("protects every CRM write family behind the authenticated admin guard", () => {
