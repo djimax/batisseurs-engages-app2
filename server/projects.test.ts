@@ -30,6 +30,14 @@ import {
 } from "./db";
 
 describe("Projects UI integrity", () => {
+  it("renders human-readable project status labels", () => {
+    const source = readFileSync(new URL("../client/src/pages/Projects.tsx", import.meta.url), "utf8");
+    expect(source).toContain('label: "Planification"');
+    expect(source).toContain('label: "En cours"');
+    expect(source).toContain('label: "Terminé"');
+    expect(source).not.toContain("<Badge className={colors[status] || \"\"}>{status}</Badge>");
+  });
+
   it("selects an active member instead of accepting a raw leader id", () => {
     const source = readFileSync(new URL("../client/src/pages/Projects.tsx", import.meta.url), "utf8");
     expect(source).toContain("trpc.members.list.useQuery");

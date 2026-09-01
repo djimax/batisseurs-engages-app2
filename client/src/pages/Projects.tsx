@@ -77,14 +77,15 @@ export function Projects() {
   };
 
   const getStatusBadge = (status: string) => {
-    const colors: Record<string, string> = {
-      planning: "bg-blue-100 text-blue-800",
-      "in-progress": "bg-yellow-100 text-yellow-800",
-      "on-hold": "bg-orange-100 text-orange-800",
-      completed: "bg-green-100 text-green-800",
-      archived: "bg-gray-100 text-gray-800",
+    const statusMeta: Record<string, { label: string; className: string }> = {
+      planning: { label: "Planification", className: "bg-blue-100 text-blue-800" },
+      "in-progress": { label: "En cours", className: "bg-yellow-100 text-yellow-800" },
+      "on-hold": { label: "En pause", className: "bg-orange-100 text-orange-800" },
+      completed: { label: "Terminé", className: "bg-green-100 text-green-800" },
+      archived: { label: "Archivé", className: "bg-gray-100 text-gray-800" },
     };
-    return <Badge className={colors[status] || ""}>{status}</Badge>;
+    const meta = statusMeta[status] ?? { label: "Statut non renseigné", className: "bg-muted text-muted-foreground" };
+    return <Badge className={meta.className}>{meta.label}</Badge>;
   };
 
   const filteredProjects = projects?.filter((p: any) =>

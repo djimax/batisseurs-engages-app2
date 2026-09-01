@@ -2209,3 +2209,4 @@
 - [x] Afficher dans l’onglet Rapport le breakdown des cotisations, dons et dépenses en F CFA et €.
 - [x] Afficher le statut réel du bénévole dans le portail, avec libellé et couleur cohérents au lieu de forcer « Actif ».
 - [x] Remplacer la saisie libre de l’identifiant du chef de projet par une sélection de membre actif dans le formulaire Projets.
+- [x] Remplacer les codes techniques des statuts de projet par des libellés français accessibles dans les badges.
