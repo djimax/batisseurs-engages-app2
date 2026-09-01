@@ -35,6 +35,7 @@ export function Projects() {
     offset,
     status: statusFilter === "all" ? undefined : statusFilter,
   });
+  const { data: members = [] } = trpc.members.list.useQuery();
 
   // Create project mutation
   const createMutation = trpc.projects.create.useMutation({
@@ -196,13 +197,13 @@ export function Projects() {
               </div>
               <div className="space-y-2">
                 <Label htmlFor="leaderId">Chef de projet *</Label>
-                <Input
-                  id="leaderId"
-                  type="number"
-                  placeholder="ID du chef de projet"
-                  value={formData.leaderId}
-                  onChange={(e) => setFormData({ ...formData, leaderId: e.target.value })}
-                />
+                <Select value={formData.leaderId || "none"} onValueChange={(value) => setFormData({ ...formData, leaderId: value === "none" ? "" : value })}>
+                  <SelectTrigger id="leaderId"><SelectValue placeholder="Sélectionner un membre actif" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">Aucun responsable</SelectItem>
+                    {members.filter((member) => member.status === "active").map((member) => <SelectItem key={member.id} value={String(member.id)}>{member.firstName} {member.lastName}</SelectItem>)}
+                  </SelectContent>
+                </Select>
               </div>
               <Button onClick={handleCreateProject} disabled={createMutation.isPending} className="w-full">
                 <LoadingButtonContent loading={createMutation.isPending} loadingLabel="Création…">

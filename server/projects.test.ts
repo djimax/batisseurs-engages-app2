@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
+import { readFileSync } from "node:fs";
 import {
   createProject,
   getProject,
@@ -27,6 +28,16 @@ import {
   updateProjectBudgetItem,
   deleteProjectBudgetItem,
 } from "./db";
+
+describe("Projects UI integrity", () => {
+  it("selects an active member instead of accepting a raw leader id", () => {
+    const source = readFileSync(new URL("../client/src/pages/Projects.tsx", import.meta.url), "utf8");
+    expect(source).toContain("trpc.members.list.useQuery");
+    expect(source).toContain('members.filter((member) => member.status === "active")');
+    expect(source).toContain("Sélectionner un membre actif");
+    expect(source).not.toContain('placeholder="ID du chef de projet"');
+  });
+});
 
 describe("Projects Management", () => {
   let projectId: number;
