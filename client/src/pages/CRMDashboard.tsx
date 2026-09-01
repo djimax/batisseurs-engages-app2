@@ -207,7 +207,7 @@ export function CRMDashboard() {
                   {pipelineQuery.data.map((item: any) => (
                     <div key={item.id} className="flex items-center justify-between p-3 border rounded-lg">
                       <div>
-                        <p className="font-medium">Contact ID: {item.contactId}</p>
+                        <p className="font-medium">{contactsQuery.data?.find((contact: any) => contact.id === item.contactId)?.firstName} {contactsQuery.data?.find((contact: any) => contact.id === item.contactId)?.lastName || `Contact #${item.contactId}`}</p>
                         <p className="text-sm text-gray-600">{item.notes}</p>
                       </div>
                       <Badge variant="outline">{item.stage}</Badge>

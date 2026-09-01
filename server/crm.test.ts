@@ -29,6 +29,13 @@ describe("Critical resource authorization contract", () => {
     expect(crmRouterSource).not.toContain("Placeholder for engagement metrics calculation");
   });
 
+  it("shows a contact name in the pipeline when available", () => {
+    const dashboardSource = readFileSync(new URL("../client/src/pages/CRMDashboard.tsx", import.meta.url), "utf8");
+    expect(dashboardSource).toContain("find((contact: any) => contact.id === item.contactId)");
+    expect(dashboardSource).toContain("Contact #${item.contactId}");
+    expect(dashboardSource).not.toContain("Contact ID: {item.contactId}");
+  });
+
   it("loads activities only for an available contact", () => {
     const dashboardSource = readFileSync(new URL("../client/src/pages/CRMDashboard.tsx", import.meta.url), "utf8");
     expect(dashboardSource).toContain("const activityContactId = contactsQuery.data?.[0]?.id ?? 0;");

@@ -2203,3 +2203,4 @@
 - [x] Vérifier et harmoniser les permissions de lecture et de gestion du module CRM, avec un contrat de test dédié.
 - [x] Remplacer le placeholder des métriques d’engagement CRM par un calcul réel à partir des contacts, avec tests de cohérence.
 - [x] Supprimer l’identifiant de contact fictif du chargement des activités CRM et afficher un état vide tant qu’aucun contact n’est sélectionné.
+- [x] Remplacer l’affichage des identifiants techniques dans le pipeline CRM par le nom du contact lorsque celui-ci est disponible.
