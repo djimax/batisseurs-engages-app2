@@ -31,6 +31,13 @@ describe("Volunteer coordination", () => {
     expect(source).toContain('assertPermission(ctx.user, "members.edit")');
   });
 
+  it("renders the volunteer status from the stored profile", () => {
+    const source = readFileSync(new URL("../client/src/pages/VolunteerPortal.tsx", import.meta.url), "utf8");
+    expect(source).toContain("volunteerStatusLabel(volunteer.status)");
+    expect(source).toContain("volunteerStatusClass(volunteer.status)");
+    expect(source).not.toContain('>Actif</Badge>');
+  });
+
   it("lists volunteers and supports skill and availability filters", async () => {
     const caller = appRouter.createCaller(createAdminContext());
     const all = await caller.volunteers.list({});
