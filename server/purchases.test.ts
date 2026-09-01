@@ -85,6 +85,14 @@ describe("purchases and suppliers module", () => {
     expect(router).toContain('actionUrl: "/purchases"');
   });
 
+  it("separates committed totals by currency in the UI", () => {
+    const page = readFileSync(new URL("../client/src/pages/Purchases.tsx", import.meta.url), "utf8");
+    expect(page).toContain("committedByCurrency");
+    expect(page).toContain("committedByCurrency.XOF");
+    expect(page).toContain("committedByCurrency.EUR");
+    expect(page).not.toContain("totalCommitted.toLocaleString");
+  });
+
   it("keeps an auditable approval lifecycle", () => {
     const schema = readFileSync(new URL("../drizzle/schema.ts", import.meta.url), "utf8");
     const router = readFileSync(new URL("./purchases-router.ts", import.meta.url), "utf8");
