@@ -56,6 +56,9 @@ describe("Financial multi-currency helpers", () => {
     expect(report.total.expensesEur).toBe(50);
     expect(report.total.balanceEur).toBe(150);
     expect(report.total.balanceXof).toBe(98393.55);
+    expect(report.breakdown.cotisation.amountEur).toBe(100);
+    expect(report.breakdown.don.amountXof).toBe(65595.7);
+    expect(report.breakdown.depense.amountEur).toBe(50);
     expect(report.comparison).toEqual({ year: 2025, totalXof: 65595.7, totalEur: 100, variationXof: 50, variationEur: 50 });
   });
 

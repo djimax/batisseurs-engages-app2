@@ -133,15 +133,23 @@ export type FinancialReportPeriod = {
 };
 
 /** Build a deterministic monthly report; XOF and EUR totals are both exposed. */
+export type FinancialReportBreakdown = Record<FinancialReportEntry["type"], { amount: number; amountXof: number; amountEur: number }>;
+
 export type FinancialReport = {
   year: number;
   monthly: FinancialReportPeriod[];
   total: FinancialReportPeriod;
+  breakdown: FinancialReportBreakdown;
   comparison: { year: number; totalXof: number; totalEur: number; variationXof: number | null; variationEur: number | null } | null;
 };
 
 export function buildFinancialReport(entries: FinancialReportEntry[], year: number, compareYear?: number): FinancialReport {
   const periods = new Map<string, FinancialReportPeriod>();
+  const breakdown: FinancialReportBreakdown = {
+    cotisation: { amount: 0, amountXof: 0, amountEur: 0 },
+    don: { amount: 0, amountXof: 0, amountEur: 0 },
+    depense: { amount: 0, amountXof: 0, amountEur: 0 },
+  };
   const createPeriod = (period: string): FinancialReportPeriod => ({
     period,
     income: 0,
@@ -164,6 +172,9 @@ export function buildFinancialReport(entries: FinancialReportEntry[], year: numb
     const isExpense = entry.type === "depense";
     const amountXof = convertFinancialAmount(amount, entry.currency, "XOF");
     const amountEur = convertFinancialAmount(amount, entry.currency, "EUR");
+    breakdown[entry.type].amount = Math.round((breakdown[entry.type].amount + amount) * 100) / 100;
+    breakdown[entry.type].amountXof = Math.round((breakdown[entry.type].amountXof + amountXof) * 100) / 100;
+    breakdown[entry.type].amountEur = Math.round((breakdown[entry.type].amountEur + amountEur) * 100) / 100;
     if (isExpense) {
       row.expenses = Math.round((row.expenses + amount) * 100) / 100;
       row.expensesXof = Math.round((row.expensesXof + amountXof) * 100) / 100;
@@ -204,5 +215,5 @@ export function buildFinancialReport(entries: FinancialReportEntry[], year: numb
       variationEur: previous.balanceEur === 0 ? null : Math.round(((total.balanceEur - previous.balanceEur) / Math.abs(previous.balanceEur)) * 10000) / 100,
     };
   }
-  return { year, monthly, total, comparison };
+  return { year, monthly, total, breakdown, comparison };
 }
