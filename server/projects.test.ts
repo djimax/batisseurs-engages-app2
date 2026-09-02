@@ -39,6 +39,10 @@ describe("Projects permission integrity", () => {
     expect(projectBlock).toContain("createTask: protectedProcedure");
     expect(projectBlock).toContain("getMilestones: protectedProcedure");
     expect(projectBlock).toContain("createMilestone: protectedProcedure");
+    expect(projectBlock).toContain("await logAudit");
+    expect(projectBlock).toContain('action: "CREATE"');
+    expect(projectBlock).toContain('action: "UPDATE"');
+    expect(projectBlock).toContain('action: "DELETE"');
   });
 });
 
