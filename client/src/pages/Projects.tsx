@@ -100,7 +100,7 @@ export function Projects() {
     { header: "Statut", value: (project) => project.status },
     { header: "Budget", value: (project) => project.budget || "" },
     { header: "Devise", value: (project) => project.currency === "EUR" ? "EUR" : "XOF" },
-    { header: "Chef de projet", value: (project) => project.leaderId || "" },
+    { header: "Chef de projet", value: (project) => project.leaderName || (project.leaderId ? `Membre #${project.leaderId}` : "") },
     { header: "Début", value: (project) => project.startDate ? new Date(project.startDate).toLocaleDateString("fr-FR") : "" },
     { header: "Fin", value: (project) => project.endDate ? new Date(project.endDate).toLocaleDateString("fr-FR") : "" },
   ];

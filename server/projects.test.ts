@@ -40,6 +40,7 @@ describe("Projects UI integrity", () => {
     expect(source).toContain("currency: formData.currency");
     expect(source).toContain('project.currency === "EUR" ? "€" : "F CFA"');
     expect(source).toContain('{ header: "Devise"');
+    expect(source).toContain('project.leaderName || (project.leaderId ? `Membre #${project.leaderId}` : "")');
     expect(router).toContain('currency: z.enum(["EUR", "XOF"]).default("XOF")');
     expect(schema).toContain("currency: mysqlEnum(['EUR', 'XOF']).default('XOF')");
   });
