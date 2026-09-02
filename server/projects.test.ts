@@ -29,6 +29,19 @@ import {
   deleteProjectBudgetItem,
 } from "./db";
 
+describe("Projects permission integrity", () => {
+  it("protects project subresources with view/manage permissions", () => {
+    const source = readFileSync(new URL("../server/routers.ts", import.meta.url), "utf8");
+    const projectBlock = source.slice(source.indexOf("projects: router({"), source.indexOf("projects: router({") + 15000);
+    expect(projectBlock).toContain('assertPermission(ctx.user, "projects.view")');
+    expect(projectBlock).toContain('assertPermission(ctx.user, "projects.manage")');
+    expect(projectBlock).toContain("getTasks: protectedProcedure");
+    expect(projectBlock).toContain("createTask: protectedProcedure");
+    expect(projectBlock).toContain("getMilestones: protectedProcedure");
+    expect(projectBlock).toContain("createMilestone: protectedProcedure");
+  });
+});
+
 describe("Projects UI integrity", () => {
   it("validates project budgets before mutation", () => {
     const source = readFileSync(new URL("../client/src/pages/Projects.tsx", import.meta.url), "utf8");

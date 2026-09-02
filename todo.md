@@ -2216,3 +2216,4 @@
 - [x] Enrichir la liste Projets avec le nom du responsable actif et l’utiliser dans l’export CSV au lieu de `leaderId` seul.
 - [x] Valider le budget projet côté interface comme montant numérique positif avant l’envoi de la création.
 - [x] Ajouter un contrat de test confirmant `structures.view` pour les lectures et `structures.manage` pour les mutations Antennes/Groupes.
+- [x] Ajouter un contrat vérifiant `projects.view` pour les lectures des tâches, jalons, membres et commentaires, et `projects.manage` pour leurs mutations.
