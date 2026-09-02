@@ -2220,3 +2220,4 @@
 - [x] Vérifier que les opérations sensibles du module Projets conservent un journal d’audit après leurs mutations.
 - [x] Ajouter un contrat de test confirmant `finances.view` sur la lecture des campagnes de collecte.
 - [x] Notifier le responsable d’un projet lors de sa création, avec lien vers le projet et déduplication.
+- [x] Afficher le responsable enrichi sur chaque carte Projet, avec repli contrôlé si la fiche membre manque.

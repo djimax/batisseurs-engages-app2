@@ -306,6 +306,10 @@ export function Projects() {
                     <span className="font-semibold">{project.budget} {project.currency === "EUR" ? "€" : "F CFA"}</span>
                   </div>
                 )}
+                <div className="text-sm">
+                  <span className="text-muted-foreground">Responsable: </span>
+                  <span>{project.leaderName || (project.leaderId ? `Membre #${project.leaderId}` : "Non renseigné")}</span>
+                </div>
                 {project.startDate && (
                   <div className="text-sm">
                     <span className="text-muted-foreground">Début: </span>
