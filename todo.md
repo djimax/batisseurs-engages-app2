@@ -2213,3 +2213,4 @@
 - [x] Ajouter un choix de devise EUR/XOF au budget initial des projets et transmettre cette devise à la création.
 - [x] Séparer les montants engagés Achats par devise afin de ne jamais additionner EUR et XOF dans un même total.
 - [x] Afficher la devise enregistrée sur chaque budget projet et l’inclure dans l’export CSV.
+- [x] Enrichir la liste Projets avec le nom du responsable actif et l’utiliser dans l’export CSV au lieu de `leaderId` seul.

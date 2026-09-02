@@ -1366,7 +1366,16 @@ export async function listProjects(limit = 50, offset = 0, status?: string) {
     query = db.select().from(projects).where(eq(projects.status, status as any)).orderBy(desc(projects.createdAt));
   }
   
-  return await query.limit(limit).offset(offset);
+  const rows = await query.limit(limit).offset(offset);
+  const leaderIds: number[] = Array.from(new Set(rows.map((project: typeof projects.$inferSelect) => project.leaderId).filter((id: number | null | undefined): id is number => typeof id === "number")));
+  const leaders = leaderIds.length
+    ? await db.select({ id: members.id, firstName: members.firstName, lastName: members.lastName }).from(members).where(inArray(members.id, leaderIds))
+    : [];
+  const leaderById = new Map(leaders.map((leader) => [leader.id, `${leader.firstName} ${leader.lastName}`]));
+  return rows.map((project: typeof projects.$inferSelect) => ({
+    ...project,
+    leaderName: leaderById.get(project.leaderId) ?? null,
+  }));
 }
 
 export async function updateProject(id: number, data: Partial<InsertProject>) {
