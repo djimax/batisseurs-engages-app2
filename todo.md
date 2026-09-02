@@ -2218,3 +2218,4 @@
 - [x] Ajouter un contrat de test confirmant `structures.view` pour les lectures et `structures.manage` pour les mutations Antennes/Groupes.
 - [x] Ajouter un contrat vérifiant `projects.view` pour les lectures des tâches, jalons, membres et commentaires, et `projects.manage` pour leurs mutations.
 - [x] Vérifier que les opérations sensibles du module Projets conservent un journal d’audit après leurs mutations.
+- [x] Ajouter un contrat de test confirmant `finances.view` sur la lecture des campagnes de collecte.

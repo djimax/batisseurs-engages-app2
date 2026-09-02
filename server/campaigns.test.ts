@@ -4,6 +4,14 @@ import { readFileSync } from "node:fs";
 
 const campaignsPageSource = readFileSync(new URL("../client/src/pages/Campaigns.tsx", import.meta.url), "utf8");
 
+describe("campaign permissions", () => {
+  it("protects campaign reads with finances.view", () => {
+    const routerSource = readFileSync(new URL("./campaigns-router.ts", import.meta.url), "utf8");
+    expect(routerSource).toContain("list: protectedProcedure");
+    expect(routerSource).toContain('assertPermission(ctx.user, "finances.view")');
+  });
+});
+
 describe("campaign progress", () => {
   it("calculates a bounded percentage from real amounts", () => {
     expect(calculateCampaignProgress("5000", "3200")).toBe(64);
