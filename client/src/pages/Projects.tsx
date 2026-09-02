@@ -99,6 +99,7 @@ export function Projects() {
     { header: "Description", value: (project) => project.description || "" },
     { header: "Statut", value: (project) => project.status },
     { header: "Budget", value: (project) => project.budget || "" },
+    { header: "Devise", value: (project) => project.currency === "EUR" ? "EUR" : "XOF" },
     { header: "Chef de projet", value: (project) => project.leaderId || "" },
     { header: "Début", value: (project) => project.startDate ? new Date(project.startDate).toLocaleDateString("fr-FR") : "" },
     { header: "Fin", value: (project) => project.endDate ? new Date(project.endDate).toLocaleDateString("fr-FR") : "" },
@@ -298,7 +299,7 @@ export function Projects() {
                 {project.budget && (
                   <div className="text-sm">
                     <span className="text-muted-foreground">Budget: </span>
-                    <span className="font-semibold">{project.budget} F</span>
+                    <span className="font-semibold">{project.budget} {project.currency === "EUR" ? "€" : "F CFA"}</span>
                   </div>
                 )}
                 {project.startDate && (

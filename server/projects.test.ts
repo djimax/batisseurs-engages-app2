@@ -38,6 +38,8 @@ describe("Projects UI integrity", () => {
     expect(source).toContain('value="XOF">Franc CFA (F)');
     expect(source).toContain('value="EUR">Euro (€)');
     expect(source).toContain("currency: formData.currency");
+    expect(source).toContain('project.currency === "EUR" ? "€" : "F CFA"');
+    expect(source).toContain('{ header: "Devise"');
     expect(router).toContain('currency: z.enum(["EUR", "XOF"]).default("XOF")');
     expect(schema).toContain("currency: mysqlEnum(['EUR', 'XOF']).default('XOF')");
   });
