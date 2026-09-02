@@ -2272,6 +2272,21 @@ export const appRouter = router({
           status: "success",
         });
 
+        const leader = await getMemberById(input.leaderId);
+        if (leader?.userId && project?.id) {
+          await createUserNotification({
+            userId: leader.userId,
+            title: "Nouveau projet attribué",
+            message: `Vous êtes responsable du projet « ${input.name} » .`,
+            type: "info",
+            actionUrl: `/projects/${project.id}`,
+            eventKey: "project.assigned",
+            entityType: "project",
+            entityId: project.id,
+            dedupeKey: `project:${project.id}:assigned:${leader.userId}`,
+          });
+        }
+
         return project;
       }),
 

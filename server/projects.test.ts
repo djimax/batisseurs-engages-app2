@@ -43,6 +43,8 @@ describe("Projects permission integrity", () => {
     expect(projectBlock).toContain('action: "CREATE"');
     expect(projectBlock).toContain('action: "UPDATE"');
     expect(projectBlock).toContain('action: "DELETE"');
+    expect(projectBlock).toContain('eventKey: "project.assigned"');
+    expect(projectBlock).toContain("dedupeKey: `project:${project.id}:assigned:${leader.userId}`");
   });
 });
 
