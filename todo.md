@@ -2214,3 +2214,4 @@
 - [x] Séparer les montants engagés Achats par devise afin de ne jamais additionner EUR et XOF dans un même total.
 - [x] Afficher la devise enregistrée sur chaque budget projet et l’inclure dans l’export CSV.
 - [x] Enrichir la liste Projets avec le nom du responsable actif et l’utiliser dans l’export CSV au lieu de `leaderId` seul.
+- [x] Valider le budget projet côté interface comme montant numérique positif avant l’envoi de la création.

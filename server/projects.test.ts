@@ -30,6 +30,13 @@ import {
 } from "./db";
 
 describe("Projects UI integrity", () => {
+  it("validates project budgets before mutation", () => {
+    const source = readFileSync(new URL("../client/src/pages/Projects.tsx", import.meta.url), "utf8");
+    expect(source).toContain("Number.isFinite(Number(formData.budget))");
+    expect(source).toContain("Number(formData.budget) <= 0");
+    expect(source).toContain("Le budget doit être un montant positif");
+  });
+
   it("supports an explicit project budget currency", () => {
     const source = readFileSync(new URL("../client/src/pages/Projects.tsx", import.meta.url), "utf8");
     const router = readFileSync(new URL("./routers.ts", import.meta.url), "utf8");

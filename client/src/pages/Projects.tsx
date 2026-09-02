@@ -67,6 +67,10 @@ export function Projects() {
       toast.error("Veuillez remplir les champs obligatoires");
       return;
     }
+    if (formData.budget && (!Number.isFinite(Number(formData.budget)) || Number(formData.budget) <= 0)) {
+      toast.error("Le budget doit être un montant positif");
+      return;
+    }
 
     createMutation.mutate({
       name: formData.name,
