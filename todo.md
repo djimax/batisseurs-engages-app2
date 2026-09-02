@@ -2221,3 +2221,4 @@
 - [x] Ajouter un contrat de test confirmant `finances.view` sur la lecture des campagnes de collecte.
 - [x] Notifier le responsable d’un projet lors de sa création, avec lien vers le projet et déduplication.
 - [x] Afficher le responsable enrichi sur chaque carte Projet, avec repli contrôlé si la fiche membre manque.
+- [x] Notifier le membre assigné lors de la création d’une tâche projet, avec lien vers le projet et clé de déduplication.

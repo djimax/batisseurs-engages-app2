@@ -2382,7 +2382,24 @@ export const appRouter = router({
           ...input,
           dueDate: input.dueDate ? input.dueDate.toISOString() : undefined,
         };
-        return await createProjectTask(convertedInput as any);
+        const task = await createProjectTask(convertedInput as any);
+        if (input.assignedTo && task?.id) {
+          const [assignee, project] = await Promise.all([getMemberById(input.assignedTo), getProject(input.projectId)]);
+          if (assignee?.userId && project) {
+            await createUserNotification({
+              userId: assignee.userId,
+              title: "Nouvelle tâche assignée",
+              message: `La tâche « ${input.title} » vous a été assignée dans le projet « ${project.name} ».`,
+              type: "info",
+              actionUrl: `/projects/${project.id}`,
+              eventKey: "project.task.assigned",
+              entityType: "project_task",
+              entityId: task.id,
+              dedupeKey: `project-task:${task.id}:assigned:${assignee.userId}`,
+            });
+          }
+        }
+        return task;
       }),
 
     getTasks: protectedProcedure
