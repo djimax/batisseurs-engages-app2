@@ -25,6 +25,7 @@ export function Projects() {
     description: "",
     status: "planning",
     budget: "",
+    currency: "XOF" as "EUR" | "XOF",
     leaderId: "",
   });
   const [isExporting, setIsExporting] = useState<"csv" | "pdf" | null>(null);
@@ -41,7 +42,7 @@ export function Projects() {
   const createMutation = trpc.projects.create.useMutation({
     onSuccess: () => {
       toast.success("Projet créé avec succès");
-      setFormData({ name: "", description: "", status: "planning", budget: "", leaderId: "" });
+      setFormData({ name: "", description: "", status: "planning", budget: "", currency: "XOF", leaderId: "" });
       setIsCreateOpen(false);
       refetch();
     },
@@ -72,6 +73,7 @@ export function Projects() {
       description: formData.description || undefined,
       status: formData.status as any,
       budget: formData.budget || undefined,
+      currency: formData.currency,
       leaderId: parseInt(formData.leaderId),
     });
   };
@@ -188,13 +190,20 @@ export function Projects() {
                 </Select>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="budget">Budget (F)</Label>
+                <Label htmlFor="budget">Budget</Label>
                 <Input
                   id="budget"
                   placeholder="Budget du projet"
                   value={formData.budget}
                   onChange={(e) => setFormData({ ...formData, budget: e.target.value })}
                 />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="project-currency">Devise du budget</Label>
+                <Select value={formData.currency} onValueChange={(value) => setFormData({ ...formData, currency: value as "EUR" | "XOF" })}>
+                  <SelectTrigger id="project-currency"><SelectValue /></SelectTrigger>
+                  <SelectContent><SelectItem value="XOF">Franc CFA (F)</SelectItem><SelectItem value="EUR">Euro (€)</SelectItem></SelectContent>
+                </Select>
               </div>
               <div className="space-y-2">
                 <Label htmlFor="leaderId">Chef de projet *</Label>

@@ -30,6 +30,18 @@ import {
 } from "./db";
 
 describe("Projects UI integrity", () => {
+  it("supports an explicit project budget currency", () => {
+    const source = readFileSync(new URL("../client/src/pages/Projects.tsx", import.meta.url), "utf8");
+    const router = readFileSync(new URL("./routers.ts", import.meta.url), "utf8");
+    const schema = readFileSync(new URL("../drizzle/schema.ts", import.meta.url), "utf8");
+    expect(source).toContain("Devise du budget");
+    expect(source).toContain('value="XOF">Franc CFA (F)');
+    expect(source).toContain('value="EUR">Euro (€)');
+    expect(source).toContain("currency: formData.currency");
+    expect(router).toContain('currency: z.enum(["EUR", "XOF"]).default("XOF")');
+    expect(schema).toContain("currency: mysqlEnum(['EUR', 'XOF']).default('XOF')");
+  });
+
   it("renders human-readable project status labels", () => {
     const source = readFileSync(new URL("../client/src/pages/Projects.tsx", import.meta.url), "utf8");
     expect(source).toContain('label: "Planification"');

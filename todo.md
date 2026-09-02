@@ -2210,5 +2210,5 @@
 - [x] Afficher le statut réel du bénévole dans le portail, avec libellé et couleur cohérents au lieu de forcer « Actif ».
 - [x] Remplacer la saisie libre de l’identifiant du chef de projet par une sélection de membre actif dans le formulaire Projets.
 - [x] Remplacer les codes techniques des statuts de projet par des libellés français accessibles dans les badges.
-- [ ] Ajouter un choix de devise EUR/XOF au budget initial des projets et transmettre cette devise à la création.
+- [x] Ajouter un choix de devise EUR/XOF au budget initial des projets et transmettre cette devise à la création.
 - [x] Séparer les montants engagés Achats par devise afin de ne jamais additionner EUR et XOF dans un même total.

@@ -901,6 +901,7 @@ export const projects = mysqlTable("projects", {
 	startDate: timestamp({ mode: 'string' }),
 	endDate: timestamp({ mode: 'string' }),
 	budget: varchar({ length: 20 }),
+	currency: mysqlEnum(['EUR', 'XOF']).default('XOF').notNull(),
 	leaderId: int().notNull(),
 	createdBy: int().notNull(),
 	createdAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),

@@ -1,0 +1,1 @@
+ALTER TABLE `projects` ADD `currency` enum('EUR','XOF') DEFAULT 'XOF' NOT NULL;

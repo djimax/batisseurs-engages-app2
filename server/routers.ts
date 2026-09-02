@@ -2251,6 +2251,7 @@ export const appRouter = router({
         startDate: z.date().optional(),
         endDate: z.date().optional(),
         budget: z.string().optional(),
+        currency: z.enum(["EUR", "XOF"]).default("XOF"),
         leaderId: z.number(),
       }))
       .mutation(async ({ input, ctx }) => {
@@ -2283,6 +2284,7 @@ export const appRouter = router({
         startDate: z.date().optional(),
         endDate: z.date().optional(),
         budget: z.string().optional(),
+        currency: z.enum(["EUR", "XOF"]).optional(),
         leaderId: z.number().optional(),
       }))
       .mutation(async ({ input, ctx }) => {
