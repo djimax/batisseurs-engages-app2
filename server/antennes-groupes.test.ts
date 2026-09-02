@@ -4,12 +4,24 @@
  */
 
 import { describe, it, expect, beforeAll, afterAll, vi } from "vitest";
+import { readFileSync } from "node:fs";
 import { z } from "zod";
 import { generateSlug } from "./antennes-groupes-router";
 
 /**
  * Tests pour la validation des schémas
  */
+describe("Antennes & Groupes - Permissions", () => {
+  it("protège les lectures et mutations avec les permissions structures", () => {
+    const source = readFileSync(new URL("./antennes-groupes-router.ts", import.meta.url), "utf8");
+    expect(source).toContain('assertPermission(ctx.user, "structures.view")');
+    expect(source).toContain('assertPermission(ctx.user, "structures.manage")');
+    expect(source).toContain('action: "CREATE"');
+    expect(source).toContain('action: "UPDATE"');
+    expect(source).toContain('action: "DELETE"');
+  });
+});
+
 describe("Antennes & Groupes - Validation des Schémas", () => {
   const CreateAntenneSchema = z.object({
     name: z.string().min(1, "Le nom est requis").max(255),
