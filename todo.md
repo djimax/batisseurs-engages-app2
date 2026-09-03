@@ -2224,3 +2224,4 @@
 - [x] Notifier le membre assigné lors de la création d’une tâche projet, avec lien vers le projet et clé de déduplication.
 - [x] Supprimer l’option « Aucun responsable » du formulaire Projets puisque la création exige un chef de projet obligatoire.
 - [x] Corriger la valeur contrôlée du sélecteur de responsable Projets afin d’utiliser le placeholder sans valeur fantôme « none ».
+- [x] Ajouter un contrat confirmant que toutes les opérations de paramètres globaux exigent `adminProcedure` et conservent l’audit des mutations.

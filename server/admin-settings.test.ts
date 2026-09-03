@@ -1,4 +1,18 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
+import { readFileSync } from "node:fs";
+
+describe("Admin Settings Security Contract", () => {
+  it("requires adminProcedure for all operations and audits mutations", () => {
+    const source = readFileSync(new URL("./admin-settings-router.ts", import.meta.url), "utf8");
+    expect(source).toContain("getAll: adminProcedure");
+    expect(source).toContain("get: adminProcedure");
+    expect(source).toContain("update: adminProcedure");
+    expect(source).toContain("delete: adminProcedure");
+    expect(source).toContain("updateBatch: adminProcedure");
+    expect(source).toContain('entityType: "app_setting"');
+    expect(source).toContain('entityType: "app_settings"');
+  });
+});
 
 describe("Admin Settings System", () => {
   describe("Settings Schema", () => {
