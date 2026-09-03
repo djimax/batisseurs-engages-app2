@@ -70,6 +70,8 @@ describe("Projects UI integrity", () => {
     expect(source).toContain('project.currency === "EUR" ? "€" : "F CFA"');
     expect(source).toContain('{ header: "Devise"');
     expect(source).toContain('project.leaderName || (project.leaderId ? `Membre #${project.leaderId}` : "")');
+    expect(source).toContain("Chef de projet * (membre actif obligatoire)");
+    expect(source).not.toContain('>Aucun responsable</SelectItem>');
     expect(source).toContain("Responsable:");
     expect(source).toContain('"Non renseigné"');
     expect(router).toContain('currency: z.enum(["EUR", "XOF"]).default("XOF")');

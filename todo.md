@@ -2222,3 +2222,4 @@
 - [x] Notifier le responsable d’un projet lors de sa création, avec lien vers le projet et déduplication.
 - [x] Afficher le responsable enrichi sur chaque carte Projet, avec repli contrôlé si la fiche membre manque.
 - [x] Notifier le membre assigné lors de la création d’une tâche projet, avec lien vers le projet et clé de déduplication.
+- [x] Supprimer l’option « Aucun responsable » du formulaire Projets puisque la création exige un chef de projet obligatoire.

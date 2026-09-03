@@ -211,11 +211,10 @@ export function Projects() {
                 </Select>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="leaderId">Chef de projet *</Label>
+                <Label htmlFor="leaderId">Chef de projet * (membre actif obligatoire)</Label>
                 <Select value={formData.leaderId || "none"} onValueChange={(value) => setFormData({ ...formData, leaderId: value === "none" ? "" : value })}>
                   <SelectTrigger id="leaderId"><SelectValue placeholder="Sélectionner un membre actif" /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="none">Aucun responsable</SelectItem>
                     {members.filter((member) => member.status === "active").map((member) => <SelectItem key={member.id} value={String(member.id)}>{member.firstName} {member.lastName}</SelectItem>)}
                   </SelectContent>
                 </Select>
