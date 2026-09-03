@@ -2579,27 +2579,37 @@ export const appRouter = router({
   }),
 
   dashboard: router({
-    statistics: protectedProcedure.query(async () => {
+    statistics: protectedProcedure.query(async ({ ctx }) => {
+      await assertPermission(ctx.user, "members.view");
+      await assertPermission(ctx.user, "projects.view");
+      await assertPermission(ctx.user, "finances.view");
       return await getDashboardStatistics();
     }),
 
-    summary: protectedProcedure.query(async () => {
+    summary: protectedProcedure.query(async ({ ctx }) => {
+      await assertPermission(ctx.user, "members.view");
+      await assertPermission(ctx.user, "projects.view");
+      await assertPermission(ctx.user, "finances.view");
       return await getGlobalDashboardSummary();
     }),
 
-    projects: protectedProcedure.query(async () => {
+    projects: protectedProcedure.query(async ({ ctx }) => {
+      await assertPermission(ctx.user, "projects.view");
       return await getProjectsStatistics();
     }),
 
-    tasks: protectedProcedure.query(async () => {
+    tasks: protectedProcedure.query(async ({ ctx }) => {
+      await assertPermission(ctx.user, "projects.view");
       return await getTasksStatistics();
     }),
 
-    finance: protectedProcedure.query(async () => {
+    finance: protectedProcedure.query(async ({ ctx }) => {
+      await assertPermission(ctx.user, "finances.view");
       return await getFinanceStatistics();
     }),
 
-    members: protectedProcedure.query(async () => {
+    members: protectedProcedure.query(async ({ ctx }) => {
+      await assertPermission(ctx.user, "members.view");
       return await getMembersStatistics();
     }),
 
