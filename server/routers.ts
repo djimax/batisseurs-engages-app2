@@ -1,7 +1,7 @@
 import { COOKIE_NAME } from "@shared/const";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
-import { publicProcedure, protectedProcedure, router } from "./_core/trpc";
+import { publicProcedure, protectedProcedure, adminProcedure, router } from "./_core/trpc";
 import { emailRouter } from "./email-router";
 import { adminSettingsRouter } from "./admin-settings-router";
 import { crmRouter } from "./crm-router";
@@ -2620,10 +2620,7 @@ export const appRouter = router({
   }),
 
   users: router({
-    list: protectedProcedure.query(async ({ ctx }) => {
-      if (ctx.user.role !== "admin") {
-        throw new Error("Vous n'avez pas la permission d'acceder a cette ressource");
-      }
+    list: adminProcedure.query(async () => {
       return await getAllUsers();
     }),
 
@@ -2636,16 +2633,12 @@ export const appRouter = router({
         return await getUserById(input.id);
       }),
 
-    updateRole: protectedProcedure
+    updateRole: adminProcedure
       .input(z.object({
         userId: z.number(),
         newRole: z.enum(["admin", "user"]),
       }))
       .mutation(async ({ input, ctx }) => {
-        if (ctx.user.role !== "admin") {
-          throw new Error("Vous n'avez pas la permission d'effectuer cette action");
-        }
-
         if (input.userId === ctx.user.id && input.newRole === "user") {
           const adminCount = await getAdminCount();
           if (adminCount <= 1) {

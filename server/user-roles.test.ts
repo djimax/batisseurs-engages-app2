@@ -1,4 +1,6 @@
 import { describe, it, expect, beforeEach } from "vitest";
+import { readFileSync } from "node:fs";
+
 import {
   getAllUsers,
   getUserById,
@@ -6,6 +8,16 @@ import {
   getAdminCount,
   isUserAdmin,
 } from "./db";
+
+describe("User Role Router Security", () => {
+  it("uses adminProcedure for listing and role changes", () => {
+    const source = readFileSync(new URL("./routers.ts", import.meta.url), "utf8");
+    const usersBlock = source.slice(source.indexOf("users: router({"), source.indexOf("users: router({") + 1800);
+    expect(usersBlock).toContain("list: adminProcedure");
+    expect(usersBlock).toContain("updateRole: adminProcedure");
+    expect(usersBlock).toContain("getById: protectedProcedure");
+  });
+});
 
 describe("User Role Management", () => {
   describe("getAllUsers", () => {
