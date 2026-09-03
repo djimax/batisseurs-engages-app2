@@ -15,6 +15,8 @@ describe("User Role Router Security", () => {
     const usersBlock = source.slice(source.indexOf("users: router({"), source.indexOf("users: router({") + 1800);
     expect(usersBlock).toContain("list: adminProcedure");
     expect(usersBlock).toContain("updateRole: adminProcedure");
+    expect(usersBlock).toContain("getAdminCount: adminProcedure");
+    expect(usersBlock).toContain("isAdmin: adminProcedure");
     expect(usersBlock).toContain("getById: protectedProcedure");
   });
 });

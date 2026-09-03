@@ -2227,3 +2227,4 @@
 - [x] Ajouter un contrat confirmant que toutes les opérations de paramètres globaux exigent `adminProcedure` et conservent l’audit des mutations.
 - [x] Harmoniser les permissions des statistiques globales : `projects.view`, `finances.view`, `members.view` et `signatures.view` selon chaque indicateur.
 - [x] Harmoniser le routeur utilisateurs avec `adminProcedure` pour la liste et la gestion des rôles, tout en conservant l’accès personnel à `getById`.
+- [x] Restreindre `users.getAdminCount` et `users.isAdmin` aux usages d’administration appropriés et ajouter un contrat de sécurité.

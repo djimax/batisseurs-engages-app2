@@ -2659,11 +2659,11 @@ export const appRouter = router({
         return { success: true };
       }),
 
-    getAdminCount: protectedProcedure.query(async () => {
+    getAdminCount: adminProcedure.query(async () => {
       return await getAdminCount();
     }),
 
-    isAdmin: protectedProcedure
+    isAdmin: adminProcedure
       .input(z.object({ userId: z.number() }))
       .query(async ({ input }) => {
         return await isUserAdmin(input.userId);
