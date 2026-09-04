@@ -32,6 +32,7 @@ export function ProjectDetail() {
     priority: "medium",
     status: "todo",
   });
+  const [impactForm, setImpactForm] = useState({ name: "", unit: "personnes", currentValue: "", targetValue: "", description: "" });
 
   // Fetch project
   const { data: project, isLoading } = trpc.projects.get.useQuery({ id: projectId });
@@ -44,6 +45,7 @@ export function ProjectDetail() {
 
   // Fetch budget items
   const { data: budgetItems } = trpc.projects.getBudgetItems.useQuery({ projectId });
+  const { data: impactIndicators, refetch: refetchImpactIndicators } = trpc.projects.getImpactIndicators.useQuery({ projectId });
   const { data: report } = trpc.projects.report.useQuery({ projectId });
   const { data: taskComments, refetch: refetchTaskComments } = trpc.projects.getTaskComments.useQuery(
     { taskId: selectedTaskId ?? 0 },
@@ -61,6 +63,20 @@ export function ProjectDetail() {
     onError: (error) => {
       toast.error(error.message || "Erreur");
     },
+  });
+
+  const createImpactMutation = trpc.projects.createImpactIndicator.useMutation({
+    onSuccess: () => {
+      toast.success("Indicateur d’impact ajouté");
+      setImpactForm({ name: "", unit: "personnes", currentValue: "", targetValue: "", description: "" });
+      void refetchImpactIndicators();
+    },
+    onError: (error) => toast.error(error.message || "Impossible d’ajouter l’indicateur"),
+  });
+
+  const deleteImpactMutation = trpc.projects.deleteImpactIndicator.useMutation({
+    onSuccess: () => { toast.success("Indicateur supprimé"); void refetchImpactIndicators(); },
+    onError: (error) => toast.error(error.message || "Impossible de supprimer l’indicateur"),
   });
 
   const addTaskCommentMutation = trpc.projects.addTaskComment.useMutation({
@@ -131,6 +147,21 @@ export function ProjectDetail() {
       void exportRowsToPDF(`Rapport projet — ${project.name}`, rows, columns, generateListExportFilename(`rapport_projet_${project.id}`, "pdf"));
       toast.success("Génération du rapport PDF lancée");
     }
+  };
+
+  const handleCreateImpact = () => {
+    if (!impactForm.name.trim() || !impactForm.currentValue.trim()) {
+      toast.error("Le nom et la valeur actuelle sont obligatoires");
+      return;
+    }
+    createImpactMutation.mutate({
+      projectId,
+      name: impactForm.name.trim(),
+      unit: impactForm.unit.trim() || "unité",
+      currentValue: impactForm.currentValue.trim(),
+      targetValue: impactForm.targetValue.trim() || undefined,
+      description: impactForm.description.trim() || undefined,
+    });
   };
 
   const handleCreateTask = () => {
@@ -249,7 +280,33 @@ export function ProjectDetail() {
           <TabsTrigger value="overview">Rapport</TabsTrigger>
           <TabsTrigger value="milestones">Jalons</TabsTrigger>
           <TabsTrigger value="budget">Budget</TabsTrigger>
+          <TabsTrigger value="impact">Impact</TabsTrigger>
         </TabsList>
+
+        <TabsContent value="impact" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Indicateurs d’impact</CardTitle>
+              <CardDescription>Mesurez les résultats concrets du projet avec une valeur actuelle, une cible et une unité explicites.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid gap-3 md:grid-cols-2">
+                <div className="space-y-2"><Label htmlFor="impact-name">Indicateur *</Label><Input id="impact-name" value={impactForm.name} onChange={(event) => setImpactForm({ ...impactForm, name: event.target.value })} placeholder="Ex. bénéficiaires accompagnés" /></div>
+                <div className="space-y-2"><Label htmlFor="impact-unit">Unité *</Label><Input id="impact-unit" value={impactForm.unit} onChange={(event) => setImpactForm({ ...impactForm, unit: event.target.value })} placeholder="personnes, ateliers, hectares…" /></div>
+                <div className="space-y-2"><Label htmlFor="impact-current">Valeur actuelle *</Label><Input id="impact-current" inputMode="decimal" value={impactForm.currentValue} onChange={(event) => setImpactForm({ ...impactForm, currentValue: event.target.value })} placeholder="0" /></div>
+                <div className="space-y-2"><Label htmlFor="impact-target">Cible</Label><Input id="impact-target" inputMode="decimal" value={impactForm.targetValue} onChange={(event) => setImpactForm({ ...impactForm, targetValue: event.target.value })} placeholder="Optionnel" /></div>
+              </div>
+              <div className="space-y-2"><Label htmlFor="impact-description">Description</Label><Textarea id="impact-description" value={impactForm.description} onChange={(event) => setImpactForm({ ...impactForm, description: event.target.value })} placeholder="Méthode de mesure ou périmètre couvert" rows={2} /></div>
+              <Button onClick={handleCreateImpact} disabled={createImpactMutation.isPending}>{createImpactMutation.isPending ? "Enregistrement…" : "Ajouter l’indicateur"}</Button>
+            </CardContent>
+          </Card>
+          {impactIndicators && impactIndicators.length > 0 ? <div className="grid gap-4 md:grid-cols-2">{impactIndicators.map((indicator: any) => {
+            const current = Number(indicator.currentValue);
+            const target = Number(indicator.targetValue);
+            const progress = Number.isFinite(target) && target > 0 ? Math.min(100, Math.round((current / target) * 100)) : null;
+            return <Card key={indicator.id}><CardHeader className="pb-3"><div className="flex items-start justify-between gap-3"><div><CardTitle className="text-base">{indicator.name}</CardTitle><CardDescription>{indicator.description || "Aucune méthode renseignée"}</CardDescription></div><Button aria-label={`Supprimer ${indicator.name}`} size="icon" variant="ghost" onClick={() => deleteImpactMutation.mutate({ id: indicator.id })} disabled={deleteImpactMutation.isPending}><Trash2 className="h-4 w-4" /></Button></div></CardHeader><CardContent><div className="flex items-end justify-between gap-3"><div><span className="text-3xl font-bold">{indicator.currentValue}</span><span className="ml-2 text-sm text-muted-foreground">{indicator.unit}</span></div>{indicator.targetValue ? <span className="text-sm text-muted-foreground">Cible : {indicator.targetValue} {indicator.unit}</span> : null}</div>{progress !== null ? <div className="mt-3 space-y-1"><div className="flex justify-between text-xs text-muted-foreground"><span>Progression vers la cible</span><span>{progress}%</span></div><div className="h-2 overflow-hidden rounded-full bg-muted" role="progressbar" aria-label={`Progression de ${indicator.name}`} aria-valuenow={progress} aria-valuemin={0} aria-valuemax={100}><div className="h-full rounded-full bg-primary transition-all" style={{ width: `${progress}%` }} /></div></div> : <p className="mt-3 text-xs text-muted-foreground">Ajoutez une cible pour afficher la progression.</p>}</CardContent></Card>;
+          })}</div> : <div className="rounded-xl border border-dashed p-8 text-center text-sm text-muted-foreground">Aucun indicateur d’impact n’est encore renseigné pour ce projet.</div>}
+        </TabsContent>
 
         {/* Report Tab */}
         <TabsContent value="overview" className="space-y-4">

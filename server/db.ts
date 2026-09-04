@@ -37,6 +37,7 @@ import {
   projectUpdates,
   projectTaskComments,
   projectBudgetItems,
+  projectImpactIndicators,
   auditLogs,
   roles,
   rolePermissions,
@@ -110,6 +111,7 @@ const schema = {
   projectUpdates,
   projectTaskComments,
   projectBudgetItems,
+  projectImpactIndicators,
   membershipFeeRules,
   memberEvaluations,
   memberGrades,
@@ -1515,6 +1517,39 @@ export async function getProjectUpdates(projectId: number) {
   return await db.select().from(projectUpdates).where(eq(projectUpdates.projectId, projectId)).orderBy(desc(projectUpdates.createdAt));
 }
 
+// Project Impact Indicators
+export async function getProjectImpactIndicators(projectId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  return await db.select().from(projectImpactIndicators)
+    .where(eq(projectImpactIndicators.projectId, projectId))
+    .orderBy(desc(projectImpactIndicators.updatedAt));
+}
+
+export async function createProjectImpactIndicator(data: InsertProjectImpactIndicator) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const result = await db.insert(projectImpactIndicators).values(data);
+  const id = Number(result[0].insertId);
+  const rows = await db.select().from(projectImpactIndicators).where(eq(projectImpactIndicators.id, id));
+  return rows[0];
+}
+
+export async function updateProjectImpactIndicator(id: number, data: Partial<InsertProjectImpactIndicator>) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.update(projectImpactIndicators).set(data).where(eq(projectImpactIndicators.id, id));
+  const rows = await db.select().from(projectImpactIndicators).where(eq(projectImpactIndicators.id, id));
+  return rows[0];
+}
+
+export async function deleteProjectImpactIndicator(id: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.delete(projectImpactIndicators).where(eq(projectImpactIndicators.id, id));
+  return { success: true };
+}
+
 // Project Task Comments
 export async function createProjectTaskComment(data: InsertProjectTaskComment) {
   const db = await getDb();
@@ -2034,6 +2069,7 @@ export type InsertProjectMilestone = typeof projectMilestones.$inferInsert;
 export type InsertProjectUpdate = typeof projectUpdates.$inferInsert;
 export type InsertProjectTaskComment = typeof projectTaskComments.$inferInsert;
 export type InsertProjectBudgetItem = typeof projectBudgetItems.$inferInsert;
+export type InsertProjectImpactIndicator = typeof projectImpactIndicators.$inferInsert;
 export type InsertAuditLog = typeof auditLogs.$inferInsert;
 export type InsertAnnouncement = typeof announcements.$inferInsert;
 export type InsertNews = typeof news.$inferInsert;

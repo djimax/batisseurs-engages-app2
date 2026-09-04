@@ -1,0 +1,1 @@
+ALTER TABLE `project_impact_indicators` MODIFY COLUMN `createdAt` timestamp NOT NULL DEFAULT (now());

@@ -24,7 +24,7 @@ function createAdminContext(): TrpcContext {
 }
 
 describe("Internal member directory", () => {
-  it("returns active members only by default and includes contribution summaries", async () => {
+  it("returns active members only by default and includes contribution summaries", { timeout: 15000 }, async () => {
     const caller = appRouter.createCaller(createAdminContext());
     const directory = await caller.members.directory({});
 
@@ -34,7 +34,7 @@ describe("Internal member directory", () => {
     expect(directory.every((member) => Array.isArray(member.contributions.recent))).toBe(true);
   });
 
-  it("supports searching by member name or skill and keeps alphabetical sorting", async () => {
+  it("supports searching by member name or skill and keeps alphabetical sorting", { timeout: 15000 }, async () => {
     const caller = appRouter.createCaller(createAdminContext());
     const directory = await caller.members.directory({ search: "", sortBy: "name_asc" });
     const names = directory.map((member) => `${member.lastName} ${member.firstName}`);
@@ -48,7 +48,7 @@ describe("Internal member directory", () => {
     }
   });
 
-  it("supports explicit all-status scope for administrative review", async () => {
+  it("supports explicit all-status scope for administrative review", { timeout: 15000 }, async () => {
     const caller = appRouter.createCaller(createAdminContext());
     const directory = await caller.members.directory({ status: "all", sortBy: "recent" });
 

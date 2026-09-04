@@ -870,6 +870,26 @@ export const projectTasks = mysqlTable("project_tasks", {
 	updatedAt: timestamp({ mode: 'string' }).defaultNow().onUpdateNow().notNull(),
 });
 
+export const projectImpactIndicators = mysqlTable("project_impact_indicators", {
+	id: int().autoincrement().notNull(),
+	projectId: int().notNull(),
+	name: varchar({ length: 160 }).notNull(),
+	description: text(),
+	unit: varchar({ length: 60 }).notNull(),
+	baselineValue: varchar({ length: 30 }),
+	currentValue: varchar({ length: 30 }).notNull(),
+	targetValue: varchar({ length: 30 }),
+	periodStart: timestamp({ mode: 'string' }),
+	periodEnd: timestamp({ mode: 'string' }),
+	source: varchar({ length: 255 }),
+	createdBy: int().notNull(),
+	createdAt: timestamp({ mode: 'string' }).defaultNow().notNull(),
+	updatedAt: timestamp({ mode: 'string' }).defaultNow().onUpdateNow().notNull(),
+}, (table) => [
+	index("project_impact_indicators_project_idx").on(table.projectId),
+	index("project_impact_indicators_period_idx").on(table.periodStart, table.periodEnd),
+]);
+
 export const projectUpdates = mysqlTable("project_updates", {
 	id: int().autoincrement().notNull(),
 	projectId: int().notNull(),

@@ -28,6 +28,7 @@ import {
   createProjectUpdate, getProjectUpdates,
   createProjectTaskComment, getProjectTaskComments, deleteProjectTaskComment, getProjectReport,
   getProjectBudgetItems, createProjectBudgetItem, updateProjectBudgetItem, deleteProjectBudgetItem,
+  getProjectImpactIndicators, createProjectImpactIndicator, updateProjectImpactIndicator, deleteProjectImpactIndicator,
   getDashboardStatistics, getGlobalDashboardSummary, getProjectsStatistics, getTasksStatistics, getFinanceStatistics, getMembersStatistics, getSignatureDeliveryDashboard,
   createMemberCertificate, getMemberCertificates,
   getAllUsers, getUserById, updateUserRole, getAdminCount, isUserAdmin,
@@ -2341,6 +2342,87 @@ export const appRouter = router({
         });
 
         return { success: true };
+      }),
+
+    getImpactIndicators: protectedProcedure
+      .input(z.object({ projectId: z.number().int().positive() }))
+      .query(async ({ input, ctx }) => {
+        await assertPermission(ctx.user, "projects.view");
+        return await getProjectImpactIndicators(input.projectId);
+      }),
+
+    createImpactIndicator: protectedProcedure
+      .input(z.object({
+        projectId: z.number().int().positive(),
+        name: z.string().trim().min(1).max(160),
+        description: z.string().trim().max(5000).optional(),
+        unit: z.string().trim().min(1).max(60),
+        baselineValue: z.string().regex(/^\d+(?:[.,]\d+)?$/).optional(),
+        currentValue: z.string().regex(/^\d+(?:[.,]\d+)?$/),
+        targetValue: z.string().regex(/^\d+(?:[.,]\d+)?$/).optional(),
+        periodStart: z.date().optional(),
+        periodEnd: z.date().optional(),
+        source: z.string().trim().max(255).optional(),
+      }).superRefine((value, refinementContext) => {
+        if (value.periodStart && value.periodEnd && value.periodEnd < value.periodStart) {
+          refinementContext.addIssue({ code: z.ZodIssueCode.custom, path: ["periodEnd"], message: "La fin de période doit être postérieure au début." });
+        }
+      }))
+      .mutation(async ({ input, ctx }) => {
+        await assertPermission(ctx.user, "projects.manage");
+        const project = await getProject(input.projectId);
+        if (!project) throw new TRPCError({ code: "NOT_FOUND", message: "Projet introuvable." });
+        const { projectId, periodStart, periodEnd, ...data } = input;
+        const indicator = await createProjectImpactIndicator({
+          ...data,
+          projectId,
+          periodStart: periodStart?.toISOString(),
+          periodEnd: periodEnd?.toISOString(),
+          createdBy: ctx.user.id,
+          baselineValue: data.baselineValue?.replace(",", "."),
+          currentValue: data.currentValue.replace(",", "."),
+          targetValue: data.targetValue?.replace(",", "."),
+        });
+        await logAudit({ userId: ctx.user.id, action: "CREATE", entityType: "project_impact_indicator", entityId: indicator?.id, entityName: input.name, description: `Création de l’indicateur d’impact « ${input.name} »`, status: "success" });
+        return indicator;
+      }),
+
+    updateImpactIndicator: protectedProcedure
+      .input(z.object({
+        id: z.number().int().positive(),
+        name: z.string().trim().min(1).max(160).optional(),
+        description: z.string().trim().max(5000).optional(),
+        unit: z.string().trim().min(1).max(60).optional(),
+        baselineValue: z.string().regex(/^\d+(?:[.,]\d+)?$/).nullable().optional(),
+        currentValue: z.string().regex(/^\d+(?:[.,]\d+)?$/).optional(),
+        targetValue: z.string().regex(/^\d+(?:[.,]\d+)?$/).nullable().optional(),
+        periodStart: z.date().nullable().optional(),
+        periodEnd: z.date().nullable().optional(),
+        source: z.string().trim().max(255).nullable().optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        await assertPermission(ctx.user, "projects.manage");
+        const { id, periodStart, periodEnd, baselineValue, currentValue, targetValue, ...data } = input;
+        const updated = await updateProjectImpactIndicator(id, {
+          ...data,
+          baselineValue: baselineValue === undefined ? undefined : baselineValue?.replace(",", ".") ?? null,
+          currentValue: currentValue?.replace(",", "."),
+          targetValue: targetValue === undefined ? undefined : targetValue?.replace(",", ".") ?? null,
+          periodStart: periodStart === undefined ? undefined : periodStart?.toISOString() ?? null,
+          periodEnd: periodEnd === undefined ? undefined : periodEnd?.toISOString() ?? null,
+        });
+        if (!updated) throw new TRPCError({ code: "NOT_FOUND", message: "Indicateur introuvable." });
+        await logAudit({ userId: ctx.user.id, action: "UPDATE", entityType: "project_impact_indicator", entityId: id, entityName: updated.name, description: `Mise à jour de l’indicateur d’impact « ${updated.name} »`, status: "success" });
+        return updated;
+      }),
+
+    deleteImpactIndicator: protectedProcedure
+      .input(z.object({ id: z.number().int().positive() }))
+      .mutation(async ({ input, ctx }) => {
+        await assertPermission(ctx.user, "projects.manage");
+        const deleted = await deleteProjectImpactIndicator(input.id);
+        await logAudit({ userId: ctx.user.id, action: "DELETE", entityType: "project_impact_indicator", entityId: input.id, description: `Suppression de l’indicateur d’impact #${input.id}`, status: "success" });
+        return deleted;
       }),
 
     // Project Members
