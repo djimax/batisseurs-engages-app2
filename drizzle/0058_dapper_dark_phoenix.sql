@@ -1,0 +1,1 @@
+ALTER TABLE `campaigns` MODIFY COLUMN `publicEnabled` int NOT NULL;

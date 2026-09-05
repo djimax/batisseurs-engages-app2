@@ -2232,3 +2232,6 @@
 - [x] Exposer les indicateurs d’impact via des procédures tRPC protégées et les afficher dans le détail projet.
 - [x] Couvrir les indicateurs d’impact par des tests de validation, permissions et traçabilité.
 - [x] Stabiliser les tests d’intégration de l’annuaire membres lorsque la base distante dépasse le délai Vitest par défaut.
+- [x] Ajouter un identifiant public révocable pour le partage des campagnes actives sans exposer les données administratives.
+- [x] Ajouter l’historique des contributions de campagne avec montant, devise, statut, référence et audit.
+- [x] Intégrer le partage et l’historique dans la page Campagnes avec états accessibles et tests.

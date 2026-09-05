@@ -204,10 +204,32 @@ export const campaigns = mysqlTable("campaigns", {
 	dateFin: timestamp({ mode: 'string' }).notNull(),
 	status: mysqlEnum(['draft','active','completed','cancelled']).default('draft').notNull(),
 	image: text(),
+	publicToken: varchar({ length: 64 }),
+	publicEnabled: int().default(0).notNull(),
 	createdBy: int().notNull(),
 	createdAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
 	updatedAt: timestamp({ mode: 'string' }).defaultNow().onUpdateNow().notNull(),
 });
+
+export const campaignContributions = mysqlTable("campaign_contributions", {
+	id: int().autoincrement().notNull(),
+	campaignId: int().notNull(),
+	displayName: varchar({ length: 160 }),
+	amount: varchar({ length: 20 }).notNull(),
+	currency: mysqlEnum(['EUR', 'XOF']).default('EUR').notNull(),
+	status: mysqlEnum(['pending', 'completed', 'failed', 'refunded']).default('pending').notNull(),
+	reference: varchar({ length: 120 }).notNull(),
+	paymentProvider: varchar({ length: 60 }),
+	paymentReference: varchar({ length: 255 }),
+	contributionDate: timestamp({ mode: 'string' }).notNull(),
+	createdBy: int(),
+	createdAt: timestamp({ mode: 'string' }).defaultNow().notNull(),
+	updatedAt: timestamp({ mode: 'string' }).defaultNow().onUpdateNow().notNull(),
+}, (table) => [
+	index("campaign_contributions_campaign_idx").on(table.campaignId),
+	index("campaign_contributions_status_idx").on(table.status),
+	uniqueIndex("campaign_contributions_reference_unique").on(table.reference),
+]);
 
 export const categories = mysqlTable("categories", {
 	id: int().autoincrement().notNull(),

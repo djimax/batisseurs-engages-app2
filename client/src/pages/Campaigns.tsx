@@ -6,7 +6,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Target, TrendingUp, Calendar, Edit2, Trash2 } from "lucide-react";
+import { Plus, Target, TrendingUp, Calendar, Edit2, Trash2, Share2, History, Copy } from "lucide-react";
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
 import { useFormatAmount } from "@/hooks/useFormatAmount";
@@ -22,6 +22,8 @@ type Campaign = {
   dateFin: string | Date;
   status: "draft" | "active" | "completed" | "cancelled";
   progress: number;
+  publicToken?: string | null;
+  publicEnabled?: number;
 };
 
 const EMPTY_CAMPAIGNS: Campaign[] = [];
@@ -41,6 +43,9 @@ export default function Campaigns() {
   const totalProgress = campaignStats.objective > 0 ? Math.min(100, Math.round((campaignStats.collected / campaignStats.objective) * 100)) : 0;
   const [isOpen, setIsOpen] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
+  const [historyCampaignId, setHistoryCampaignId] = useState<number | null>(null);
+  const { data: contributionHistory = [] } = trpc.campaigns.getContributions.useQuery({ campaignId: historyCampaignId || 0 }, { enabled: Boolean(historyCampaignId) });
+  const enableSharing = trpc.campaigns.enableSharing.useMutation({ onSuccess: async ({ publicUrl }) => { await navigator.clipboard?.writeText(`${window.location.origin}${publicUrl}`); toast.success("Lien public copié"); }, onError: (error) => toast.error(error.message) });
   const [formData, setFormData] = useState({
     title: "",
     description: "",
@@ -167,7 +172,9 @@ export default function Campaigns() {
                   </div>
                   <p className="text-sm text-muted-foreground mt-2">{campaign.description || "Aucune description"}</p>
                 </div>
-                <div className="flex gap-2">
+                <div className="flex flex-wrap gap-2">
+                  <Button aria-label={`Partager ${campaign.title}`} variant="outline" size="sm" disabled={campaign.status !== "active" || enableSharing.isPending} onClick={() => enableSharing.mutate({ campaignId: campaign.id })}><Share2 className="h-4 w-4" /></Button>
+                  <Button aria-label={`Voir l’historique de ${campaign.title}`} variant="outline" size="sm" onClick={() => setHistoryCampaignId(campaign.id)}><History className="h-4 w-4" /></Button>
                   <Button
                     variant="ghost"
                     size="sm"
@@ -249,6 +256,8 @@ export default function Campaigns() {
           </Card>
         ))}
       </div>
+
+      {historyCampaignId ? <Card><CardHeader><CardTitle className="flex items-center gap-2"><History className="h-5 w-5" />Historique des contributions</CardTitle><CardDescription>Les montants et références restent visibles aux utilisateurs autorisés du module financier.</CardDescription></CardHeader><CardContent>{contributionHistory.length ? <div className="divide-y rounded-xl border">{contributionHistory.map((contribution) => <div key={contribution.id} className="flex items-center justify-between gap-3 p-3"><div><p className="font-medium">{contribution.displayName || "Donateur anonyme"}</p><p className="text-xs text-muted-foreground">{contribution.reference} · {new Date(contribution.contributionDate).toLocaleDateString("fr-FR")}</p></div><span className="font-semibold">{Number(contribution.amount).toLocaleString("fr-FR")} {contribution.currency === "EUR" ? "€" : "F CFA"}</span></div>)}</div> : <p className="rounded-xl border border-dashed p-5 text-sm text-muted-foreground">Aucune contribution enregistrée.</p>}</CardContent></Card> : null}
 
       {/* Dialog for Creating/Editing Campaign */}
       <Dialog open={isOpen} onOpenChange={setIsOpen}>

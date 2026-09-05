@@ -400,6 +400,20 @@
       "when": 1788525945781,
       "tag": "0056_cool_black_queen",
       "breakpoints": true
+    },
+    {
+      "idx": 57,
+      "version": "5",
+      "when": 1788526652986,
+      "tag": "0057_flowery_pride",
+      "breakpoints": true
+    },
+    {
+      "idx": 58,
+      "version": "5",
+      "when": 1788527007865,
+      "tag": "0058_dapper_dark_phoenix",
+      "breakpoints": true
     }
   ]
 }

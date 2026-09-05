@@ -18,6 +18,7 @@ import Offline from "./pages/Offline";
 import ModeSelector from "./pages/ModeSelector";
 import Settings from "./pages/Settings";
 import Campaigns from "./pages/Campaigns";
+import PublicCampaign from "./pages/PublicCampaign";
 import Adhesions from "./pages/Adhesions";
 import Events from "./pages/Events";
 import ProtectedUserManagement from "./pages/ProtectedUserManagement";
@@ -58,10 +59,7 @@ function OnlineRouter({ isAuthenticated, error, onLogin, onLogout, onForgotPassw
   const [showForgotPassword, setShowForgotPassword] = useState(false);
 
   if (!isAuthenticated) {
-    if (showForgotPassword) {
-      return <ForgotPassword onBack={() => setShowForgotPassword(false)} />;
-    }
-    return <Login onLogin={onLogin} error={error} onForgotPassword={() => setShowForgotPassword(true)} />;
+    return <Switch><Route path="/campaigns/public/:token" component={PublicCampaign} /><Route path="*" component={() => showForgotPassword ? <ForgotPassword onBack={() => setShowForgotPassword(false)} /> : <Login onLogin={onLogin} error={error} onForgotPassword={() => setShowForgotPassword(true)} />} /></Switch>;
   }
 
   return (
@@ -80,6 +78,7 @@ function OnlineRouter({ isAuthenticated, error, onLogin, onLogout, onForgotPassw
         <Route path="/archives" component={Archives} />
         <Route path="/finance" component={Finance} />
         <Route path="/purchases" component={Purchases} />
+        <Route path="/campaigns/public/:token" component={PublicCampaign} />
         <Route path="/campaigns" component={Campaigns} />
         <Route path="/adhesions" component={Adhesions} />
         <Route path="/events" component={Events} />
