@@ -1608,7 +1608,7 @@
 
 ### 2. Trésorerie, Budgets et Rapprochement Bancaire
 - [x] Ventilation analytique des dépenses et recettes par projet, antenne et catégo. budgétaire
-- [ ] Module de rapprochement bancaire (import relevé / lettrage des paiements Stripe & HelloAsso)
+- [x] Module de rapprochement bancaire (import relevé / lettrage des paiements Stripe & HelloAsso)
 - [ ] Gestion des notes de frais et justificatifs de déplacement pour les bénévoles
 - [ ] Tableau de bord financier multi-devises (EUR / FCFA) avec taux de change administrable
 
@@ -2238,3 +2238,6 @@
 - [x] Ajouter les dimensions analytiques projet, antenne et catégorie budgétaire aux écritures financières concernées.
 - [x] Exposer un rapport analytique EUR/XOF protégé avec agrégats par dimension.
 - [x] Afficher la ventilation analytique dans Finance et couvrir la migration par tests.
+- [x] Ajouter un registre de rapprochement idempotent pour les paiements Stripe et références externes.
+- [x] Exposer la liste et le lettrage des écritures rapprochées avec permissions financières et audit.
+- [x] Ajouter une vue Finance des paiements à rapprocher et couvrir les doublons par tests.

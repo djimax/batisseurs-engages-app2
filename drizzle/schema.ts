@@ -1024,6 +1024,27 @@ export const transactions = mysqlTable("transactions", {
 	createdAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
 });
 
+export const bankReconciliations = mysqlTable("bank_reconciliations", {
+	id: int().autoincrement().notNull(),
+	externalReference: varchar({ length: 255 }).notNull(),
+	provider: varchar({ length: 60 }).notNull(),
+	amount: varchar({ length: 20 }).notNull(),
+	currency: mysqlEnum(['EUR', 'XOF']).notNull(),
+	transactionDate: timestamp({ mode: 'string' }).notNull(),
+	status: mysqlEnum(['unmatched','matched','ignored']).default('unmatched').notNull(),
+	stripePaymentId: int(),
+	transactionId: int(),
+	matchedBy: int(),
+	matchedAt: timestamp({ mode: 'string' }),
+	notes: text(),
+	createdAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
+	updatedAt: timestamp({ mode: 'string' }).defaultNow().onUpdateNow().notNull(),
+}, (table) => [
+	uniqueIndex("bank_reconciliations_external_ref_unique").on(table.provider, table.externalReference),
+	index("bank_reconciliations_status_idx").on(table.status),
+	index("bank_reconciliations_stripe_payment_idx").on(table.stripePaymentId),
+]);
+
 export const userRoles = mysqlTable("user_roles", {
 	id: int().autoincrement().notNull(),
 	userId: int().notNull(),

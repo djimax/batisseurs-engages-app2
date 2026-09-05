@@ -147,6 +147,8 @@ export default function Finance() {
   const reportInput = useMemo(() => ({ year: reportYear, compareYear }), [reportYear, compareYear]);
   const { data: financialReport, isFetching: isReportFetching } = trpc.finances.report.useQuery(reportInput);
   const { data: analyticReport = [], isFetching: isAnalyticFetching } = trpc.finances.analyticReport.useQuery();
+  const { data: reconciliationRows = [], isFetching: isReconciliationFetching } = trpc.finances.listReconciliations.useQuery({ status: "unmatched" });
+  const matchReconciliation = trpc.finances.matchReconciliation.useMutation({ onSuccess: () => { void utils.finances.listReconciliations.invalidate({ status: "unmatched" }); toast.success("Rapprochement mis à jour"); }, onError: (error) => toast.error(error.message) });
   const [sortBy, setSortBy] = useState<string>("date-newest");
   const [newFeeRule, setNewFeeRule] = useState({ category: "standard" as typeof MEMBERSHIP_CATEGORIES[number]["value"], currency: "EUR" as "EUR" | "XOF", amount: "", validFrom: new Date().toISOString().slice(0, 10) });
   useEffect(() => {
@@ -440,6 +442,7 @@ export default function Finance() {
           <TabsTrigger value="depenses">Dépenses</TabsTrigger>
           <TabsTrigger value="rapport">Rapport</TabsTrigger>
           <TabsTrigger value="analytique">Analytique</TabsTrigger>
+          <TabsTrigger value="rapprochement">Rapprochement</TabsTrigger>
           <TabsTrigger value="graphiques">Graphiques</TabsTrigger>
           <TabsTrigger value="recus">Reçus</TabsTrigger>
           <TabsTrigger value="paiements">Paiements Stripe</TabsTrigger>
@@ -922,6 +925,10 @@ export default function Finance() {
 
         <TabsContent value="analytique" className="space-y-6">
           <Card><CardHeader><CardTitle>Ventilation analytique</CardTitle><CardDescription>Recettes et dépenses regroupées par projet, antenne et catégorie. Les montants sont présentés en F CFA avec leur équivalence en euros.</CardDescription></CardHeader><CardContent>{isAnalyticFetching ? <p className="text-sm text-muted-foreground" role="status">Chargement de la ventilation…</p> : analyticReport.length === 0 ? <p className="rounded-xl border border-dashed p-6 text-sm text-muted-foreground">Aucune écriture analytique renseignée.</p> : <div className="overflow-x-auto"><table className="w-full text-sm"><thead><tr className="border-b text-left"><th className="p-2">Catégorie</th><th className="p-2">Projet</th><th className="p-2">Antenne</th><th className="p-2">Recettes</th><th className="p-2">Dépenses</th><th className="p-2">Solde</th></tr></thead><tbody>{analyticReport.map((row) => <tr key={`${row.projectId ?? "none"}-${row.antenneId ?? "none"}-${row.category}`} className="border-b"><td className="p-2">{row.category}</td><td className="p-2">{row.projectId ?? "Non affecté"}</td><td className="p-2">{row.antenneId ?? "Non affectée"}</td><td className="p-2">{row.incomeXof.toLocaleString("fr-FR")} F CFA <span className="text-xs text-muted-foreground">({row.incomeEur.toLocaleString("fr-FR", { maximumFractionDigits: 2 })} €)</span></td><td className="p-2">{row.expensesXof.toLocaleString("fr-FR")} F CFA <span className="text-xs text-muted-foreground">({row.expensesEur.toLocaleString("fr-FR", { maximumFractionDigits: 2 })} €)</span></td><td className="p-2 font-medium">{row.balanceXof.toLocaleString("fr-FR")} F CFA <span className="text-xs text-muted-foreground">({row.balanceEur.toLocaleString("fr-FR", { maximumFractionDigits: 2 })} €)</span></td></tr>)}</tbody></table></div>}</CardContent></Card>
+        </TabsContent>
+
+        <TabsContent value="rapprochement" className="space-y-6">
+          <Card><CardHeader><CardTitle>Rapprochement des paiements</CardTitle><CardDescription>Écritures importées depuis Stripe ou une autre source, en attente de lettrage. Les références externes sont dédupliquées.</CardDescription></CardHeader><CardContent>{isReconciliationFetching ? <p className="text-sm text-muted-foreground" role="status">Chargement des écritures…</p> : reconciliationRows.length === 0 ? <p className="rounded-xl border border-dashed p-6 text-sm text-muted-foreground">Aucune écriture en attente de rapprochement.</p> : <div className="space-y-3">{reconciliationRows.map((row) => <div key={row.id} className="flex flex-wrap items-center justify-between gap-3 rounded-xl border p-4"><div><p className="font-medium">{row.provider} · {row.externalReference}</p><p className="text-sm text-muted-foreground">{Number(row.amount).toLocaleString("fr-FR")} {row.currency === "EUR" ? "€" : "F CFA"} · {new Date(row.transactionDate).toLocaleDateString("fr-FR")}</p></div><div className="flex gap-2"><Button variant="outline" size="sm" aria-label={`Ignorer ${row.externalReference}`} onClick={() => matchReconciliation.mutate({ id: row.id, status: "ignored" })}>Ignorer</Button><Button size="sm" aria-label={`Marquer ${row.externalReference} comme rapproché`} onClick={() => matchReconciliation.mutate({ id: row.id, status: "matched", stripePaymentId: row.stripePaymentId ?? undefined })}>Marquer rapproché</Button></div></div>)}</div>}</CardContent></Card>
         </TabsContent>
 
         {/* Graphiques Tab */}

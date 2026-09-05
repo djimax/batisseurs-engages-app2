@@ -60,8 +60,9 @@ import {
 		stripeEvents,
 		suppliers,
 		purchaseRequests,
-		purchaseQuotes
-	} from "../drizzle/schema";
+			purchaseQuotes,
+			bankReconciliations
+		} from "../drizzle/schema";
 import { ENV } from './_core/env';
 
 let _db: ReturnType<typeof drizzle> | null = null;
@@ -118,6 +119,7 @@ const schema = {
   suppliers,
   purchaseRequests,
   purchaseQuotes,
+  bankReconciliations,
 };
 
 export async function getDb() {
@@ -2051,6 +2053,7 @@ export type InsertMembershipFeeRule = typeof membershipFeeRules.$inferInsert;
 export type InsertDon = typeof dons.$inferInsert;
 export type InsertDepense = typeof depenses.$inferInsert;
 export type InsertTransaction = typeof transactions.$inferInsert;
+export type InsertBankReconciliation = typeof bankReconciliations.$inferInsert;
 export type InsertEmailTemplate = typeof emailTemplates.$inferInsert;
 export type InsertEmailHistory = typeof emailHistory.$inferInsert;
 export type InsertEmailRecipient = typeof emailRecipients.$inferInsert;

@@ -36,7 +36,7 @@ import {
   getNewsList, createNews, updateNews, deleteNews, getNewsComments, addNewsComment, deleteNewsComment,
   createMemberEvaluation, getMemberEvaluations, getMemberGrade
 } from "./db";
-import { roles, permissions, rolePermissions, userRoles, userScopes, auditLogs, emailTemplates, emailHistory, emailRecipients, members, adhesions, notificationSchedules, announcements, news, newsComments, projects, projectMembers, groupes, groupeMembers, antennes, documents, documentNotes, users, dataDeletionRequests } from "../drizzle/schema";
+import { roles, permissions, rolePermissions, userRoles, userScopes, auditLogs, emailTemplates, emailHistory, emailRecipients, members, adhesions, notificationSchedules, announcements, news, newsComments, projects, projectMembers, groupes, groupeMembers, antennes, documents, documentNotes, users, dataDeletionRequests, bankReconciliations, stripePayments, transactions } from "../drizzle/schema";
 import { buildMemberCardPayload, getMemberHistory, getMemberStatusHistory, memberStatusSchema, recordMemberHistory, recordMemberStatus } from "./member-lifecycle";
 import { createUserNotification, generateMembershipReminderNotifications, getOrCreateNotificationPreferences, listUserNotifications, markAllNotificationsRead, markNotificationRead, updateNotificationPreferences } from "./notification-center";
 import { and, eq, desc, sql } from "drizzle-orm";
@@ -1500,6 +1500,42 @@ export const appRouter = router({
         for (const row of [...cotisations, ...dons]) { if (!matches(row)) continue; const group = ensureGroup(row); const amount = Number(row.montant || 0); if (row.currency === "EUR") { group.incomeEur += amount; group.incomeXof += convertFinancialAmount(amount, "EUR", "XOF"); } else { group.incomeXof += amount; group.incomeEur += convertFinancialAmount(amount, "XOF", "EUR"); } }
         for (const row of depenses) { if (!matches(row)) continue; const group = ensureGroup(row); const amount = Number(row.montant || 0); if (row.currency === "EUR") { group.expensesEur += amount; group.expensesXof += convertFinancialAmount(amount, "EUR", "XOF"); } else { group.expensesXof += amount; group.expensesEur += convertFinancialAmount(amount, "XOF", "EUR"); } }
         return Array.from(groups.values()).map((group) => ({ ...group, balanceEur: group.incomeEur - group.expensesEur, balanceXof: group.incomeXof - group.expensesXof })).sort((a, b) => b.incomeXof + b.expensesXof - (a.incomeXof + a.expensesXof));
+      }),
+    listReconciliations: protectedProcedure
+      .input(z.object({ status: z.enum(["unmatched", "matched", "ignored"]).optional() }).optional())
+      .query(async ({ input, ctx }) => {
+        await assertPermission(ctx.user, "finances.view");
+        const db = await getDb();
+        if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Base de données indisponible" });
+        const rows = input?.status ? await db.select().from(bankReconciliations).where(eq(bankReconciliations.status, input.status)).orderBy(desc(bankReconciliations.transactionDate)) : await db.select().from(bankReconciliations).orderBy(desc(bankReconciliations.transactionDate));
+        return rows;
+      }),
+    importReconciliation: protectedProcedure
+      .input(z.object({ provider: z.string().trim().min(2).max(60), externalReference: z.string().trim().min(2).max(255), amount: z.union([z.string(), z.number()]), currency: z.enum(["EUR", "XOF"]), transactionDate: z.string().datetime(), stripePaymentId: z.number().int().positive().optional(), notes: z.string().trim().max(2000).optional() }))
+      .mutation(async ({ input, ctx }) => {
+        await assertPermission(ctx.user, "finances.manage");
+        const db = await getDb();
+        if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Base de données indisponible" });
+        const amount = parseFinancialAmount(input.amount);
+        const existing = await db.select().from(bankReconciliations).where(and(eq(bankReconciliations.provider, input.provider), eq(bankReconciliations.externalReference, input.externalReference))).limit(1);
+        if (existing[0]) return existing[0];
+        const result = await db.insert(bankReconciliations).values({ provider: input.provider, externalReference: input.externalReference, amount: amount.toFixed(2), currency: input.currency, transactionDate: input.transactionDate, stripePaymentId: input.stripePaymentId, notes: input.notes });
+        const created = await db.select().from(bankReconciliations).where(eq(bankReconciliations.id, Number(result[0].insertId))).limit(1).then((rows) => rows[0]);
+        await logAudit({ userId: ctx.user.id, action: "CREATE", entityType: "bank_reconciliation", entityId: created?.id, entityName: input.externalReference, description: `Écriture ${input.provider} importée pour rapprochement`, status: "success" });
+        return created;
+      }),
+    matchReconciliation: protectedProcedure
+      .input(z.object({ id: z.number().int().positive(), transactionId: z.number().int().positive().optional(), stripePaymentId: z.number().int().positive().optional(), status: z.enum(["matched", "ignored"]) }))
+      .mutation(async ({ input, ctx }) => {
+        await assertPermission(ctx.user, "finances.manage");
+        if (input.status === "matched" && !input.transactionId && !input.stripePaymentId) throw new TRPCError({ code: "BAD_REQUEST", message: "Une écriture ou un paiement doit être sélectionné" });
+        const db = await getDb();
+        if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Base de données indisponible" });
+        const existing = await db.select().from(bankReconciliations).where(eq(bankReconciliations.id, input.id)).limit(1).then((rows) => rows[0]);
+        if (!existing) throw new TRPCError({ code: "NOT_FOUND", message: "Rapprochement introuvable" });
+        await db.update(bankReconciliations).set({ status: input.status, transactionId: input.transactionId, stripePaymentId: input.stripePaymentId, matchedBy: ctx.user.id, matchedAt: new Date().toISOString() }).where(eq(bankReconciliations.id, input.id));
+        await logAudit({ userId: ctx.user.id, action: "UPDATE", entityType: "bank_reconciliation", entityId: input.id, entityName: existing.externalReference, description: `Rapprochement marqué ${input.status}`, status: "success" });
+        return db.select().from(bankReconciliations).where(eq(bankReconciliations.id, input.id)).limit(1).then((rows) => rows[0]);
       }),
     cotisations: protectedProcedure.query(async ({ ctx }) => {
       await assertPermission(ctx.user, "finances.view");
