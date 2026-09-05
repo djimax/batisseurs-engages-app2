@@ -40,7 +40,13 @@ describe("Financial multi-currency helpers", () => {
     expect(routerSource).toContain("report: protectedProcedure");
     expect(routerSource).toContain('assertPermission(ctx.user, "finances.view")');
     expect(routerSource).toContain("compareYear");
+    const financePageSource = readFileSync(new URL("../client/src/pages/Finance.tsx", import.meta.url), "utf8");
+    expect(financePageSource).toContain("trpc.finances.analyticReport.useQuery()");
+    expect(financePageSource).toContain('TabsTrigger value="analytique"');
+    expect(financePageSource).toContain("Ventilation analytique");
     expect(routerSource).toContain("buildFinancialReport");
+    expect(routerSource).toContain("analyticReport: protectedProcedure");
+    expect(routerSource).toContain('assertPermission(ctx.user, "finances.view")');
   });
 
   it("builds a monthly report with EUR/XOF equivalences and annual comparison", () => {

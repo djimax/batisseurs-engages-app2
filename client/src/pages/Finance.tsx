@@ -146,6 +146,7 @@ export default function Finance() {
   const [compareYear, setCompareYear] = useState(() => new Date().getUTCFullYear() - 1);
   const reportInput = useMemo(() => ({ year: reportYear, compareYear }), [reportYear, compareYear]);
   const { data: financialReport, isFetching: isReportFetching } = trpc.finances.report.useQuery(reportInput);
+  const { data: analyticReport = [], isFetching: isAnalyticFetching } = trpc.finances.analyticReport.useQuery();
   const [sortBy, setSortBy] = useState<string>("date-newest");
   const [newFeeRule, setNewFeeRule] = useState({ category: "standard" as typeof MEMBERSHIP_CATEGORIES[number]["value"], currency: "EUR" as "EUR" | "XOF", amount: "", validFrom: new Date().toISOString().slice(0, 10) });
   useEffect(() => {
@@ -438,6 +439,7 @@ export default function Finance() {
           <TabsTrigger value="dons">Dons</TabsTrigger>
           <TabsTrigger value="depenses">Dépenses</TabsTrigger>
           <TabsTrigger value="rapport">Rapport</TabsTrigger>
+          <TabsTrigger value="analytique">Analytique</TabsTrigger>
           <TabsTrigger value="graphiques">Graphiques</TabsTrigger>
           <TabsTrigger value="recus">Reçus</TabsTrigger>
           <TabsTrigger value="paiements">Paiements Stripe</TabsTrigger>
@@ -916,6 +918,10 @@ export default function Finance() {
               </> : <p className="text-sm text-muted-foreground">Aucune donnée disponible pour cette période.</p>}
             </CardContent>
           </Card>
+        </TabsContent>
+
+        <TabsContent value="analytique" className="space-y-6">
+          <Card><CardHeader><CardTitle>Ventilation analytique</CardTitle><CardDescription>Recettes et dépenses regroupées par projet, antenne et catégorie. Les montants sont présentés en F CFA avec leur équivalence en euros.</CardDescription></CardHeader><CardContent>{isAnalyticFetching ? <p className="text-sm text-muted-foreground" role="status">Chargement de la ventilation…</p> : analyticReport.length === 0 ? <p className="rounded-xl border border-dashed p-6 text-sm text-muted-foreground">Aucune écriture analytique renseignée.</p> : <div className="overflow-x-auto"><table className="w-full text-sm"><thead><tr className="border-b text-left"><th className="p-2">Catégorie</th><th className="p-2">Projet</th><th className="p-2">Antenne</th><th className="p-2">Recettes</th><th className="p-2">Dépenses</th><th className="p-2">Solde</th></tr></thead><tbody>{analyticReport.map((row) => <tr key={`${row.projectId ?? "none"}-${row.antenneId ?? "none"}-${row.category}`} className="border-b"><td className="p-2">{row.category}</td><td className="p-2">{row.projectId ?? "Non affecté"}</td><td className="p-2">{row.antenneId ?? "Non affectée"}</td><td className="p-2">{row.incomeXof.toLocaleString("fr-FR")} F CFA <span className="text-xs text-muted-foreground">({row.incomeEur.toLocaleString("fr-FR", { maximumFractionDigits: 2 })} €)</span></td><td className="p-2">{row.expensesXof.toLocaleString("fr-FR")} F CFA <span className="text-xs text-muted-foreground">({row.expensesEur.toLocaleString("fr-FR", { maximumFractionDigits: 2 })} €)</span></td><td className="p-2 font-medium">{row.balanceXof.toLocaleString("fr-FR")} F CFA <span className="text-xs text-muted-foreground">({row.balanceEur.toLocaleString("fr-FR", { maximumFractionDigits: 2 })} €)</span></td></tr>)}</tbody></table></div>}</CardContent></Card>
         </TabsContent>
 
         {/* Graphiques Tab */}

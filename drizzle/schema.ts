@@ -248,6 +248,9 @@ export const categories = mysqlTable("categories", {
 export const cotisations = mysqlTable("cotisations", {
 	id: int().autoincrement().notNull(),
 	memberId: int().notNull(),
+	projectId: int(),
+	antenneId: int(),
+	analyticCategory: varchar({ length: 100 }),
 	montant: varchar({ length: 20 }).notNull(),
 	currency: mysqlEnum(['EUR', 'XOF']).default('EUR').notNull(),
 	dateDebut: timestamp({ mode: 'string' }).notNull(),
@@ -333,6 +336,9 @@ export const crmReports = mysqlTable("crm_reports", {
 export const depenses = mysqlTable("depenses", {
 	id: int().autoincrement().notNull(),
 	description: varchar({ length: 255 }).notNull(),
+	projectId: int(),
+	antenneId: int(),
+	analyticCategory: varchar({ length: 100 }),
 	montant: varchar({ length: 20 }).notNull(),
 	currency: mysqlEnum(['EUR', 'XOF']).default('EUR').notNull(),
 	categorie: varchar({ length: 100 }).notNull(),
@@ -513,6 +519,9 @@ export const signatureSigners = mysqlTable("signature_signers", {
 export const dons = mysqlTable("dons", {
 	id: int().autoincrement().notNull(),
 	donateur: varchar({ length: 255 }).notNull(),
+	projectId: int(),
+	antenneId: int(),
+	analyticCategory: varchar({ length: 100 }),
 	montant: varchar({ length: 20 }).notNull(),
 	currency: mysqlEnum(['EUR', 'XOF']).default('EUR').notNull(),
 	description: text(),

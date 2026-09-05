@@ -1601,13 +1601,13 @@
 ## Feuille de route exhaustive — Plateforme associative Les Bâtisseurs Engagés
 
 ### 1. Membres, Bénévoles et Cotisations Avancées
-- [ ] Gestion des types de cotisations par catégorie (étudiant, bienfaiteur, fondateur, actif) avec échéanciers
-- [ ] Suivi des reçus fiscaux et attestations de don normalisées (CFA/EUR)
-- [ ] Portail bénévole avec déclaration de disponibilités, compétences et affectation aux antennes/projets
-- [ ] Historique complet des adhésions, radiations et suspensions avec motif
+- [x] Gestion des types de cotisations par catégorie (étudiant, bienfaiteur, fondateur, actif) avec échéanciers
+- [x] Suivi des reçus fiscaux et attestations de don normalisées (CFA/EUR)
+- [x] Portail bénévole avec déclaration de disponibilités, compétences et affectation aux antennes/projets
+- [x] Historique complet des adhésions, radiations et suspensions avec motif
 
 ### 2. Trésorerie, Budgets et Rapprochement Bancaire
-- [ ] Ventilation analytique des dépenses et recettes par projet, antenne et catégo. budgétaire
+- [x] Ventilation analytique des dépenses et recettes par projet, antenne et catégo. budgétaire
 - [ ] Module de rapprochement bancaire (import relevé / lettrage des paiements Stripe & HelloAsso)
 - [ ] Gestion des notes de frais et justificatifs de déplacement pour les bénévoles
 - [ ] Tableau de bord financier multi-devises (EUR / FCFA) avec taux de change administrable
@@ -2235,3 +2235,6 @@
 - [x] Ajouter un identifiant public révocable pour le partage des campagnes actives sans exposer les données administratives.
 - [x] Ajouter l’historique des contributions de campagne avec montant, devise, statut, référence et audit.
 - [x] Intégrer le partage et l’historique dans la page Campagnes avec états accessibles et tests.
+- [x] Ajouter les dimensions analytiques projet, antenne et catégorie budgétaire aux écritures financières concernées.
+- [x] Exposer un rapport analytique EUR/XOF protégé avec agrégats par dimension.
+- [x] Afficher la ventilation analytique dans Finance et couvrir la migration par tests.

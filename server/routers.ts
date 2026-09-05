@@ -1489,6 +1489,18 @@ export const appRouter = router({
         ], input.year, input.compareYear);
       }),
 
+    analyticReport: protectedProcedure
+      .input(z.object({ projectId: z.number().int().positive().optional(), antenneId: z.number().int().positive().optional(), category: z.string().trim().max(100).optional() }).optional())
+      .query(async ({ input, ctx }) => {
+        await assertPermission(ctx.user, "finances.view");
+        const [cotisations, dons, depenses] = await Promise.all([getCotisations(), getDons(), getDepenses()]);
+        const matches = (row: any) => (!input?.projectId || row.projectId === input.projectId) && (!input?.antenneId || row.antenneId === input.antenneId) && (!input?.category || row.analyticCategory === input.category || row.categorie === input.category);
+        const groups = new Map<string, { projectId: number | null; antenneId: number | null; category: string; incomeEur: number; incomeXof: number; expensesEur: number; expensesXof: number }>();
+        const ensureGroup = (row: any) => { const key = `${row.projectId ?? "none"}:${row.antenneId ?? "none"}:${row.analyticCategory || row.categorie || "non catégorisé"}`; const existing = groups.get(key); if (existing) return existing; const created = { projectId: row.projectId ?? null, antenneId: row.antenneId ?? null, category: row.analyticCategory || row.categorie || "non catégorisé", incomeEur: 0, incomeXof: 0, expensesEur: 0, expensesXof: 0 }; groups.set(key, created); return created; };
+        for (const row of [...cotisations, ...dons]) { if (!matches(row)) continue; const group = ensureGroup(row); const amount = Number(row.montant || 0); if (row.currency === "EUR") { group.incomeEur += amount; group.incomeXof += convertFinancialAmount(amount, "EUR", "XOF"); } else { group.incomeXof += amount; group.incomeEur += convertFinancialAmount(amount, "XOF", "EUR"); } }
+        for (const row of depenses) { if (!matches(row)) continue; const group = ensureGroup(row); const amount = Number(row.montant || 0); if (row.currency === "EUR") { group.expensesEur += amount; group.expensesXof += convertFinancialAmount(amount, "EUR", "XOF"); } else { group.expensesXof += amount; group.expensesEur += convertFinancialAmount(amount, "XOF", "EUR"); } }
+        return Array.from(groups.values()).map((group) => ({ ...group, balanceEur: group.incomeEur - group.expensesEur, balanceXof: group.incomeXof - group.expensesXof })).sort((a, b) => b.incomeXof + b.expensesXof - (a.incomeXof + a.expensesXof));
+      }),
     cotisations: protectedProcedure.query(async ({ ctx }) => {
       await assertPermission(ctx.user, "finances.view");
       return getCotisations();
