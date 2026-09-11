@@ -24,9 +24,14 @@ export default function Governance() {
   const [quorumPercentage, setQuorumPercentage] = useState("50");
   const [resolutionTitle, setResolutionTitle] = useState("");
   const [participantId, setParticipantId] = useState("");
+  const [mandateRole, setMandateRole] = useState("");
+  const [mandateMemberId, setMandateMemberId] = useState("");
+  const [mandateStartDate, setMandateStartDate] = useState("");
+  const [mandateEndDate, setMandateEndDate] = useState("");
 
   const utils = trpc.useUtils();
   const assembliesQuery = trpc.governance.list.useQuery();
+  const mandatesQuery = trpc.governance.listMandates.useQuery();
   const detailQuery = trpc.governance.getById.useQuery(
     { id: selectedId ?? 0 },
     { enabled: Boolean(selectedId) },
@@ -67,6 +72,8 @@ export default function Governance() {
   const castVote = trpc.governance.castVote.useMutation({
     onSuccess: () => void utils.governance.getById.invalidate(),
   });
+  const createMandate = trpc.governance.createMandate.useMutation({ onSuccess: () => { setMandateRole(""); setMandateMemberId(""); setMandateStartDate(""); setMandateEndDate(""); void utils.governance.listMandates.invalidate(); } });
+  const updateMandateStatus = trpc.governance.updateMandateStatus.useMutation({ onSuccess: () => void utils.governance.listMandates.invalidate() });
 
   const handleCreate = (event: React.FormEvent) => {
     event.preventDefault();
@@ -112,6 +119,20 @@ export default function Governance() {
             <div className="space-y-2"><Label htmlFor="assembly-quorum">Quorum requis (%)</Label><Input id="assembly-quorum" type="number" min="1" max="100" value={quorumPercentage} onChange={(event) => setQuorumPercentage(event.target.value)} /></div>
             <div className="md:col-span-2"><Button type="submit" className="gap-2" disabled={createAssembly.isPending}><Plus className="h-4 w-4" />{createAssembly.isPending ? "Création…" : "Créer l’assemblée"}</Button></div>
           </form>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader><CardTitle>Mandats du bureau</CardTitle><CardDescription>Suivez les titulaires, les périodes et les renouvellements. Un rôle ne peut avoir qu’un seul mandat actif.</CardDescription></CardHeader>
+        <CardContent className="space-y-4">
+          <form className="grid gap-3 md:grid-cols-5" onSubmit={(event) => { event.preventDefault(); const memberId = Number(mandateMemberId); if (!Number.isInteger(memberId) || memberId <= 0 || !mandateStartDate) return; createMandate.mutate({ role: mandateRole, memberId, startDate: new Date(mandateStartDate).toISOString(), endDate: mandateEndDate ? new Date(mandateEndDate).toISOString() : undefined }); }}>
+            <div className="space-y-2"><Label htmlFor="mandate-role">Fonction</Label><Input id="mandate-role" value={mandateRole} onChange={(event) => setMandateRole(event.target.value)} placeholder="Trésorier" required /></div>
+            <div className="space-y-2"><Label htmlFor="mandate-member">ID membre</Label><Input id="mandate-member" type="number" min="1" value={mandateMemberId} onChange={(event) => setMandateMemberId(event.target.value)} required /></div>
+            <div className="space-y-2"><Label htmlFor="mandate-start">Début</Label><Input id="mandate-start" type="date" value={mandateStartDate} onChange={(event) => setMandateStartDate(event.target.value)} required /></div>
+            <div className="space-y-2"><Label htmlFor="mandate-end">Fin facultative</Label><Input id="mandate-end" type="date" value={mandateEndDate} onChange={(event) => setMandateEndDate(event.target.value)} /></div>
+            <div className="flex items-end"><Button type="submit" disabled={createMandate.isPending}><Plus className="mr-2 h-4 w-4" />Ajouter</Button></div>
+          </form>
+          {mandatesQuery.isLoading ? <LoadingState variant="inline" label="Chargement des mandats…" /> : mandatesQuery.data?.length ? <div className="grid gap-3 md:grid-cols-2">{mandatesQuery.data.map((mandate) => <div key={mandate.id} className="rounded-lg border p-4"><div className="flex items-start justify-between gap-3"><div><h3 className="font-semibold">{mandate.role}</h3><p className="text-sm text-muted-foreground">Membre #{mandate.memberId}</p></div><span className="rounded-full border px-2 py-1 text-xs">{mandate.status === "renewal_due" ? "À renouveler" : mandate.status === "active" ? "Actif" : mandate.status === "ended" ? "Terminé" : "Planifié"}</span></div><p className="mt-2 text-xs text-muted-foreground">Du {new Date(mandate.startDate).toLocaleDateString("fr-FR")}{mandate.endDate ? ` au ${new Date(mandate.endDate).toLocaleDateString("fr-FR")}` : " · durée ouverte"}</p><div className="mt-3 flex flex-wrap gap-2">{mandate.status === "planned" ? <Button size="sm" variant="outline" onClick={() => updateMandateStatus.mutate({ mandateId: mandate.id, status: "active" })}>Activer</Button> : null}{mandate.status === "active" ? <><Button size="sm" variant="outline" onClick={() => updateMandateStatus.mutate({ mandateId: mandate.id, status: "renewal_due" })}>À renouveler</Button><Button size="sm" variant="destructive" onClick={() => updateMandateStatus.mutate({ mandateId: mandate.id, status: "ended" })}>Terminer</Button></> : null}</div></div>)}</div> : <p className="rounded-lg border border-dashed p-5 text-sm text-muted-foreground">Aucun mandat enregistré.</p>}
         </CardContent>
       </Card>
 

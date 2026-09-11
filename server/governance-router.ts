@@ -8,6 +8,7 @@ import {
   assemblyResolutions,
   assemblyVotes,
   members,
+  boardMandates,
 } from "../drizzle/schema";
 import { getDb } from "./db";
 import { assertPermission } from "./authorization";
@@ -70,6 +71,51 @@ async function getResolutionOrThrow(resolutionId: number) {
 }
 
 export const governanceRouter = router({
+  listMandates: protectedProcedure
+    .input(z.object({ status: z.enum(["planned", "active", "ended", "renewal_due"]).optional() }).optional())
+    .query(async ({ ctx, input }) => {
+      await assertPermission(ctx.user, "governance.view");
+      const db = await requireDb();
+      return db.select().from(boardMandates).where(input?.status ? eq(boardMandates.status, input.status) : undefined).orderBy(desc(boardMandates.startDate), desc(boardMandates.id));
+    }),
+
+  createMandate: protectedProcedure
+    .input(z.object({ role: z.string().trim().min(2).max(100), memberId: z.number().int().positive(), startDate: z.string().datetime(), endDate: z.string().datetime().optional(), status: z.enum(["planned", "active"]).default("planned"), notes: z.string().trim().max(5000).optional() }))
+    .mutation(async ({ ctx, input }) => {
+      await assertPermission(ctx.user, "governance.manage");
+      if (input.endDate && new Date(input.endDate).getTime() < new Date(input.startDate).getTime()) throw new TRPCError({ code: "BAD_REQUEST", message: "La fin du mandat doit être postérieure au début." });
+      const db = await requireDb();
+      const member = await db.select({ id: members.id, status: members.status }).from(members).where(eq(members.id, input.memberId)).limit(1);
+      if (!member[0]) throw new TRPCError({ code: "NOT_FOUND", message: "Membre introuvable." });
+      if (member[0].status !== "active") throw new TRPCError({ code: "BAD_REQUEST", message: "Un mandat doit être attribué à un membre actif." });
+      if (input.status === "active") {
+        const existing = await db.select({ id: boardMandates.id }).from(boardMandates).where(and(eq(boardMandates.role, input.role), eq(boardMandates.status, "active"))).limit(1);
+        if (existing[0]) throw new TRPCError({ code: "CONFLICT", message: "Ce rôle possède déjà un mandat actif." });
+      }
+      const result = await db.insert(boardMandates).values({ ...input, appointedBy: ctx.user.id });
+      const id = Number(result[0].insertId);
+      await logAudit({ userId: ctx.user.id, action: "CREATE", entityType: "board_mandate", entityId: id, entityName: input.role, description: `Mandat créé pour le rôle ${input.role}`, status: "success" });
+      return db.select().from(boardMandates).where(eq(boardMandates.id, id)).limit(1).then((rows) => rows[0]);
+    }),
+
+  updateMandateStatus: protectedProcedure
+    .input(z.object({ mandateId: z.number().int().positive(), status: z.enum(["planned", "active", "ended", "renewal_due"]) }))
+    .mutation(async ({ ctx, input }) => {
+      await assertPermission(ctx.user, "governance.manage");
+      const db = await requireDb();
+      const rows = await db.select().from(boardMandates).where(eq(boardMandates.id, input.mandateId)).limit(1);
+      const mandate = rows[0];
+      if (!mandate) throw new TRPCError({ code: "NOT_FOUND", message: "Mandat introuvable." });
+      if (mandate.status === "ended" && input.status !== "ended") throw new TRPCError({ code: "CONFLICT", message: "Un mandat terminé est immuable." });
+      if (input.status === "active") {
+        const active = await db.select({ id: boardMandates.id }).from(boardMandates).where(and(eq(boardMandates.role, mandate.role), eq(boardMandates.status, "active"))).limit(1);
+        if (active[0] && active[0].id !== mandate.id) throw new TRPCError({ code: "CONFLICT", message: "Ce rôle possède déjà un autre mandat actif." });
+      }
+      await db.update(boardMandates).set({ status: input.status }).where(eq(boardMandates.id, input.mandateId));
+      await logAudit({ userId: ctx.user.id, action: "UPDATE", entityType: "board_mandate", entityId: input.mandateId, entityName: mandate.role, description: `Statut de mandat mis à jour : ${input.status}`, newValue: JSON.stringify({ status: input.status }), status: "success" });
+      return db.select().from(boardMandates).where(eq(boardMandates.id, input.mandateId)).limit(1).then((updated) => updated[0]);
+    }),
+
   list: protectedProcedure.query(async ({ ctx }) => {
     await assertPermission(ctx.user, "governance.view");
     const db = await requireDb();

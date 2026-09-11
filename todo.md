@@ -1614,7 +1614,7 @@
 
 ### 3. Gouvernance, Décisions et Conformité
 - [ ] Registre des délibérations et procès-verbaux signés électroniquement
-- [ ] Gestion des mandats du bureau (Président, Secrétaire, Trésorier) et renouvellement
+- [x] Gestion des mandats du bureau (Président, Secrétaire, Trésorier) et renouvellement
 - [ ] Registre unique du personnel et des bénévoles actifs (conformité associative)
 - [ ] Suivi des convocations et feuilles de présence certifiées pour les AG
 
@@ -2248,3 +2248,6 @@
 - [x] Protéger la création de notifications personnalisées par permission et auditer l’opération.
 - [x] Ajouter l’interface de création et les contrats d’accessibilité de la notification personnalisée.
 - [x] Ajouter un taux EUR/XOF administrable dans les paramètres globaux et l’utiliser dans les rapports financiers.
+- [x] Compléter le registre des délibérations et procès-verbaux avec statut de signature et audit.
+- [x] Ajouter la gestion des mandats du bureau avec dates, titulaires, renouvellement et permissions.
+- [x] Intégrer les vues gouvernance et couvrir les transitions par tests.

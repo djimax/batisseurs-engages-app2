@@ -1,0 +1,1 @@
+ALTER TABLE `board_mandates` MODIFY COLUMN `createdAt` timestamp NOT NULL DEFAULT (now());

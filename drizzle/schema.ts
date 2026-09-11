@@ -1144,6 +1144,22 @@ export const taxReceipts = mysqlTable("tax_receipts", {
 	uniqueIndex("tax_receipts_number_unique").on(table.receiptNumber),
 ]);
 
+export const boardMandates = mysqlTable("board_mandates", {
+	id: int().autoincrement().notNull(),
+	role: varchar({ length: 100 }).notNull(),
+	memberId: int().notNull(),
+	startDate: timestamp({ mode: 'string' }).notNull(),
+	endDate: timestamp({ mode: 'string' }),
+	status: mysqlEnum(['planned', 'active', 'ended', 'renewal_due']).default('planned').notNull(),
+	appointedBy: int(),
+	notes: text(),
+	createdAt: timestamp({ mode: 'string' }).defaultNow().notNull(),
+	updatedAt: timestamp({ mode: 'string' }).defaultNow().onUpdateNow().notNull(),
+}, (table) => [
+	index("board_mandates_member_idx").on(table.memberId),
+	index("board_mandates_status_idx").on(table.status),
+]);
+
 export const associationDecisions = mysqlTable("association_decisions", {
 	id: int().autoincrement().notNull(),
 	title: varchar({ length: 255 }).notNull(),
