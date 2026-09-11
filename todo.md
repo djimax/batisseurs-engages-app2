@@ -2322,3 +2322,11 @@
 - [x] Tester les doublons, erreurs et états accessibles du journal terrain.
 - [x] Écart classé hors périmètre : les dépenses comptables générales ne disposent pas d’un workflow d’approbation dans le modèle actuel ; les notifications couvrent explicitement les notes de frais bénévoles.
 - [x] Contrat de portée vérifié : tests existants sur les transitions approuvée, rejetée et remboursée des notes de frais bénévoles.
+- [x] Afficher l’identité institutionnelle et les coordonnées publiques de l’association.
+- [x] Ajouter une section de ressources utiles sans liens inventés ni données sensibles.
+- [x] Tester les états renseigné, vide et non autorisé du dashboard institutionnel.
+
+- [x] Finaliser le bloc d’identité institutionnelle du dashboard avec nom, description, contact public et liens sûrs, sans exposer le RIB dans une vue générale.
+- [x] Ajouter une section de ressources utiles réellement actionnables vers les espaces internes existants, avec états accessibles.
+- [x] Tester le contrat dashboard institutionnel, les permissions, TypeScript, Vitest et le rendu responsive.
+

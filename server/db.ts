@@ -1974,6 +1974,17 @@ export async function getGlobalDashboardSummary() {
       urgentTasks: baseStats.urgentTasks ?? [],
       activeProjects: baseStats.activeProjects ?? [],
     },
+    institution: {
+      name: associationSettings?.associationName ?? "Les Bâtisseurs Engagés",
+      description: associationSettings?.description ?? null,
+      seatCity: associationSettings?.seatCity ?? null,
+      email: associationSettings?.email ?? null,
+      phone: associationSettings?.phone ?? null,
+      website: associationSettings?.website ?? null,
+      folio: associationSettings?.folio ?? null,
+      logo: associationSettings?.logo ?? null,
+      // Le RIB n'est jamais exposé par le résumé général du dashboard.
+    },
     onboarding: {
       steps: onboardingSteps,
       completed: completedOnboardingSteps,

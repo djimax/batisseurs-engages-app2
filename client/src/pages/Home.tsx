@@ -26,7 +26,10 @@ import {
   ShieldCheck,
   Landmark,
   Megaphone,
-  CreditCard
+  CreditCard,
+  BookOpen,
+  Phone,
+  ExternalLink
 } from "lucide-react";
 import { useLocation } from "wouter";
 import { RoleSelector } from "@/components/RoleSelector";
@@ -34,13 +37,13 @@ import { useRole } from "@/hooks/useRole";
 import { useCurrency } from "@/contexts/CurrencyContext";
 import React from "react";
 
-const ORGANIZATION_INFO = {
-  name: "Les Batisseurs Engages",
-  location: "N'djaména, Tchad",
-  folio: "10512",
-  email: "contact.lesbatisseursengages@gmail.com",
-  website: "www.lesbatisseursengage.com",
-};
+const DASHBOARD_RESOURCES = [
+  { title: "Documents", description: "Retrouver les procédures, justificatifs et archives de l’association.", href: "/documents", icon: FolderOpen },
+  { title: "Membres", description: "Consulter l’annuaire, les adhésions et les responsabilités.", href: "/members", icon: Users },
+  { title: "Projets", description: "Suivre les actions, tâches, jalons et indicateurs d’impact.", href: "/projects", icon: Landmark },
+  { title: "Finance", description: "Contrôler les cotisations, dons, dépenses et rapports multi-devises.", href: "/finance", icon: CreditCard },
+  { title: "Cadre de conformité", description: "Accéder aux paramètres, aux demandes RGPD et aux contrôles administratifs.", href: "/settings", icon: ShieldCheck },
+] as const;
 
 export default function Home() {
   const [, setLocation] = useLocation();
@@ -50,6 +53,10 @@ export default function Home() {
   const { data: categories, isLoading: categoriesLoading } = trpc.categories.list.useQuery();
   const { data: documents, isLoading: documentsLoading } = trpc.documents.list.useQuery({});
   const { data: dashboardSummary, isLoading: dashboardSummaryLoading } = trpc.dashboard.summary.useQuery();
+  const institution = dashboardSummary?.institution;
+  const websiteUrl = institution?.website
+    ? (/^https?:\/\//i.test(institution.website) ? institution.website : `https://${institution.website}`)
+    : null;
 
   const recentDocs = documents?.slice(0, 5) || [];
   const urgentDocs = documents?.filter(d => d.priority === "urgent" && d.status !== "completed") || [];
@@ -158,7 +165,7 @@ export default function Home() {
               Nouveau document
             </Button>
             <Button 
-              onClick={() => window.open("https://www.lesbatisseursengages.com/", "_blank")} 
+              onClick={() => websiteUrl && window.open(websiteUrl, "_blank", "noopener,noreferrer")} 
               className="button-interactive gap-2 border border-white/25 bg-white/10 text-white shadow-lg hover:bg-white/20 h-12 px-6"
               size="lg"
               variant="outline"
@@ -317,52 +324,69 @@ export default function Home() {
         </Card>
       </div>
 
-      {/* Organization Contact Info */}
-      <div className="space-y-4">
-        <h2 className="text-2xl font-bold tracking-tight flex items-center gap-2">
-          <Building2 className="h-6 w-6 text-primary" />
-          Informations de l'Association
-        </h2>
-        
-        <Card className="bg-gradient-to-br from-primary/5 to-accent/5 border-primary/20">
-          <CardContent className="pt-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="flex items-start gap-3">
-                <MapPin className="h-5 w-5 text-primary mt-1 flex-shrink-0" />
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">Siège Social</p>
-                  <p className="text-base font-semibold">{ORGANIZATION_INFO.location}</p>
+      {/* Identité institutionnelle */}
+      <section aria-labelledby="institution-title" className="space-y-4 animate-fade-in-up">
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <h2 id="institution-title" className="flex items-center gap-2 text-2xl font-bold tracking-tight">
+              <Building2 className="h-6 w-6 text-primary" />
+              Identité institutionnelle
+            </h2>
+            <p className="text-sm text-muted-foreground">Les informations de contact utiles à l’équipe, issues des paramètres généraux.</p>
+          </div>
+          <Button variant="outline" size="sm" onClick={() => setLocation("/settings")}>
+            Gérer les paramètres <ArrowRight className="ml-2 h-4 w-4" />
+          </Button>
+        </div>
+
+        <Card className="overflow-hidden border-primary/20 bg-gradient-to-br from-primary/5 via-background to-accent/5">
+          <CardContent className="p-6">
+            {dashboardSummaryLoading ? (
+              <div className="grid gap-4 md:grid-cols-[1.2fr_1fr]" aria-live="polite" aria-label="Chargement de l’identité institutionnelle">
+                <div className="space-y-3"><Skeleton className="h-7 w-2/3" /><Skeleton className="h-4 w-full" /><Skeleton className="h-4 w-4/5" /></div>
+                <div className="grid gap-3 sm:grid-cols-2"><Skeleton className="h-16" /><Skeleton className="h-16" /><Skeleton className="h-16" /><Skeleton className="h-16" /></div>
+              </div>
+            ) : (
+              <div className="grid gap-6 md:grid-cols-[1.2fr_1fr]">
+                <div className="space-y-3">
+                  <div className="flex items-start gap-3">
+                    {institution?.logo ? <img src={institution.logo} alt="" className="h-12 w-12 rounded-xl object-contain ring-1 ring-border" /> : <div className="grid h-12 w-12 shrink-0 place-items-center rounded-xl bg-primary/10 text-primary"><Building2 className="h-6 w-6" /></div>}
+                    <div>
+                      <p className="text-xl font-semibold">{institution?.name ?? "Les Bâtisseurs Engagés"}</p>
+                      <p className="text-sm text-muted-foreground">Association · gouvernance, solidarité et actions de terrain</p>
+                    </div>
+                  </div>
+                  <p className="max-w-2xl text-sm leading-6 text-muted-foreground">{institution?.description || "La fiche institutionnelle peut être complétée depuis les paramètres généraux afin d’assurer un référentiel clair pour l’équipe."}</p>
+                </div>
+                <div className="grid gap-3 sm:grid-cols-2">
+                  {institution?.seatCity ? <div className="flex items-start gap-3 rounded-xl bg-background/70 p-3"><MapPin className="mt-0.5 h-4 w-4 shrink-0 text-primary" /><div><p className="text-xs font-medium text-muted-foreground">Siège</p><p className="text-sm font-semibold">{institution.seatCity}</p></div></div> : null}
+                  {institution?.folio ? <div className="flex items-start gap-3 rounded-xl bg-background/70 p-3"><FileCheck className="mt-0.5 h-4 w-4 shrink-0 text-primary" /><div><p className="text-xs font-medium text-muted-foreground">Folio</p><p className="text-sm font-semibold">{institution.folio}</p></div></div> : null}
+                  {institution?.email ? <div className="flex items-start gap-3 rounded-xl bg-background/70 p-3"><Mail className="mt-0.5 h-4 w-4 shrink-0 text-primary" /><div className="min-w-0"><p className="text-xs font-medium text-muted-foreground">Email</p><a href={`mailto:${institution.email}`} className="block truncate text-sm font-semibold text-primary underline-offset-4 hover:underline">{institution.email}</a></div></div> : null}
+                  {institution?.phone ? <div className="flex items-start gap-3 rounded-xl bg-background/70 p-3"><Phone className="mt-0.5 h-4 w-4 shrink-0 text-primary" /><div><p className="text-xs font-medium text-muted-foreground">Téléphone</p><a href={`tel:${institution.phone}`} className="text-sm font-semibold text-primary underline-offset-4 hover:underline">{institution.phone}</a></div></div> : null}
+                  {websiteUrl ? <div className="flex items-start gap-3 rounded-xl bg-background/70 p-3 sm:col-span-2"><Globe className="mt-0.5 h-4 w-4 shrink-0 text-primary" /><div className="min-w-0"><p className="text-xs font-medium text-muted-foreground">Site web</p><a href={websiteUrl} target="_blank" rel="noopener noreferrer" className="inline-flex max-w-full items-center gap-1 truncate text-sm font-semibold text-primary underline-offset-4 hover:underline">{institution?.website}<ExternalLink className="h-3 w-3 shrink-0" /></a></div></div> : null}
                 </div>
               </div>
-              <div className="flex items-start gap-3">
-                <FileCheck className="h-5 w-5 text-primary mt-1 flex-shrink-0" />
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">Folio</p>
-                  <p className="text-base font-semibold">{ORGANIZATION_INFO.folio}</p>
-                </div>
-              </div>
-              <div className="flex items-start gap-3">
-                <Mail className="h-5 w-5 text-primary mt-1 flex-shrink-0" />
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">Email</p>
-                  <a href={`mailto:${ORGANIZATION_INFO.email}`} className="text-base font-semibold text-primary underline-offset-4 hover:underline">
-                    {ORGANIZATION_INFO.email}
-                  </a>
-                </div>
-              </div>
-              <div className="flex items-start gap-3">
-                <Globe className="h-5 w-5 text-primary mt-1 flex-shrink-0" />
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">Site Web</p>
-                  <a href={`https://${ORGANIZATION_INFO.website}`} target="_blank" rel="noopener noreferrer" className="text-base font-semibold text-primary underline-offset-4 hover:underline">
-                    {ORGANIZATION_INFO.website}
-                  </a>
-                </div>
-              </div>
-            </div>
+            )}
           </CardContent>
         </Card>
-      </div>
+      </section>
+
+      {/* Ressources utiles */}
+      <section aria-labelledby="resources-title" className="space-y-4 animate-fade-in-up">
+        <div>
+          <h2 id="resources-title" className="flex items-center gap-2 text-2xl font-bold tracking-tight"><BookOpen className="h-6 w-6 text-primary" />Ressources utiles</h2>
+          <p className="text-sm text-muted-foreground">Des raccourcis vers les espaces de travail disponibles, sans lien fictif ni intégration externe implicite.</p>
+        </div>
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {DASHBOARD_RESOURCES.map((resource) => {
+            const ResourceIcon = resource.icon;
+            return <Card key={resource.href} className="card-hover flex h-full flex-col border-border/70">
+              <CardHeader className="pb-3"><div className="flex items-start justify-between gap-3"><div className="grid h-10 w-10 place-items-center rounded-xl bg-primary/10 text-primary"><ResourceIcon className="h-5 w-5" /></div><Badge variant="outline">Interne</Badge></div><CardTitle className="text-base">{resource.title}</CardTitle><CardDescription className="leading-5">{resource.description}</CardDescription></CardHeader>
+              <CardContent className="mt-auto pt-0"><Button variant="link" className="h-auto p-0 text-sm" onClick={() => setLocation(resource.href)}>Ouvrir la ressource <ArrowRight className="ml-1 h-3.5 w-3.5" /></Button></CardContent>
+            </Card>;
+          })}
+        </div>
+      </section>
 
       {/* Statistiques en direct */}
       <div className="space-y-4">
