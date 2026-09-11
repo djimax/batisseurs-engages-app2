@@ -1778,13 +1778,31 @@ export const appRouter = router({
         });
         return receipt;
       }),
+    getMembershipReminderSchedule: protectedProcedure.query(async ({ ctx }) => {
+      await assertPermission(ctx.user, "finances.view");
+      const db = await getDb();
+      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Base de données indisponible" });
+      const rows = await db.select().from(notificationSchedules).where(eq(notificationSchedules.name, "membership-reminders")).limit(1);
+      return rows[0] ?? null;
+    }),
+
     generateMembershipReminders: protectedProcedure.mutation(async ({ ctx }) => {
       await assertPermission(ctx.user, "finances.manage");
-      return generateMembershipReminderNotifications();
+      const result = await generateMembershipReminderNotifications();
+      await logAudit({
+        userId: ctx.user.id,
+        action: "CREATE",
+        entityType: "membership_reminder_run",
+        entityName: "manual_membership_reminders",
+        description: `Génération manuelle des rappels : ${result.created} créé(s), ${result.skipped} ignoré(s)`,
+        newValue: JSON.stringify(result),
+        status: "success",
+      });
+      return result;
     }),
 
     setupMembershipReminderSchedule: protectedProcedure
-      .input(z.object({ cron: z.string().regex(/^\\d+ \\d+ \\d+ \\* \\* \\*$/).default("0 0 9 * * *") }))
+      .input(z.object({ cron: z.string().regex(/^\d+ \d+ \d+ \* \* \*$/).default("0 0 9 * * *") }))
       .mutation(async ({ ctx, input }) => {
         await assertPermission(ctx.user, "finances.manage");
         const db = await getDb();

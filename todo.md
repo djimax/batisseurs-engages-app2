@@ -2272,3 +2272,6 @@
 - [x] Ajouter des segments de destinataires par antenne, projet et niveau de cotisation.
 - [x] Afficher un comptage et une prévisualisation des destinataires sans exposer les coordonnées inutilement.
 - [x] Intégrer la segmentation au composeur et couvrir les permissions par tests.
+- [x] Renforcer le registre administrateur des rappels de renouvellement.
+- [x] Garantir l’idempotence des notifications et des emails de rappel.
+- [x] Ajouter les contrôles et tests du déclenchement manuel et planifié.
