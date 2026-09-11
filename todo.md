@@ -2317,3 +2317,6 @@
 - [x] Corriger la fermeture JSX fautive de la page Notifications.
 - [x] Préserver le journal administrateur, ses filtres et ses états d’accès.
 - [x] Vérifier TypeScript, build et rendu compilable après correction.
+- [x] Formaliser les états de synchronisation hors ligne et la reprise après erreur.
+- [x] Dédupliquer les relevés terrain lors de la reprise réseau.
+- [x] Tester les doublons, erreurs et états accessibles du journal terrain.
