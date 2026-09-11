@@ -1601,7 +1601,22 @@ export const appRouter = router({
         const allowed = (claim.status === "submitted" && ["approved", "rejected"].includes(input.status)) || (claim.status === "approved" && input.status === "reimbursed");
         if (!allowed) throw new TRPCError({ code: "BAD_REQUEST", message: "Transition de note de frais invalide" });
         await db.update(volunteerExpenseClaims).set({ status: input.status, approvedBy: input.status === "approved" ? ctx.user.id : claim.approvedBy, approvedAt: input.status === "approved" ? new Date().toISOString() : claim.approvedAt, reimbursedAt: input.status === "reimbursed" ? new Date().toISOString() : claim.reimbursedAt, rejectionReason: input.status === "rejected" ? input.rejectionReason ?? null : claim.rejectionReason }).where(eq(volunteerExpenseClaims.id, input.id));
-        await logAudit({ userId: ctx.user.id, action: "UPDATE", entityType: "volunteer_expense_claim", entityId: input.id, description: `Note de frais ${input.status}`, status: "success" });
+        const memberRecipient = await db.select({ userId: members.userId }).from(members).where(eq(members.id, claim.memberId)).limit(1).then((rows) => rows[0]);
+        if (memberRecipient?.userId) {
+          const statusLabel = input.status === "approved" ? "approuvée" : input.status === "rejected" ? "rejetée" : "marquée comme remboursée";
+          await createUserNotification({
+            userId: memberRecipient.userId,
+            title: "Mise à jour de votre note de frais",
+            message: `Votre note « ${claim.title} » a été ${statusLabel}.${input.status === "rejected" && input.rejectionReason ? ` Motif : ${input.rejectionReason}` : ""}`,
+            type: input.status === "rejected" ? "warning" : "success",
+            actionUrl: "/finance?tab=frais",
+            eventKey: `expense_claim_${input.status}`,
+            entityType: "volunteer_expense_claim",
+            entityId: input.id,
+            dedupeKey: `expense-claim:${input.id}:${input.status}`,
+          });
+        }
+        await logAudit({ userId: ctx.user.id, action: "UPDATE", entityType: "volunteer_expense_claim", entityId: input.id, description: `Note de frais ${input.status}`, newValue: JSON.stringify({ notifiedUserId: memberRecipient?.userId ?? null }), status: "success" });
         return db.select().from(volunteerExpenseClaims).where(eq(volunteerExpenseClaims.id, input.id)).limit(1).then((rows) => rows[0]);
       }),
     listReconciliations: protectedProcedure

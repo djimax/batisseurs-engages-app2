@@ -2287,3 +2287,6 @@
 - [x] Déclencher une alerte persistée quand une campagne atteint un seuil de progression.
 - [x] Dédupliquer les alertes de campagne et respecter les préférences de notification.
 - [x] Couvrir le déclenchement après contribution par des tests de contrat.
+- [x] Notifier le membre lors de l’approbation, du rejet ou du remboursement d’une note de frais.
+- [x] Respecter les préférences de notification et dédupliquer chaque transition.
+- [x] Ajouter les tests de contrat du workflow de notification des frais.

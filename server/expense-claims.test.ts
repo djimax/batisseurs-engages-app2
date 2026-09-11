@@ -26,4 +26,13 @@ describe("Volunteer expense claims contract", () => {
     expect(finance).toContain("Notes de frais bénévoles");
     expect(finance).toContain("aria-label={`Marquer ${claim.title} comme remboursée`}");
   });
+
+  it("notifies the linked member for each validated transition", () => {
+    const router = readFileSync(new URL("./routers.ts", import.meta.url), "utf8");
+    expect(router).toContain("memberRecipient?.userId");
+    expect(router).toContain("createUserNotification");
+    expect(router).toContain("expense_claim_${input.status}");
+    expect(router).toContain("expense-claim:${input.id}:${input.status}");
+    expect(router).toContain("notifiedUserId");
+  });
 });
