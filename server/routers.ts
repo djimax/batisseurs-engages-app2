@@ -810,6 +810,36 @@ export const appRouter = router({
         }));
       }),
 
+    complianceRegistry: protectedProcedure
+      .input(z.object({ status: z.enum(["active", "inactive", "pending", "suspended", "resigned", "deceased", "archived"]).optional(), personType: z.enum(["benevole", "responsable"]).optional(), search: z.string().trim().max(100).optional() }).optional())
+      .query(async ({ input, ctx }) => {
+        await assertPermission(ctx.user, "members.view");
+        const allMembers = await getAllMembers();
+        const query = input?.search?.toLowerCase();
+        return allMembers.filter((member) => {
+          const personType = member.memberRole === "member" ? "benevole" : "responsable";
+          if (input?.status && member.status !== input.status) return false;
+          if (input?.personType && personType !== input.personType) return false;
+          if (query && !`${member.firstName} ${member.lastName} ${member.role ?? ""} ${member.function ?? ""} ${member.email ?? ""}`.toLowerCase().includes(query)) return false;
+          return true;
+        }).map((member) => ({
+          id: member.id,
+          memberId: member.memberId,
+          firstName: member.firstName,
+          lastName: member.lastName,
+          email: member.email,
+          phone: member.phone,
+          role: member.role,
+          function: member.function,
+          status: member.status,
+          personType: member.memberRole === "member" ? "benevole" as const : "responsable" as const,
+          membershipCategory: member.membershipCategory,
+          joinedAt: member.joinedAt,
+          skills: member.skills,
+          availability: member.availability,
+        }));
+      }),
+
     updateProfile: protectedProcedure
       .input(z.object({
         memberId: z.number(),

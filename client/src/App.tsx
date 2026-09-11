@@ -11,6 +11,7 @@ import Categories from "./pages/Categories";
 import Members from "./pages/Members";
 import MemberDirectory from "./pages/MemberDirectory";
 import VolunteerPortal from "./pages/VolunteerPortal";
+import PeopleRegistry from "./pages/PeopleRegistry";
 import Activity from "./pages/Activity";
 import Archives from "./pages/Archives";
 import Finance from "./pages/Finance";
@@ -72,6 +73,7 @@ function OnlineRouter({ isAuthenticated, error, onLogin, onLogout, onForgotPassw
         <Route path="/members" component={Members} />
         <Route path="/member-directory" component={MemberDirectory} />
         <Route path="/volunteers" component={VolunteerPortal} />
+        <Route path="/people-registry" component={PeopleRegistry} />
         <Route path="/members/adhesions" component={Adhesions} />
         <Route path="/adhesions-list" component={AdhesionsList} />
         <Route path="/activity" component={Activity} />

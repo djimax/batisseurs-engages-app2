@@ -1615,7 +1615,7 @@
 ### 3. Gouvernance, Décisions et Conformité
 - [ ] Registre des délibérations et procès-verbaux signés électroniquement
 - [x] Gestion des mandats du bureau (Président, Secrétaire, Trésorier) et renouvellement
-- [ ] Registre unique du personnel et des bénévoles actifs (conformité associative)
+- [x] Registre unique du personnel et des bénévoles actifs (conformité associative)
 - [ ] Suivi des convocations et feuilles de présence certifiées pour les AG
 
 ### 4. Opérations Terrain, Événements et Présences
@@ -2251,3 +2251,6 @@
 - [x] Compléter le registre des délibérations et procès-verbaux avec statut de signature et audit.
 - [x] Ajouter la gestion des mandats du bureau avec dates, titulaires, renouvellement et permissions.
 - [x] Intégrer les vues gouvernance et couvrir les transitions par tests.
+- [x] Unifier le registre du personnel et des bénévoles actifs avec type de personne, rôle, statut, dates et coordonnées contrôlées.
+- [x] Ajouter une vue de conformité filtrable protégée par permission membres.
+- [x] Couvrir la confidentialité, les statuts et l’audit par des tests.
