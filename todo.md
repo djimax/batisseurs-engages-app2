@@ -2296,3 +2296,6 @@
 - [x] Déclencher des notifications ciblées pour les cotisations en retard.
 - [x] Dédupliquer les rappels par adhésion et fenêtre de retard.
 - [x] Tester le déclenchement administrable et l’affichage dans Finance.
+- [x] Ajouter un agrégat financier mensuel par devise et catégorie.
+- [x] Afficher les équivalences EUR/XOF avec le taux administratif courant.
+- [x] Exporter le rapport mensuel et couvrir ses calculs par tests.
