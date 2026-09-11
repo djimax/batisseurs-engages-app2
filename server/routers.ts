@@ -36,7 +36,7 @@ import {
   getNewsList, createNews, updateNews, deleteNews, getNewsComments, addNewsComment, deleteNewsComment,
   createMemberEvaluation, getMemberEvaluations, getMemberGrade
 } from "./db";
-import { roles, permissions, rolePermissions, userRoles, userScopes, auditLogs, emailTemplates, emailHistory, emailRecipients, members, adhesions, notificationSchedules, announcements, news, newsComments, projects, projectMembers, groupes, groupeMembers, antennes, documents, documentNotes, users, dataDeletionRequests, privacyRequests, bankReconciliations, stripePayments, transactions, volunteerExpenseClaims } from "../drizzle/schema";
+import { roles, permissions, rolePermissions, userRoles, userScopes, auditLogs, emailTemplates, emailHistory, emailRecipients, notifications, members, adhesions, notificationSchedules, announcements, news, newsComments, projects, projectMembers, groupes, groupeMembers, antennes, documents, documentNotes, users, dataDeletionRequests, privacyRequests, bankReconciliations, stripePayments, transactions, volunteerExpenseClaims } from "../drizzle/schema";
 import { buildMemberCardPayload, getMemberHistory, getMemberStatusHistory, memberStatusSchema, recordMemberHistory, recordMemberStatus } from "./member-lifecycle";
 import { createUserNotification, generateMembershipReminderNotifications, getOrCreateNotificationPreferences, listUserNotifications, markAllNotificationsRead, markNotificationRead, updateNotificationPreferences } from "./notification-center";
 import { and, eq, desc, sql } from "drizzle-orm";
@@ -1505,6 +1505,46 @@ export const appRouter = router({
       }))
       .mutation(({ ctx, input }) => updateNotificationPreferences({ userId: ctx.user.id, ...input })),
 
+    journal: adminProcedure
+      .input(z.object({
+        channel: z.enum(["all", "in_app", "email"]).default("all"),
+        emailStatus: z.enum(["pending", "sending", "sent", "failed"]).optional(),
+        limit: z.number().int().min(1).max(100).default(50),
+        offset: z.number().int().min(0).default(0),
+      }))
+      .query(async ({ ctx, input }) => {
+        const db = await getDb();
+        if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Base de données indisponible" });
+        const emails = input.channel === "in_app" ? [] : await db.select({
+          id: emailHistory.id,
+          channel: sql<string>`'email'`,
+          subject: emailHistory.subject,
+          status: emailHistory.status,
+          recipientCount: emailHistory.recipientCount,
+          successCount: emailHistory.successCount,
+          failureCount: emailHistory.failureCount,
+          errorMessage: emailHistory.errorMessage,
+          createdAt: emailHistory.createdAt,
+          sentAt: emailHistory.sentAt,
+        }).from(emailHistory)
+          .where(input.emailStatus ? eq(emailHistory.status, input.emailStatus) : undefined)
+          .orderBy(desc(emailHistory.createdAt)).limit(input.limit).offset(input.offset);
+        const inApp = input.channel === "email" ? [] : await db.select({
+          id: notifications.id,
+          channel: sql<string>`'in_app'`,
+          userId: notifications.userId,
+          title: notifications.title,
+          eventKey: notifications.eventKey,
+          entityType: notifications.entityType,
+          entityId: notifications.entityId,
+          dedupeKey: notifications.dedupeKey,
+          status: sql<string>`'created'`,
+          isRead: notifications.isRead,
+          createdAt: notifications.createdAt,
+        }).from(notifications).orderBy(desc(notifications.createdAt)).limit(input.limit).offset(input.offset);
+        await logAudit({ userId: ctx.user.id, action: "READ", entityType: "notification_journal", description: `Journal des notifications consulté (${input.channel})`, newValue: JSON.stringify({ limit: input.limit, offset: input.offset }), status: "success" });
+        return { emails, inApp, page: { limit: input.limit, offset: input.offset } };
+      }),
     createForUser: protectedProcedure
       .input(z.object({
         userId: z.number().int().positive(),

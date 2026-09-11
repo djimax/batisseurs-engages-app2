@@ -2299,3 +2299,6 @@
 - [x] Ajouter un agrégat financier mensuel par devise et catégorie.
 - [x] Afficher les équivalences EUR/XOF avec le taux administratif courant.
 - [x] Exporter le rapport mensuel et couvrir ses calculs par tests.
+- [x] Centraliser les notifications in-app et emails envoyés dans une vue administrateur.
+- [x] Exposer les statuts créé, envoyé, échoué et dédupliqué sans inventer d’accusé de réception.
+- [x] Ajouter pagination, filtres, permissions et tests du journal des notifications.
