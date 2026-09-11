@@ -1,12 +1,13 @@
 import { router, protectedProcedure, publicProcedure } from "./_core/trpc";
 import { TRPCError } from "@trpc/server";
 import { getDb } from "./db";
-import { campaigns, campaignContributions } from "../drizzle/schema";
+import { campaigns, campaignContributions, users } from "../drizzle/schema";
 import { and, desc, eq, sql } from "drizzle-orm";
 import { assertPermission } from "./authorization";
 import { z } from "zod";
 import { nanoid } from "nanoid";
 import { logAudit } from "./audit";
+import { createUserNotification } from "./notification-center";
 
 function toSafeAmount(value: string | number | null | undefined): number {
   const amount = Number(value ?? 0);
@@ -89,8 +90,28 @@ export const campaignsRouter = router({
       if (!campaign) throw new TRPCError({ code: "NOT_FOUND", message: "Campagne introuvable" });
       const contribution = await db.insert(campaignContributions).values({ ...input, amount: input.amount.replace(",", "."), contributionDate: (input.contributionDate || new Date()).toISOString(), createdBy: ctx.user.id }).then(async (result) => db.select().from(campaignContributions).where(eq(campaignContributions.id, Number(result[0].insertId))).limit(1).then((rows) => rows[0]));
       const totals = await db.select({ total: sql<string>`coalesce(sum(case when ${campaignContributions.status} = 'completed' then cast(${campaignContributions.amount} as decimal(15,2)) else 0 end), 0)` }).from(campaignContributions).where(eq(campaignContributions.campaignId, input.campaignId));
-      await db.update(campaigns).set({ montantCollecte: String(totals[0]?.total ?? "0") }).where(eq(campaigns.id, input.campaignId));
-      await logAudit({ userId: ctx.user.id, action: "CREATE", entityType: "campaign_contribution", entityId: contribution?.id, entityName: input.reference, description: `Contribution enregistrée pour « ${campaign.title} »`, status: "success" });
+      const collected = toSafeAmount(totals[0]?.total ?? "0");
+      await db.update(campaigns).set({ montantCollecte: String(collected) }).where(eq(campaigns.id, input.campaignId));
+      if (input.status === "completed") {
+        const progress = calculateCampaignProgress(campaign.objectif, collected);
+        const threshold = progress >= 100 ? 100 : progress >= 80 ? 80 : null;
+        if (threshold) {
+          const administrators = await db.select({ id: users.id }).from(users).where(eq(users.role, "admin"));
+          const recipientIds = Array.from(new Set([ctx.user.id, ...administrators.map((administrator) => administrator.id)]));
+          await Promise.all(recipientIds.map((userId) => createUserNotification({
+            userId,
+            title: threshold === 100 ? "Objectif de campagne atteint" : "Campagne proche de son objectif",
+            message: `La campagne « ${campaign.title} » a atteint ${progress} % de son objectif.`,
+            type: threshold === 100 ? "success" : "info",
+            actionUrl: `/campaigns/${campaign.id}`,
+            eventKey: "campaign_progress",
+            entityType: "campaign",
+            entityId: campaign.id,
+            dedupeKey: `campaign-progress:${campaign.id}:${threshold}`,
+          })));
+        }
+      }
+      await logAudit({ userId: ctx.user.id, action: "CREATE", entityType: "campaign_contribution", entityId: contribution?.id, entityName: input.reference, description: `Contribution enregistrée pour « ${campaign.title} »`, newValue: JSON.stringify({ progress: calculateCampaignProgress(campaign.objectif, collected) }), status: "success" });
       return contribution;
     }),
 

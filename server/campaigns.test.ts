@@ -47,4 +47,13 @@ describe("campaign progress", () => {
     expect(schemaSource).toContain("publicToken: varchar({ length: 64 })");
     expect(schemaSource).toContain('export const campaignContributions = mysqlTable("campaign_contributions"');
   });
+
+  it("déclenche des alertes dédupliquées aux seuils 80 et 100 pour les contributions finalisées", () => {
+    const routerSource = readFileSync(new URL("./campaigns-router.ts", import.meta.url), "utf8");
+    expect(routerSource).toContain('input.status === "completed"');
+    expect(routerSource).toContain("progress >= 100 ? 100 : progress >= 80 ? 80 : null");
+    expect(routerSource).toContain('eventKey: "campaign_progress"');
+    expect(routerSource).toContain("campaign-progress:${campaign.id}:${threshold}");
+    expect(routerSource).toContain("createUserNotification");
+  });
 });

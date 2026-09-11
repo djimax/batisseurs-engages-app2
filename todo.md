@@ -2284,3 +2284,6 @@
 - [x] Créer le registre des demandes RGPD d’accès, d’export et de suppression.
 - [x] Appliquer les transitions administrées, le contrôle de conservation et l’audit.
 - [x] Fournir un export personnel authentifié avec état de traitement accessible.
+- [x] Déclencher une alerte persistée quand une campagne atteint un seuil de progression.
+- [x] Dédupliquer les alertes de campagne et respecter les préférences de notification.
+- [x] Couvrir le déclenchement après contribution par des tests de contrat.
