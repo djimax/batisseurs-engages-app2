@@ -2275,3 +2275,6 @@
 - [x] Renforcer le registre administrateur des rappels de renouvellement.
 - [x] Garantir l’idempotence des notifications et des emails de rappel.
 - [x] Ajouter les contrôles et tests du déclenchement manuel et planifié.
+- [x] Créer un module newsletter avec modèles et blocs dynamiques contrôlés.
+- [x] Ajouter la prévisualisation avec les données réelles d’un membre et un rendu sécurisé.
+- [x] Relier les newsletters aux segments de destinataires et auditer les envois.

@@ -1,5 +1,6 @@
 import { useState, useMemo } from "react";
 import { buildEmailPreviewDocument, replaceEmailPreviewVariables, EMAIL_PREVIEW_VARIABLES } from "@/lib/emailPreview";
+import { appendNewsletterBlock, NEWSLETTER_BLOCKS } from "@/lib/newsletterBlocks";
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -17,7 +18,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Loader2, Send, CheckCircle2, AlertCircle, Users, Filter, Eye } from "lucide-react";
+import { Loader2, Send, CheckCircle2, AlertCircle, Users, Filter, Eye, Newspaper } from "lucide-react";
 
 const MEMBER_ROLES = [
   { value: "admin", label: "Admin" },
@@ -98,6 +99,14 @@ export default function EmailComposer() {
   } : EMAIL_PREVIEW_VARIABLES, [selectedPreviewMember]);
   const previewDocument = useMemo(() => buildEmailPreviewDocument(subject, content, previewVariables), [subject, content, previewVariables]);
   const previewSubject = replaceEmailPreviewVariables(subject, previewVariables);
+
+  const insertNewsletterBlock = (blockId: string) => {
+    const block = NEWSLETTER_BLOCKS.find((candidate) => candidate.id === blockId);
+    if (!block) return;
+    setSubject((current) => current.trim() ? current : block.subject);
+    setContent((current) => appendNewsletterBlock(current, block));
+    setTemplateId("new");
+  };
 
   const handleLoadTemplate = (id: string) => {
     if (id === "new") {
@@ -365,7 +374,17 @@ export default function EmailComposer() {
 
               {/* Content */}
               <div>
-                <label className="block text-sm font-medium mb-2">Contenu</label>
+                <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+                  <label className="block text-sm font-medium">Contenu</label>
+                  <span className="inline-flex items-center gap-1 text-xs text-muted-foreground"><Newspaper className="h-3.5 w-3.5" />Blocs newsletter</span>
+                </div>
+                <div className="mb-3 grid grid-cols-1 gap-2 sm:grid-cols-2">
+                  {NEWSLETTER_BLOCKS.map((block) => (
+                    <Button key={block.id} type="button" variant="outline" className="h-auto justify-start whitespace-normal p-3 text-left" onClick={() => insertNewsletterBlock(block.id)} disabled={isLoading}>
+                      <span><span className="block text-sm font-medium">{block.label}</span><span className="mt-1 block text-xs font-normal text-muted-foreground">{block.description}</span></span>
+                    </Button>
+                  ))}
+                </div>
                 <Textarea
                   placeholder="Entrez le contenu de l'email"
                   value={content}
