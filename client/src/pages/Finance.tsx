@@ -148,6 +148,8 @@ export default function Finance() {
   const { data: financialReport, isFetching: isReportFetching } = trpc.finances.report.useQuery(reportInput);
   const { data: analyticReport = [], isFetching: isAnalyticFetching } = trpc.finances.analyticReport.useQuery();
   const { data: reconciliationRows = [], isFetching: isReconciliationFetching } = trpc.finances.listReconciliations.useQuery({ status: "unmatched" });
+  const { data: expenseClaims = [], isFetching: isExpenseClaimsFetching } = trpc.finances.listExpenseClaims.useQuery({ status: "submitted" });
+  const transitionExpenseClaim = trpc.finances.transitionExpenseClaim.useMutation({ onSuccess: () => { void utils.finances.listExpenseClaims.invalidate({ status: "submitted" }); toast.success("Note de frais mise à jour"); }, onError: (error) => toast.error(error.message) });
   const matchReconciliation = trpc.finances.matchReconciliation.useMutation({ onSuccess: () => { void utils.finances.listReconciliations.invalidate({ status: "unmatched" }); toast.success("Rapprochement mis à jour"); }, onError: (error) => toast.error(error.message) });
   const [sortBy, setSortBy] = useState<string>("date-newest");
   const [newFeeRule, setNewFeeRule] = useState({ category: "standard" as typeof MEMBERSHIP_CATEGORIES[number]["value"], currency: "EUR" as "EUR" | "XOF", amount: "", validFrom: new Date().toISOString().slice(0, 10) });
@@ -443,6 +445,7 @@ export default function Finance() {
           <TabsTrigger value="rapport">Rapport</TabsTrigger>
           <TabsTrigger value="analytique">Analytique</TabsTrigger>
           <TabsTrigger value="rapprochement">Rapprochement</TabsTrigger>
+          <TabsTrigger value="frais">Notes de frais</TabsTrigger>
           <TabsTrigger value="graphiques">Graphiques</TabsTrigger>
           <TabsTrigger value="recus">Reçus</TabsTrigger>
           <TabsTrigger value="paiements">Paiements Stripe</TabsTrigger>
@@ -929,6 +932,10 @@ export default function Finance() {
 
         <TabsContent value="rapprochement" className="space-y-6">
           <Card><CardHeader><CardTitle>Rapprochement des paiements</CardTitle><CardDescription>Écritures importées depuis Stripe ou une autre source, en attente de lettrage. Les références externes sont dédupliquées.</CardDescription></CardHeader><CardContent>{isReconciliationFetching ? <p className="text-sm text-muted-foreground" role="status">Chargement des écritures…</p> : reconciliationRows.length === 0 ? <p className="rounded-xl border border-dashed p-6 text-sm text-muted-foreground">Aucune écriture en attente de rapprochement.</p> : <div className="space-y-3">{reconciliationRows.map((row) => <div key={row.id} className="flex flex-wrap items-center justify-between gap-3 rounded-xl border p-4"><div><p className="font-medium">{row.provider} · {row.externalReference}</p><p className="text-sm text-muted-foreground">{Number(row.amount).toLocaleString("fr-FR")} {row.currency === "EUR" ? "€" : "F CFA"} · {new Date(row.transactionDate).toLocaleDateString("fr-FR")}</p></div><div className="flex gap-2"><Button variant="outline" size="sm" aria-label={`Ignorer ${row.externalReference}`} onClick={() => matchReconciliation.mutate({ id: row.id, status: "ignored" })}>Ignorer</Button><Button size="sm" aria-label={`Marquer ${row.externalReference} comme rapproché`} onClick={() => matchReconciliation.mutate({ id: row.id, status: "matched", stripePaymentId: row.stripePaymentId ?? undefined })}>Marquer rapproché</Button></div></div>)}</div>}</CardContent></Card>
+        </TabsContent>
+
+        <TabsContent value="frais" className="space-y-6">
+          <Card><CardHeader><CardTitle>Notes de frais bénévoles</CardTitle><CardDescription>Vérifiez les justificatifs et validez les remboursements. Les montants conservent leur devise d’origine.</CardDescription></CardHeader><CardContent>{isExpenseClaimsFetching ? <p className="text-sm text-muted-foreground" role="status">Chargement des notes de frais…</p> : expenseClaims.length === 0 ? <p className="rounded-xl border border-dashed p-6 text-sm text-muted-foreground">Aucune note de frais en attente.</p> : <div className="space-y-3">{expenseClaims.map((claim) => <div key={claim.id} className="flex flex-wrap items-center justify-between gap-3 rounded-xl border p-4"><div><p className="font-medium">{claim.title}</p><p className="text-sm text-muted-foreground">Membre #{claim.memberId} · {Number(claim.amount).toLocaleString("fr-FR")} {claim.currency === "EUR" ? "€" : "F CFA"}</p>{claim.receiptUrl ? <a className="text-sm underline" href={claim.receiptUrl} target="_blank" rel="noreferrer">Voir le justificatif</a> : <p className="text-xs text-amber-700">Justificatif non joint</p>}</div><div className="flex gap-2"><Button variant="outline" size="sm" aria-label={`Rejeter ${claim.title}`} onClick={() => transitionExpenseClaim.mutate({ id: claim.id, status: "rejected", rejectionReason: "Rejeté depuis Finance" })}>Rejeter</Button><Button size="sm" aria-label={`Approuver ${claim.title}`} onClick={() => transitionExpenseClaim.mutate({ id: claim.id, status: "approved" })}>Approuver</Button></div></div>)}</div>}</CardContent></Card>
         </TabsContent>
 
         {/* Graphiques Tab */}

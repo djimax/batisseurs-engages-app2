@@ -61,7 +61,8 @@ import {
 		suppliers,
 		purchaseRequests,
 			purchaseQuotes,
-			bankReconciliations
+			bankReconciliations,
+			volunteerExpenseClaims
 		} from "../drizzle/schema";
 import { ENV } from './_core/env';
 
@@ -120,6 +121,7 @@ const schema = {
   purchaseRequests,
   purchaseQuotes,
   bankReconciliations,
+  volunteerExpenseClaims,
 };
 
 export async function getDb() {
@@ -2054,6 +2056,7 @@ export type InsertDon = typeof dons.$inferInsert;
 export type InsertDepense = typeof depenses.$inferInsert;
 export type InsertTransaction = typeof transactions.$inferInsert;
 export type InsertBankReconciliation = typeof bankReconciliations.$inferInsert;
+export type InsertVolunteerExpenseClaim = typeof volunteerExpenseClaims.$inferInsert;
 export type InsertEmailTemplate = typeof emailTemplates.$inferInsert;
 export type InsertEmailHistory = typeof emailHistory.$inferInsert;
 export type InsertEmailRecipient = typeof emailRecipients.$inferInsert;

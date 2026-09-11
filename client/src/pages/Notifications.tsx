@@ -1,5 +1,7 @@
 import { useState } from "react";
-import { Bell, CheckCheck, ExternalLink, Mail, Radio, Settings2 } from "lucide-react";
+import { Bell, CheckCheck, ExternalLink, Mail, Radio, Settings2, Send } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -9,11 +11,14 @@ import { getErrorMessage } from "@/lib/uxFeedback";
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
 import { useNotificationRealtime } from "@/hooks/useNotificationRealtime";
+import { useAuth } from "@/_core/hooks/useAuth";
 
 const TYPE_LABELS: Record<string, string> = { info: "Information", warning: "Alerte", error: "Erreur", success: "Succès" };
 
 export default function Notifications() {
   const [unreadOnly, setUnreadOnly] = useState(false);
+  const [customNotification, setCustomNotification] = useState({ userId: "", title: "", message: "", type: "info" as "info" | "warning" | "error" | "success", actionUrl: "" });
+  const { user } = useAuth();
   const utils = trpc.useUtils();
   const realtime = useNotificationRealtime();
   const query = trpc.notifications.list.useQuery({ unreadOnly, limit: 50 });
@@ -21,6 +26,7 @@ export default function Notifications() {
   const markRead = trpc.notifications.markRead.useMutation({ onSuccess: () => utils.notifications.list.invalidate(), onError: (error) => toast.error(getErrorMessage(error, "Impossible de marquer la notification")) });
   const markAllRead = trpc.notifications.markAllRead.useMutation({ onSuccess: () => { toast.success("Notifications marquées comme lues"); utils.notifications.list.invalidate(); }, onError: (error) => toast.error(getErrorMessage(error, "Impossible de marquer les notifications")) });
   const updatePreferences = trpc.notifications.updatePreferences.useMutation({ onSuccess: () => { toast.success("Préférences enregistrées"); utils.notifications.preferences.invalidate(); }, onError: (error) => toast.error(getErrorMessage(error, "Impossible d’enregistrer les préférences")) });
+  const createCustomNotification = trpc.notifications.createForUser.useMutation({ onSuccess: () => { toast.success("Notification envoyée"); setCustomNotification({ userId: "", title: "", message: "", type: "info", actionUrl: "" }); utils.notifications.list.invalidate(); }, onError: (error) => toast.error(getErrorMessage(error, "Impossible d’envoyer la notification")) });
 
   if (query.isLoading) return <LoadingState label="Chargement des notifications…" />;
 
@@ -42,6 +48,7 @@ export default function Notifications() {
           </article>)}
         </CardContent></Card>
 
+        {user?.role === "admin" && <Card><CardHeader><CardTitle className="flex items-center gap-2"><Send className="h-5 w-5" />Notification personnalisée</CardTitle><CardDescription>Envoyez une alerte ciblée à un utilisateur. La diffusion temps réel est automatique.</CardDescription></CardHeader><CardContent><form className="space-y-4" onSubmit={(event) => { event.preventDefault(); const userId = Number(customNotification.userId); if (!Number.isInteger(userId) || userId <= 0) { toast.error("Indiquez un identifiant utilisateur valide"); return; } createCustomNotification.mutate({ userId, title: customNotification.title, message: customNotification.message, type: customNotification.type, actionUrl: customNotification.actionUrl || undefined, eventKey: "custom.admin" }); }}><div className="space-y-2"><Label htmlFor="notification-user-id">Destinataire</Label><Input id="notification-user-id" inputMode="numeric" placeholder="Identifiant utilisateur" value={customNotification.userId} onChange={(event) => setCustomNotification((current) => ({ ...current, userId: event.target.value }))} required /></div><div className="space-y-2"><Label htmlFor="notification-title">Titre</Label><Input id="notification-title" maxLength={255} value={customNotification.title} onChange={(event) => setCustomNotification((current) => ({ ...current, title: event.target.value }))} required /></div><div className="space-y-2"><Label htmlFor="notification-message">Message</Label><textarea id="notification-message" className="min-h-24 w-full rounded-md border bg-background px-3 py-2 text-sm" maxLength={2000} value={customNotification.message} onChange={(event) => setCustomNotification((current) => ({ ...current, message: event.target.value }))} required /></div><div className="space-y-2"><Label htmlFor="notification-action-url">Lien d’action facultatif</Label><Input id="notification-action-url" type="url" placeholder="/notifications ou https://…" value={customNotification.actionUrl} onChange={(event) => setCustomNotification((current) => ({ ...current, actionUrl: event.target.value }))} /></div><Button type="submit" disabled={createCustomNotification.isPending} aria-busy={createCustomNotification.isPending}><Send className="mr-2 h-4 w-4" />{createCustomNotification.isPending ? "Envoi…" : "Envoyer la notification"}</Button></form></CardContent></Card>}
         <Card><CardHeader><CardTitle className="flex items-center gap-2"><Settings2 className="h-5 w-5" />Préférences</CardTitle><CardDescription>Choisissez les canaux actifs pour votre compte.</CardDescription></CardHeader><CardContent className="space-y-5">
           <label className="flex items-center justify-between gap-3 text-sm"><span className="flex items-center gap-2"><Bell className="h-4 w-4" />Notifications dans l’application</span><Switch checked={preference?.inAppEnabled === 1} onCheckedChange={(checked) => updatePreferences.mutate({ inAppEnabled: checked })} disabled={updatePreferences.isPending} /></label>
           <label className="flex items-center justify-between gap-3 text-sm"><span className="flex items-center gap-2"><Mail className="h-4 w-4" />Notifications par email</span><Switch checked={preference?.emailEnabled === 1} onCheckedChange={(checked) => updatePreferences.mutate({ emailEnabled: checked })} disabled={updatePreferences.isPending} /></label>

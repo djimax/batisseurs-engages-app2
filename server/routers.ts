@@ -36,7 +36,7 @@ import {
   getNewsList, createNews, updateNews, deleteNews, getNewsComments, addNewsComment, deleteNewsComment,
   createMemberEvaluation, getMemberEvaluations, getMemberGrade
 } from "./db";
-import { roles, permissions, rolePermissions, userRoles, userScopes, auditLogs, emailTemplates, emailHistory, emailRecipients, members, adhesions, notificationSchedules, announcements, news, newsComments, projects, projectMembers, groupes, groupeMembers, antennes, documents, documentNotes, users, dataDeletionRequests, bankReconciliations, stripePayments, transactions } from "../drizzle/schema";
+import { roles, permissions, rolePermissions, userRoles, userScopes, auditLogs, emailTemplates, emailHistory, emailRecipients, members, adhesions, notificationSchedules, announcements, news, newsComments, projects, projectMembers, groupes, groupeMembers, antennes, documents, documentNotes, users, dataDeletionRequests, bankReconciliations, stripePayments, transactions, volunteerExpenseClaims } from "../drizzle/schema";
 import { buildMemberCardPayload, getMemberHistory, getMemberStatusHistory, memberStatusSchema, recordMemberHistory, recordMemberStatus } from "./member-lifecycle";
 import { createUserNotification, generateMembershipReminderNotifications, getOrCreateNotificationPreferences, listUserNotifications, markAllNotificationsRead, markNotificationRead, updateNotificationPreferences } from "./notification-center";
 import { and, eq, desc, sql } from "drizzle-orm";
@@ -1500,6 +1500,45 @@ export const appRouter = router({
         for (const row of [...cotisations, ...dons]) { if (!matches(row)) continue; const group = ensureGroup(row); const amount = Number(row.montant || 0); if (row.currency === "EUR") { group.incomeEur += amount; group.incomeXof += convertFinancialAmount(amount, "EUR", "XOF"); } else { group.incomeXof += amount; group.incomeEur += convertFinancialAmount(amount, "XOF", "EUR"); } }
         for (const row of depenses) { if (!matches(row)) continue; const group = ensureGroup(row); const amount = Number(row.montant || 0); if (row.currency === "EUR") { group.expensesEur += amount; group.expensesXof += convertFinancialAmount(amount, "EUR", "XOF"); } else { group.expensesXof += amount; group.expensesEur += convertFinancialAmount(amount, "XOF", "EUR"); } }
         return Array.from(groups.values()).map((group) => ({ ...group, balanceEur: group.incomeEur - group.expensesEur, balanceXof: group.incomeXof - group.expensesXof })).sort((a, b) => b.incomeXof + b.expensesXof - (a.incomeXof + a.expensesXof));
+      }),
+    listExpenseClaims: protectedProcedure
+      .input(z.object({ status: z.enum(["draft", "submitted", "approved", "rejected", "reimbursed"]).optional(), memberId: z.number().int().positive().optional() }).optional())
+      .query(async ({ input, ctx }) => {
+        await assertPermission(ctx.user, "finances.view");
+        const db = await getDb();
+        if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Base de données indisponible" });
+        const conditions = [];
+        if (input?.status) conditions.push(eq(volunteerExpenseClaims.status, input.status));
+        if (input?.memberId) conditions.push(eq(volunteerExpenseClaims.memberId, input.memberId));
+        return conditions.length ? db.select().from(volunteerExpenseClaims).where(and(...conditions)).orderBy(desc(volunteerExpenseClaims.createdAt)) : db.select().from(volunteerExpenseClaims).orderBy(desc(volunteerExpenseClaims.createdAt));
+      }),
+    createExpenseClaim: protectedProcedure
+      .input(z.object({ memberId: z.number().int().positive(), projectId: z.number().int().positive().optional(), antenneId: z.number().int().positive().optional(), title: z.string().trim().min(2).max(255), description: z.string().trim().max(3000).optional(), expenseType: z.enum(["transport", "accommodation", "meals", "supplies", "other"]).default("other"), amount: z.union([z.string(), z.number()]), currency: z.enum(["EUR", "XOF"]), expenseDate: z.string().datetime(), receiptUrl: z.string().url().optional() }))
+      .mutation(async ({ input, ctx }) => {
+        await assertPermission(ctx.user, "finances.manage");
+        const db = await getDb();
+        if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Base de données indisponible" });
+        const member = await getMemberById(input.memberId);
+        if (!member || member.status !== "active") throw new TRPCError({ code: "BAD_REQUEST", message: "La note doit être rattachée à un membre actif" });
+        const amount = parseFinancialAmount(input.amount);
+        const result = await db.insert(volunteerExpenseClaims).values({ ...input, amount: amount.toFixed(2), expenseDate: input.expenseDate, status: "submitted", submittedAt: new Date().toISOString() });
+        const claimId = Number(result[0].insertId);
+        await logAudit({ userId: ctx.user.id, action: "CREATE", entityType: "volunteer_expense_claim", entityId: claimId, description: `Note de frais créée : ${input.title}`, status: "success" });
+        return db.select().from(volunteerExpenseClaims).where(eq(volunteerExpenseClaims.id, claimId)).limit(1).then((rows) => rows[0]);
+      }),
+    transitionExpenseClaim: protectedProcedure
+      .input(z.object({ id: z.number().int().positive(), status: z.enum(["approved", "rejected", "reimbursed"]), rejectionReason: z.string().trim().max(2000).optional() }))
+      .mutation(async ({ input, ctx }) => {
+        await assertPermission(ctx.user, "finances.manage");
+        const db = await getDb();
+        if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Base de données indisponible" });
+        const claim = await db.select().from(volunteerExpenseClaims).where(eq(volunteerExpenseClaims.id, input.id)).limit(1).then((rows) => rows[0]);
+        if (!claim) throw new TRPCError({ code: "NOT_FOUND", message: "Note de frais introuvable" });
+        const allowed = (claim.status === "submitted" && ["approved", "rejected"].includes(input.status)) || (claim.status === "approved" && input.status === "reimbursed");
+        if (!allowed) throw new TRPCError({ code: "BAD_REQUEST", message: "Transition de note de frais invalide" });
+        await db.update(volunteerExpenseClaims).set({ status: input.status, approvedBy: input.status === "approved" ? ctx.user.id : claim.approvedBy, approvedAt: input.status === "approved" ? new Date().toISOString() : claim.approvedAt, reimbursedAt: input.status === "reimbursed" ? new Date().toISOString() : claim.reimbursedAt, rejectionReason: input.status === "rejected" ? input.rejectionReason ?? null : claim.rejectionReason }).where(eq(volunteerExpenseClaims.id, input.id));
+        await logAudit({ userId: ctx.user.id, action: "UPDATE", entityType: "volunteer_expense_claim", entityId: input.id, description: `Note de frais ${input.status}`, status: "success" });
+        return db.select().from(volunteerExpenseClaims).where(eq(volunteerExpenseClaims.id, input.id)).limit(1).then((rows) => rows[0]);
       }),
     listReconciliations: protectedProcedure
       .input(z.object({ status: z.enum(["unmatched", "matched", "ignored"]).optional() }).optional())

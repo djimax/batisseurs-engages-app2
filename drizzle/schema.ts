@@ -1086,6 +1086,31 @@ export const users = mysqlTable("users", {
 
 
 
+export const volunteerExpenseClaims = mysqlTable("volunteer_expense_claims", {
+	id: int().autoincrement().notNull(),
+	memberId: int().notNull(),
+	projectId: int(),
+	antenneId: int(),
+	title: varchar({ length: 255 }).notNull(),
+	description: text(),
+	expenseType: mysqlEnum(['transport', 'accommodation', 'meals', 'supplies', 'other']).default('other').notNull(),
+	amount: varchar({ length: 20 }).notNull(),
+	currency: mysqlEnum(['EUR', 'XOF']).default('XOF').notNull(),
+	expenseDate: timestamp({ mode: 'string' }).notNull(),
+	receiptUrl: text(),
+	status: mysqlEnum(['draft', 'submitted', 'approved', 'rejected', 'reimbursed']).default('draft').notNull(),
+	submittedAt: timestamp({ mode: 'string' }),
+	approvedBy: int(),
+	approvedAt: timestamp({ mode: 'string' }),
+	reimbursedAt: timestamp({ mode: 'string' }),
+	rejectionReason: text(),
+	createdAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
+	updatedAt: timestamp({ mode: 'string' }).defaultNow().onUpdateNow().notNull(),
+}, (table) => [
+	index("volunteer_expense_claims_member_idx").on(table.memberId),
+	index("volunteer_expense_claims_status_idx").on(table.status),
+]);
+
 export const financialExpenses = mysqlTable("financial_expenses", {
 	id: int().autoincrement().notNull(),
 	title: varchar({ length: 255 }).notNull(),

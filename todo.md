@@ -2241,3 +2241,9 @@
 - [x] Ajouter un registre de rapprochement idempotent pour les paiements Stripe et références externes.
 - [x] Exposer la liste et le lettrage des écritures rapprochées avec permissions financières et audit.
 - [x] Ajouter une vue Finance des paiements à rapprocher et couvrir les doublons par tests.
+- [ ] Ajouter un registre de notes de frais avec justificatif, déplacement, statut et remboursement.
+- [ ] Exposer la validation et le remboursement des notes de frais avec permissions et audit.
+- [ ] Ajouter une vue Finance des notes de frais en attente avec tests de transition d’état.
+- [x] Ajouter une notification personnalisée avec message, priorité, destinataire ou diffusion ciblée, lien d’action et temps réel.
+- [x] Protéger la création de notifications personnalisées par permission et auditer l’opération.
+- [x] Ajouter l’interface de création et les contrats d’accessibilité de la notification personnalisée.
