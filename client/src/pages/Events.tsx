@@ -3,7 +3,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { Plus, Calendar, MapPin, Users, Clock, Trash2, Edit2, ClipboardCheck, Download } from "lucide-react";
+import { Plus, Calendar, MapPin, Users, Clock, Trash2, Edit2, ClipboardCheck, Download, QrCode } from "lucide-react";
+import QRCode from "qrcode";
 import { toast } from "sonner";
 import { trpc } from "@/lib/trpc";
 
@@ -50,6 +51,7 @@ export default function Events() {
   });
   const [registrationEventId, setRegistrationEventId] = useState<number | null>(null);
   const [registrationMemberId, setRegistrationMemberId] = useState<number | null>(null);
+  const [attendanceQr, setAttendanceQr] = useState<{ dataUrl: string; expiresAt: string } | null>(null);
   const membersQuery = trpc.members.list.useQuery();
   const registrationsQuery = trpc.events.registrations.useQuery({ id: registrationEventId ?? 1 }, { enabled: registrationEventId !== null });
   const registerMember = trpc.events.register.useMutation({
@@ -58,6 +60,14 @@ export default function Events() {
   });
   const cancelRegistration = trpc.events.cancelRegistration.useMutation({
     onSuccess: async () => { await registrationsQuery.refetch(); toast.success("Inscription annulée"); },
+    onError: (error) => toast.error(error.message),
+  });
+  const generateAttendanceToken = trpc.events.generateAttendanceToken.useMutation({
+    onSuccess: async (result) => { const dataUrl = await QRCode.toDataURL(JSON.stringify({ type: "event-attendance", token: result.token }), { width: 220, margin: 2 }); setAttendanceQr({ dataUrl, expiresAt: result.expiresAt }); toast.success("QR d’émargement généré pour 15 minutes"); },
+    onError: (error) => toast.error(error.message),
+  });
+  const revokeAttendanceToken = trpc.events.revokeAttendanceToken.useMutation({
+    onSuccess: () => { setAttendanceQr(null); toast.success("QR d’émargement révoqué"); },
     onError: (error) => toast.error(error.message),
   });
   const markAttendance = trpc.events.markAttendance.useMutation({
@@ -392,7 +402,7 @@ export default function Events() {
           <div className="space-y-4">
             <div className="flex items-center justify-between gap-2">
               <div><p className="text-sm text-muted-foreground">{registrationSummary.total} inscription(s)</p><p className="text-xs text-muted-foreground">{registrationSummary.registered} inscrit(s) · {registrationSummary.waitlisted} en attente · {registrationSummary.attended} présent(s) · {registrationSummary.cancelled} annulé(s) · {registrationSummary.attendanceRate}% de présence</p></div>
-              <Button variant="outline" size="sm" disabled={!registrationsQuery.data?.length} onClick={exportRegistrationsCsv}><Download className="mr-2 h-4 w-4" />Exporter CSV</Button>
+              <div className="flex flex-wrap gap-2"><Button variant="outline" size="sm" disabled={!registrationsQuery.data?.length} onClick={exportRegistrationsCsv}><Download className="mr-2 h-4 w-4" />Exporter CSV</Button>{registrationEventId ? <Button variant="outline" size="sm" onClick={() => generateAttendanceToken.mutate({ id: registrationEventId })} disabled={generateAttendanceToken.isPending}><QrCode className="mr-2 h-4 w-4" />Générer QR</Button> : null}</div>
             </div>
             <div className="flex flex-col gap-2 sm:flex-row">
               <select aria-label="Membre à inscrire" className="h-10 flex-1 rounded-md border bg-background px-3 text-sm" value={registrationMemberId ?? ""} onChange={(event) => setRegistrationMemberId(Number(event.target.value) || null)}>
@@ -401,8 +411,9 @@ export default function Events() {
               </select>
               <Button disabled={!registrationEventId || !registrationMemberId || registerMember.isPending} onClick={() => registrationEventId && registrationMemberId && registerMember.mutate({ eventId: registrationEventId, memberId: registrationMemberId })}>Inscrire</Button>
             </div>
+            {attendanceQr ? <div className="flex flex-wrap items-center gap-4 rounded-lg border bg-muted/30 p-3"><img src={attendanceQr.dataUrl} alt="QR code temporaire pour émargement" className="h-40 w-40 rounded border bg-white p-2" /><div className="space-y-2 text-sm"><p className="font-medium">Émargement tablette</p><p className="text-xs text-muted-foreground">Valable jusqu’au {new Date(attendanceQr.expiresAt).toLocaleTimeString("fr-FR")}.</p><Button size="sm" variant="destructive" onClick={() => registrationEventId && revokeAttendanceToken.mutate({ id: registrationEventId })}>Révoquer le QR</Button></div></div> : null}
             <div className="space-y-2">
-              {(registrationsQuery.data ?? []).length === 0 ? <p className="rounded-md border border-dashed p-6 text-center text-sm text-muted-foreground">Aucune inscription pour le moment.</p> : (registrationsQuery.data ?? []).map(({ registration, member }) => <div key={registration.id} className="flex flex-wrap items-center justify-between gap-3 rounded-md border p-3"><div><p className="font-medium">{member.firstName} {member.lastName}</p><p className="text-xs text-muted-foreground">Statut : {registration.status === "attended" ? "Présent" : registration.status === "cancelled" ? "Annulé" : "Inscrit"}</p></div><div className="flex gap-2"><Button size="sm" variant="outline" disabled={registration.status === "attended" || markAttendance.isPending} onClick={() => markAttendance.mutate({ registrationId: registration.id, status: "attended" })}>Présent</Button>{registration.status !== "cancelled" && <Button size="sm" variant="ghost" disabled={cancelRegistration.isPending} onClick={() => cancelRegistration.mutate({ registrationId: registration.id })}>Annuler</Button>}</div></div>)}
+              {(registrationsQuery.data ?? []).length === 0 ? <p className="rounded-md border border-dashed p-6 text-center text-sm text-muted-foreground">Aucune inscription pour le moment.</p> : (registrationsQuery.data ?? []).map(({ registration, member }) => <div key={registration.id} className="flex flex-wrap items-center justify-between gap-3 rounded-md border p-3"><div><p className="font-medium">{member.firstName} {member.lastName}</p><p className="text-xs text-muted-foreground">Statut : {registration.status === "attended" ? "Présent" : registration.status === "cancelled" ? "Annulé" : registration.status === "waitlisted" ? "Liste d’attente" : "Inscrit"}</p></div><div className="flex gap-2"><Button size="sm" variant="outline" disabled={registration.status === "attended" || markAttendance.isPending} onClick={() => markAttendance.mutate({ registrationId: registration.id, status: "attended" })}>Présent</Button>{registration.status !== "cancelled" && <Button size="sm" variant="ghost" disabled={cancelRegistration.isPending} onClick={() => cancelRegistration.mutate({ registrationId: registration.id })}>Annuler</Button>}</div></div>)}
             </div>
           </div>
         </DialogContent>

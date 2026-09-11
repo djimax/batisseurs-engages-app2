@@ -1,5 +1,6 @@
 import { router, protectedProcedure } from "./_core/trpc";
 import { TRPCError } from "@trpc/server";
+import { randomBytes } from "node:crypto";
 import { getDb } from "./db";
 import { eventRegistrations, events, members } from "../drizzle/schema";
 import { and, eq } from "drizzle-orm";
@@ -29,6 +30,7 @@ const EventId = z.object({ id: z.number().int().positive() });
   const RegistrationInput = z.object({ eventId: z.number().int().positive(), memberId: z.number().int().positive() });
 const RegistrationId = z.object({ registrationId: z.number().int().positive() });
 const AttendanceInput = RegistrationId.extend({ status: z.enum(["registered", "attended", "cancelled"]) });
+const AttendanceTokenInput = z.object({ token: z.string().trim().min(32).max(128), memberId: z.number().int().positive() });
 
 async function requireDb() {
   const db = await getDb();
@@ -137,6 +139,41 @@ export const eventsRouter = router({
     await logAudit({ userId: ctx.user.id, action: "CANCEL", entityType: "event_registration", entityId: input.registrationId });
     if (row.member.userId) await createUserNotification({ userId: row.member.userId, title: "Inscription annulée", message: `Votre inscription à l’événement « ${row.event.title} » a été annulée.`, type: "warning", actionUrl: "/events", eventKey: "event.registration.cancelled", entityType: "event_registration", entityId: input.registrationId, dedupeKey: `event-registration:${input.registrationId}:cancelled:${Date.now()}` });
     return { id: input.registrationId };
+  }),
+
+  generateAttendanceToken: protectedProcedure.input(EventId).mutation(async ({ input, ctx }) => {
+    await assertPermission(ctx.user, "structures.manage");
+    const db = await requireDb();
+    const event = await db.select({ id: events.id, title: events.title }).from(events).where(eq(events.id, input.id)).limit(1);
+    if (!event[0]) throw new TRPCError({ code: "NOT_FOUND", message: "Événement introuvable" });
+    const token = randomBytes(32).toString("hex");
+    const expiresAt = new Date(Date.now() + 15 * 60 * 1000).toISOString();
+    await db.update(events).set({ attendanceToken: token, attendanceTokenExpiresAt: expiresAt, attendanceTokenRevoked: 0 }).where(eq(events.id, input.id));
+    await logAudit({ userId: ctx.user.id, action: "CREATE", entityType: "event_attendance_token", entityId: input.id, description: "Jeton QR d’émargement généré", newValue: JSON.stringify({ expiresAt }), status: "success" });
+    return { eventId: input.id, token, expiresAt };
+  }),
+
+  revokeAttendanceToken: protectedProcedure.input(EventId).mutation(async ({ input, ctx }) => {
+    await assertPermission(ctx.user, "structures.manage");
+    const db = await requireDb();
+    await db.update(events).set({ attendanceTokenRevoked: 1 }).where(eq(events.id, input.id));
+    await logAudit({ userId: ctx.user.id, action: "UPDATE", entityType: "event_attendance_token", entityId: input.id, description: "Jeton QR d’émargement révoqué", status: "success" });
+    return { success: true };
+  }),
+
+  checkInByToken: protectedProcedure.input(AttendanceTokenInput).mutation(async ({ input, ctx }) => {
+    await assertPermission(ctx.user, "structures.view");
+    const db = await requireDb();
+    const rows = await db.select({ event: events, registration: eventRegistrations, member: members }).from(events).innerJoin(eventRegistrations, eq(eventRegistrations.eventId, events.id)).innerJoin(members, eq(eventRegistrations.memberId, members.id)).where(and(eq(events.attendanceToken, input.token), eq(eventRegistrations.memberId, input.memberId))).limit(1);
+    const row = rows[0];
+    if (!row || row.event.attendanceTokenRevoked || !row.event.attendanceTokenExpiresAt || new Date(row.event.attendanceTokenExpiresAt).getTime() < Date.now()) throw new TRPCError({ code: "FORBIDDEN", message: "Le QR d’émargement est invalide ou expiré." });
+    const canManage = ctx.user.role === "admin" || await userHasPermission(ctx.user.id, "structures.manage");
+    if (!canManage && row.member.userId !== ctx.user.id) throw new TRPCError({ code: "FORBIDDEN", message: "Vous ne pouvez émarger que votre propre inscription." });
+    if (row.registration.status === "cancelled" || row.registration.status === "waitlisted") throw new TRPCError({ code: "BAD_REQUEST", message: "Cette inscription ne peut pas être émargée." });
+    if (row.registration.status === "attended") return { id: row.registration.id, status: "attended" as const, alreadyCheckedIn: true };
+    await db.update(eventRegistrations).set({ status: "attended", attendedAt: new Date().toISOString() }).where(eq(eventRegistrations.id, row.registration.id));
+    await logAudit({ userId: ctx.user.id, action: "ATTENDANCE", entityType: "event_registration", entityId: row.registration.id, description: "Émargement QR validé", newValue: JSON.stringify({ eventId: row.event.id, memberId: row.member.id }), status: "success" });
+    return { id: row.registration.id, status: "attended" as const, alreadyCheckedIn: false };
   }),
 
   markAttendance: protectedProcedure.input(AttendanceInput).mutation(async ({ input, ctx }) => {
