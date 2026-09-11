@@ -2269,3 +2269,6 @@
 - [x] Ajouter un journal des actions terrain rattaché à une antenne et à un opérateur.
 - [x] Exposer des filtres sécurisés par antenne, période et type d’action.
 - [x] Intégrer la consultation et les tests de confidentialité du journal terrain.
+- [x] Ajouter des segments de destinataires par antenne, projet et niveau de cotisation.
+- [x] Afficher un comptage et une prévisualisation des destinataires sans exposer les coordonnées inutilement.
+- [x] Intégrer la segmentation au composeur et couvrir les permissions par tests.

@@ -35,6 +35,21 @@ const MEMBER_STATUS = [
   { value: "pending", label: "En attente" },
 ];
 
+const MEMBERSHIP_CATEGORIES = [
+  { value: "standard", label: "Standard" },
+  { value: "etudiant", label: "Étudiant" },
+  { value: "bienfaiteur", label: "Bienfaiteur" },
+  { value: "fondateur", label: "Fondateur" },
+  { value: "actif", label: "Actif" },
+  { value: "honoraire", label: "Honoraire" },
+];
+
+const CONTRIBUTION_STATUSES = [
+  { value: "payée", label: "Cotisation payée" },
+  { value: "en attente", label: "Cotisation en attente" },
+  { value: "en retard", label: "Cotisation en retard" },
+];
+
 export default function EmailComposer() {
   const [subject, setSubject] = useState("");
   const [content, setContent] = useState("");
@@ -48,16 +63,26 @@ export default function EmailComposer() {
   // Filtres
   const [selectedRoles, setSelectedRoles] = useState<string[]>([]);
   const [selectedStatuses, setSelectedStatuses] = useState<string[]>([]);
+  const [selectedMembershipCategories, setSelectedMembershipCategories] = useState<string[]>([]);
+  const [selectedContributionStatuses, setSelectedContributionStatuses] = useState<string[]>([]);
+  const [selectedAntennaIds, setSelectedAntennaIds] = useState<number[]>([]);
+  const [selectedProjectIds, setSelectedProjectIds] = useState<number[]>([]);
   const [excludeNoEmail, setExcludeNoEmail] = useState(false);
   const [excludedMemberIds, setExcludedMemberIds] = useState<number[]>([]);
 
   const { data: templates, isLoading: templatesLoading } = trpc.email.templates.list.useQuery();
+  const { data: antennaResult } = trpc.antennes.list.useQuery({ page: 1, limit: 100, sortBy: "name", sortOrder: "asc" });
+  const { data: projects = [] } = trpc.projects.list.useQuery({ limit: 100, offset: 0 });
   const recipientFilter = useMemo(() => ({
     roles: selectedRoles.length > 0 ? selectedRoles : undefined,
     statuses: selectedStatuses.length > 0 ? selectedStatuses : undefined,
+    antennaIds: selectedAntennaIds.length > 0 ? selectedAntennaIds : undefined,
+    projectIds: selectedProjectIds.length > 0 ? selectedProjectIds : undefined,
+    membershipCategories: selectedMembershipCategories.length > 0 ? selectedMembershipCategories as Array<"standard" | "etudiant" | "bienfaiteur" | "fondateur" | "actif" | "honoraire"> : undefined,
+    contributionStatuses: selectedContributionStatuses.length > 0 ? selectedContributionStatuses as Array<"payée" | "en attente" | "en retard"> : undefined,
     excludeNoEmail,
     excludedMemberIds: excludedMemberIds.length > 0 ? excludedMemberIds : undefined,
-  }), [selectedRoles, selectedStatuses, excludeNoEmail, excludedMemberIds]);
+  }), [selectedRoles, selectedStatuses, selectedMembershipCategories, selectedContributionStatuses, selectedAntennaIds, selectedProjectIds, excludeNoEmail, excludedMemberIds]);
   const { data: filteredRecipients = [], isFetching: recipientsLoading } = trpc.email.getFilteredRecipients.useQuery(recipientFilter);
   const sendEmailMutation = trpc.email.sendMassEmail.useMutation();
   const { data: previewMembers = [], isLoading: previewMembersLoading } = trpc.email.previewMembers.useQuery(undefined, { enabled: previewOpen });
@@ -99,6 +124,12 @@ export default function EmailComposer() {
     setSelectedStatuses((prev) =>
       prev.includes(status) ? prev.filter((s) => s !== status) : [...prev, status]
     );
+  };
+  const toggleMembershipCategory = (category: string) => {
+    setSelectedMembershipCategories((prev) => prev.includes(category) ? prev.filter((value) => value !== category) : [...prev, category]);
+  };
+  const toggleContributionStatus = (status: string) => {
+    setSelectedContributionStatuses((prev) => prev.includes(status) ? prev.filter((value) => value !== status) : [...prev, status]);
   };
 
   const toggleExcludedMember = (memberId: number) => {
@@ -206,6 +237,49 @@ export default function EmailComposer() {
                   </label>
                 </div>
               ))}
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Segmentation associative</CardTitle>
+              <CardDescription>Affinez l’audience par catégorie et situation de cotisation</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <div className="grid grid-cols-1 gap-3">
+                <div className="space-y-1">
+                  <label htmlFor="segment-antenna" className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Antenne</label>
+                  <Select value={selectedAntennaIds[0]?.toString() ?? "all"} onValueChange={(value) => setSelectedAntennaIds(value === "all" ? [] : [Number(value)])}>
+                    <SelectTrigger id="segment-antenna"><SelectValue placeholder="Toutes les antennes" /></SelectTrigger>
+                    <SelectContent><SelectItem value="all">Toutes les antennes</SelectItem>{antennaResult?.data.map((antenna) => <SelectItem key={antenna.id} value={String(antenna.id)}>{antenna.name} · {antenna.city}</SelectItem>)}</SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-1">
+                  <label htmlFor="segment-project" className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Projet</label>
+                  <Select value={selectedProjectIds[0]?.toString() ?? "all"} onValueChange={(value) => setSelectedProjectIds(value === "all" ? [] : [Number(value)])}>
+                    <SelectTrigger id="segment-project"><SelectValue placeholder="Tous les projets" /></SelectTrigger>
+                    <SelectContent><SelectItem value="all">Tous les projets</SelectItem>{projects.map((project: { id: number; name: string }) => <SelectItem key={project.id} value={String(project.id)}>{project.name}</SelectItem>)}</SelectContent>
+                  </Select>
+                </div>
+              </div>
+              <div className="space-y-2 pt-3 border-t">
+                <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Catégorie de membre</p>
+                {MEMBERSHIP_CATEGORIES.map((category) => (
+                  <div key={category.value} className="flex items-center gap-2">
+                    <Checkbox id={`category-${category.value}`} checked={selectedMembershipCategories.includes(category.value)} onCheckedChange={() => toggleMembershipCategory(category.value)} />
+                    <label htmlFor={`category-${category.value}`} className="text-sm cursor-pointer">{category.label}</label>
+                  </div>
+                ))}
+              </div>
+              <div className="space-y-2 pt-2 border-t">
+                <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Situation de cotisation</p>
+                {CONTRIBUTION_STATUSES.map((status) => (
+                  <div key={status.value} className="flex items-center gap-2">
+                    <Checkbox id={`contribution-${status.value}`} checked={selectedContributionStatuses.includes(status.value)} onCheckedChange={() => toggleContributionStatus(status.value)} />
+                    <label htmlFor={`contribution-${status.value}`} className="text-sm cursor-pointer">{status.label}</label>
+                  </div>
+                ))}
+              </div>
             </CardContent>
           </Card>
 

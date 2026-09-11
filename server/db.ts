@@ -2207,6 +2207,10 @@ export async function deleteNewsComment(id: number, authorId?: number) {
 export type MemberRecipientFilters = {
   roles?: string[];
   statuses?: string[];
+  antennaIds?: number[];
+  projectIds?: number[];
+  membershipCategories?: string[];
+  contributionStatuses?: string[];
   excludeNoEmail?: boolean;
   excludedMemberIds?: number[];
 };
@@ -2215,11 +2219,45 @@ export async function getFilteredMembers(filters: MemberRecipientFilters = {}) {
   const membersList = await getAllMembers();
   const roles = filters.roles?.filter(Boolean) ?? [];
   const statuses = filters.statuses?.filter(Boolean) ?? [];
+  const antennaIds = new Set(filters.antennaIds ?? []);
+  const projectIds = new Set(filters.projectIds ?? []);
+  const membershipCategories = new Set(filters.membershipCategories ?? []);
+  const contributionStatuses = new Set(filters.contributionStatuses ?? []);
   const excludedIds = new Set(filters.excludedMemberIds ?? []);
+  const db = await getDb();
+
+  const [projectRows, groupRows, contributionRows] = db && (antennaIds.size > 0 || projectIds.size > 0 || contributionStatuses.size > 0)
+    ? await Promise.all([
+        db.select({ memberId: projectMembers.memberId, projectId: projectMembers.projectId }).from(projectMembers),
+        db.select({ memberId: groupeMembers.memberId, antenneId: groupes.antenneId }).from(groupeMembers).leftJoin(groupes, eq(groupeMembers.groupeId, groupes.id)),
+        db.select({ memberId: cotisations.memberId, statut: cotisations.statut }).from(cotisations),
+      ])
+    : [[], [], []];
+
+  const projectsByMember = new Map<number, Set<number>>();
+  for (const row of projectRows) {
+    if (!projectsByMember.has(row.memberId)) projectsByMember.set(row.memberId, new Set());
+    projectsByMember.get(row.memberId)!.add(row.projectId);
+  }
+  const antennasByMember = new Map<number, Set<number>>();
+  for (const row of groupRows) {
+    if (row.antenneId == null) continue;
+    if (!antennasByMember.has(row.memberId)) antennasByMember.set(row.memberId, new Set());
+    antennasByMember.get(row.memberId)!.add(row.antenneId);
+  }
+  const statusesByMember = new Map<number, Set<string>>();
+  for (const row of contributionRows) {
+    if (!statusesByMember.has(row.memberId)) statusesByMember.set(row.memberId, new Set());
+    statusesByMember.get(row.memberId)!.add(row.statut);
+  }
 
   return membersList.filter((member) => {
     if (roles.length > 0 && !roles.includes(member.role ?? "member")) return false;
     if (statuses.length > 0 && !statuses.includes(member.status)) return false;
+    if (membershipCategories.size > 0 && !membershipCategories.has(member.membershipCategory)) return false;
+    if (antennaIds.size > 0 && !Array.from<number>(antennasByMember.get(member.id) ?? new Set<number>()).some((id) => antennaIds.has(id))) return false;
+    if (projectIds.size > 0 && !Array.from<number>(projectsByMember.get(member.id) ?? new Set<number>()).some((id) => projectIds.has(id))) return false;
+    if (contributionStatuses.size > 0 && !Array.from<string>(statusesByMember.get(member.id) ?? new Set<string>()).some((status) => contributionStatuses.has(status))) return false;
     if (filters.excludeNoEmail && !member.email) return false;
     if (excludedIds.has(member.id)) return false;
     return true;

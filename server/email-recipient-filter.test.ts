@@ -42,4 +42,23 @@ describe("Email recipient targeting", () => {
     expect(recipients.some((recipient) => excludedMemberIds.includes(recipient.id))).toBe(false);
     expect(recipients.every((recipient) => recipient.role === "Membre")).toBe(true);
   });
+
+  it("accepts membership and contribution segments while keeping the preview shape minimal", async () => {
+    const caller = appRouter.createCaller(createAdminContext());
+    const recipients = await caller.email.getFilteredRecipients({
+      membershipCategories: ["standard", "actif"],
+      contributionStatuses: ["payée"],
+      excludeNoEmail: true,
+    });
+
+    expect(recipients.every((recipient) => Boolean(recipient.email))).toBe(true);
+    expect(recipients.every((recipient) => Object.keys(recipient).sort().join(",") === "email,firstName,id,lastName,role,status")).toBe(true);
+  });
+
+  it("returns no recipients for unknown antenna or project identifiers", async () => {
+    const caller = appRouter.createCaller(createAdminContext());
+    const recipients = await caller.email.getFilteredRecipients({ antennaIds: [999999], projectIds: [999999] });
+
+    expect(recipients).toEqual([]);
+  });
 });

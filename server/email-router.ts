@@ -116,6 +116,10 @@ export const emailRouter = router({
     .input(z.object({
       roles: z.array(z.string().min(1)).max(20).optional(),
       statuses: z.array(z.string().min(1)).max(20).optional(),
+      antennaIds: z.array(z.number().int().positive()).max(100).optional(),
+      projectIds: z.array(z.number().int().positive()).max(100).optional(),
+      membershipCategories: z.array(z.enum(["standard", "etudiant", "bienfaiteur", "fondateur", "actif", "honoraire"])).max(20).optional(),
+      contributionStatuses: z.array(z.enum(["payée", "en attente", "en retard"])).max(10).optional(),
       excludeNoEmail: z.boolean().optional(),
       excludedMemberIds: z.array(z.number().int().positive()).max(500).optional(),
     }))
@@ -140,6 +144,10 @@ export const emailRouter = router({
       recipientFilter: z.object({
         roles: z.array(z.string().min(1)).max(20).optional(),
         statuses: z.array(z.string().min(1)).max(20).optional(),
+        antennaIds: z.array(z.number().int().positive()).max(100).optional(),
+        projectIds: z.array(z.number().int().positive()).max(100).optional(),
+        membershipCategories: z.array(z.enum(["standard", "etudiant", "bienfaiteur", "fondateur", "actif", "honoraire"])).max(20).optional(),
+        contributionStatuses: z.array(z.enum(["payée", "en attente", "en retard"])).max(10).optional(),
         excludeNoEmail: z.boolean().optional(),
         excludedMemberIds: z.array(z.number().int().positive()).max(500).optional(),
       }).optional(),
