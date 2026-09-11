@@ -179,6 +179,24 @@ export const associationInfo = mysqlTable("association_info", {
 	updatedAt: timestamp({ mode: 'string' }).defaultNow().onUpdateNow().notNull(),
 });
 
+export const privacyRequests = mysqlTable("privacy_requests", {
+	id: int().autoincrement().notNull(),
+	requesterUserId: int().notNull(),
+	memberId: int(),
+	requestType: mysqlEnum(['access','export','erasure']).notNull(),
+	status: mysqlEnum(['submitted','in_review','approved','rejected','completed','cancelled']).default('submitted').notNull(),
+	reason: text(),
+	decisionReason: text(),
+	decidedBy: int(),
+	completedAt: timestamp({ mode: 'string' }),
+	createdAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
+	updatedAt: timestamp({ mode: 'string' }).defaultNow().onUpdateNow().notNull(),
+}, (table) => [
+	index("privacy_requests_requester_idx").on(table.requesterUserId),
+	index("privacy_requests_member_idx").on(table.memberId),
+	index("privacy_requests_status_idx").on(table.status),
+]);
+
 export const auditLogs = mysqlTable("auditLogs", {
 	id: int().autoincrement().notNull(),
 	userId: int(),

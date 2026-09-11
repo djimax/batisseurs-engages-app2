@@ -2281,3 +2281,6 @@
 - [x] Ajouter les indicateurs transversaux des antennes, projets et paiements récents.
 - [x] Afficher les campagnes actives avec leur progression réelle.
 - [x] Couvrir les agrégats du dashboard par tests et états accessibles.
+- [x] Créer le registre des demandes RGPD d’accès, d’export et de suppression.
+- [x] Appliquer les transitions administrées, le contrôle de conservation et l’audit.
+- [x] Fournir un export personnel authentifié avec état de traitement accessible.

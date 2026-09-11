@@ -62,3 +62,25 @@ describe("RGPD deletion request contract", () => {
     expect(routerSource).toContain("Cette demande a déjà été traitée");
   });
 });
+
+describe("RGPD privacy request registry", () => {
+  it("requires an authenticated requester and deduplicates active requests", () => {
+    expect(routerSource).toContain("listMyPrivacyRequests: protectedProcedure");
+    expect(routerSource).toContain("requestPrivacyRequest: protectedProcedure");
+    expect(routerSource).toContain("privacyRequests.requesterUserId, ctx.user.id");
+    expect(routerSource).toContain("Une demande de ce type est déjà en cours");
+  });
+
+  it("restricts cancellation to the requesting user and submitted state", () => {
+    expect(routerSource).toContain("cancelPrivacyRequest: protectedProcedure");
+    expect(routerSource).toContain('eq(privacyRequests.status, "submitted")');
+    expect(routerSource).toContain("Demande RGPD annulée par son auteur");
+  });
+
+  it("audits and constrains administrative state transitions", () => {
+    expect(routerSource).toContain("listPrivacyRequests: protectedProcedure");
+    expect(routerSource).toContain("reviewPrivacyRequest: protectedProcedure");
+    expect(routerSource).toContain("Transition RGPD interdite");
+    expect(routerSource).toContain('entityType: "privacy_request"');
+  });
+});

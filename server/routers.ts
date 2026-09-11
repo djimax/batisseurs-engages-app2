@@ -36,7 +36,7 @@ import {
   getNewsList, createNews, updateNews, deleteNews, getNewsComments, addNewsComment, deleteNewsComment,
   createMemberEvaluation, getMemberEvaluations, getMemberGrade
 } from "./db";
-import { roles, permissions, rolePermissions, userRoles, userScopes, auditLogs, emailTemplates, emailHistory, emailRecipients, members, adhesions, notificationSchedules, announcements, news, newsComments, projects, projectMembers, groupes, groupeMembers, antennes, documents, documentNotes, users, dataDeletionRequests, bankReconciliations, stripePayments, transactions, volunteerExpenseClaims } from "../drizzle/schema";
+import { roles, permissions, rolePermissions, userRoles, userScopes, auditLogs, emailTemplates, emailHistory, emailRecipients, members, adhesions, notificationSchedules, announcements, news, newsComments, projects, projectMembers, groupes, groupeMembers, antennes, documents, documentNotes, users, dataDeletionRequests, privacyRequests, bankReconciliations, stripePayments, transactions, volunteerExpenseClaims } from "../drizzle/schema";
 import { buildMemberCardPayload, getMemberHistory, getMemberStatusHistory, memberStatusSchema, recordMemberHistory, recordMemberStatus } from "./member-lifecycle";
 import { createUserNotification, generateMembershipReminderNotifications, getOrCreateNotificationPreferences, listUserNotifications, markAllNotificationsRead, markNotificationRead, updateNotificationPreferences } from "./notification-center";
 import { and, eq, desc, sql } from "drizzle-orm";
@@ -96,6 +96,39 @@ export const appRouter = router({
       await logAudit({ userId: ctx.user.id, action: "EXPORT", entityType: "user_data", entityId: ctx.user.id, description: "Export RGPD des données personnelles", status: "success" });
       return { exportedAt: new Date().toISOString(), user: { id: ctx.user.id, name: ctx.user.name, email: ctx.user.email, role: ctx.user.role, loginMethod: ctx.user.loginMethod, createdAt: ctx.user.createdAt, updatedAt: ctx.user.updatedAt, lastSignedIn: ctx.user.lastSignedIn }, memberProfiles, ownedDocuments, authoredNotes, auditHistory };
     }),
+    listMyPrivacyRequests: protectedProcedure.query(async ({ ctx }) => {
+      const db = await getDb();
+      if (!db) return [];
+      return db.select().from(privacyRequests).where(eq(privacyRequests.requesterUserId, ctx.user.id)).orderBy(desc(privacyRequests.createdAt)).limit(50);
+    }),
+    requestPrivacyRequest: protectedProcedure
+      .input(z.object({ requestType: z.enum(["access", "export", "erasure"]), reason: z.string().trim().max(2000).optional() }))
+      .mutation(async ({ input, ctx }) => {
+        const db = await getDb();
+        if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Base de données indisponible" });
+        const existing = await db.select({ id: privacyRequests.id }).from(privacyRequests).where(and(
+          eq(privacyRequests.requesterUserId, ctx.user.id),
+          eq(privacyRequests.requestType, input.requestType),
+          sql`${privacyRequests.status} in ('submitted', 'in_review', 'approved')`,
+        )).limit(1);
+        if (existing.length) throw new TRPCError({ code: "CONFLICT", message: "Une demande de ce type est déjà en cours" });
+        const member = await db.select({ id: members.id }).from(members).where(eq(members.userId, ctx.user.id)).limit(1);
+        const result = await db.insert(privacyRequests).values({ requesterUserId: ctx.user.id, memberId: member[0]?.id ?? null, requestType: input.requestType, reason: input.reason?.trim() || null, status: "submitted" });
+        const requestId = Number(result[0].insertId);
+        await logAudit({ userId: ctx.user.id, action: "CREATE", entityType: "privacy_request", entityId: requestId, description: `Demande RGPD ${input.requestType} créée`, newValue: JSON.stringify({ requestType: input.requestType }), status: "success" });
+        return db.select().from(privacyRequests).where(eq(privacyRequests.id, requestId)).limit(1).then((rows) => rows[0]);
+      }),
+    cancelPrivacyRequest: protectedProcedure
+      .input(z.object({ id: z.number().int().positive() }))
+      .mutation(async ({ input, ctx }) => {
+        const db = await getDb();
+        if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Base de données indisponible" });
+        const existing = await db.select().from(privacyRequests).where(and(eq(privacyRequests.id, input.id), eq(privacyRequests.requesterUserId, ctx.user.id), eq(privacyRequests.status, "submitted"))).limit(1);
+        if (!existing[0]) throw new TRPCError({ code: "NOT_FOUND", message: "Demande RGPD introuvable ou déjà traitée" });
+        await db.update(privacyRequests).set({ status: "cancelled" }).where(eq(privacyRequests.id, input.id));
+        await logAudit({ userId: ctx.user.id, action: "UPDATE", entityType: "privacy_request", entityId: input.id, description: "Demande RGPD annulée par son auteur", status: "success" });
+        return { success: true as const };
+      }),
     requestDataDeletion: protectedProcedure
       .input(z.object({ reason: z.string().trim().max(2000).optional() }))
       .mutation(async ({ input, ctx }) => {
@@ -2089,6 +2122,29 @@ export const appRouter = router({
         return { success: true } as const;
       }),
 
+    listPrivacyRequests: protectedProcedure
+      .input(z.object({ status: z.enum(["submitted", "in_review", "approved", "rejected", "completed", "cancelled"]).optional() }).optional())
+      .query(async ({ input, ctx }) => {
+        await assertPermission(ctx.user, "admin.audit.view");
+        const db = await getDb();
+        if (!db) return [];
+        const condition = input?.status ? eq(privacyRequests.status, input.status) : undefined;
+        return db.select({ id: privacyRequests.id, requesterUserId: privacyRequests.requesterUserId, memberId: privacyRequests.memberId, requestType: privacyRequests.requestType, status: privacyRequests.status, reason: privacyRequests.reason, decisionReason: privacyRequests.decisionReason, decidedBy: privacyRequests.decidedBy, createdAt: privacyRequests.createdAt, updatedAt: privacyRequests.updatedAt }).from(privacyRequests).where(condition).orderBy(desc(privacyRequests.createdAt)).limit(100);
+      }),
+    reviewPrivacyRequest: protectedProcedure
+      .input(z.object({ id: z.number().int().positive(), status: z.enum(["in_review", "approved", "rejected", "completed"]), decisionReason: z.string().trim().max(2000).optional() }))
+      .mutation(async ({ input, ctx }) => {
+        await assertPermission(ctx.user, "admin.audit.view");
+        const db = await getDb();
+        if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Base de données indisponible" });
+        const existing = await db.select().from(privacyRequests).where(eq(privacyRequests.id, input.id)).limit(1);
+        if (!existing[0]) throw new TRPCError({ code: "NOT_FOUND", message: "Demande RGPD introuvable" });
+        const allowedTransitions: Record<string, string[]> = { submitted: ["in_review", "approved", "rejected"], in_review: ["approved", "rejected"], approved: ["completed"], rejected: [], completed: [], cancelled: [] };
+        if (!allowedTransitions[existing[0].status]?.includes(input.status)) throw new TRPCError({ code: "CONFLICT", message: "Transition RGPD interdite" });
+        await db.update(privacyRequests).set({ status: input.status, decisionReason: input.decisionReason?.trim() || null, decidedBy: ctx.user.id, completedAt: input.status === "completed" ? new Date().toISOString() : existing[0].completedAt }).where(eq(privacyRequests.id, input.id));
+        await logAudit({ userId: ctx.user.id, action: "UPDATE", entityType: "privacy_request", entityId: input.id, description: `Demande RGPD ${input.status}`, newValue: JSON.stringify({ status: input.status, requestType: existing[0].requestType }), status: "success" });
+        return { success: true as const };
+      }),
     listDataDeletionRequests: protectedProcedure
       .input(z.object({ status: z.enum(["pending", "approved", "rejected", "cancelled"]).optional() }).optional())
       .query(async ({ input, ctx }) => {
