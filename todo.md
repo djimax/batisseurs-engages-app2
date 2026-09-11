@@ -2311,3 +2311,6 @@
 - [x] Agréger budgets, tâches, jalons et indicateurs d’impact par projet.
 - [x] Respecter les permissions projects.view/manage et le périmètre attribué.
 - [x] Ajouter une vue projet exportable et couvrir les calculs par tests.
+- [x] Harmoniser la validation des entrées sensibles et des fichiers uploadés.
+- [x] Refuser les types, tailles et noms de fichiers non conformes côté serveur.
+- [x] Ajouter les tests de rejet, permissions et erreurs accessibles.

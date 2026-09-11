@@ -1147,18 +1147,22 @@ export const appRouter = router({
     uploadPhoto: protectedProcedure
       .input(z.object({
         memberId: z.number().int().positive(),
-        photoData: z.string().min(1).max(12 * 1024 * 1024),
-        fileName: z.string().trim().min(1).max(255),
+        photoData: z.string().min(1).max(12 * 1024 * 1024).refine((value) => /^(?:data:image\/(?:jpeg|png);base64,)?[A-Za-z0-9+/]*={0,2}$/.test(value), "Contenu image Base64 invalide"),
+        fileName: z.string().trim().min(1).max(255).refine((name) => !name.includes("/") && !name.includes("\\") && !name.includes("\0"), "Nom de fichier invalide"),
       }))
       .mutation(async ({ input, ctx }) => {
         await assertPermission(ctx.user, "members.manage");
         try {
           // Convert base64 to buffer
-          const buffer = Buffer.from(input.photoData.split(',')[1] || input.photoData, 'base64');
-          
+                    const encoded = input.photoData.includes(",") ? input.photoData.split(",", 2)[1] : input.photoData;
+          const buffer = Buffer.from(encoded, "base64");
+          if (buffer.length === 0 || buffer.length > 8 * 1024 * 1024) throw new TRPCError({ code: "BAD_REQUEST", message: "La photo doit mesurer entre 1 octet et 8 Mo." });
+          const isJpeg = buffer.length >= 3 && buffer[0] === 0xff && buffer[1] === 0xd8 && buffer[2] === 0xff;
+          const isPng = buffer.length >= 8 && buffer.subarray(0, 8).equals(Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]));
+          if (!isJpeg && !isPng) throw new TRPCError({ code: "BAD_REQUEST", message: "Format photo non pris en charge. Utilisez JPEG ou PNG." });
           // Upload to S3
-          const fileKey = `members/${input.memberId}/photo-${nanoid()}.jpg`;
-          const { url } = await storagePut(fileKey, buffer, 'image/jpeg');
+          const fileKey = `members/${input.memberId}/photo-${nanoid()}.${isPng ? "png" : "jpg"}`;
+          const { url } = await storagePut(fileKey, buffer, isPng ? "image/png" : "image/jpeg");
           
           // Update member with photo URL
           const db = await getDb();
