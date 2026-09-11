@@ -1619,7 +1619,7 @@
 - [x] Suivi des convocations et feuilles de présence certifiées pour les AG
 
 ### 4. Opérations Terrain, Événements et Présences
-- [ ] Création d'événements de terrain (réunions publiques, chantiers, collectes) avec jauge et inscription
+- [x] Création d'événements de terrain (réunions publiques, chantiers, collectes) avec jauge et inscription
 - [ ] Feuille de présence numérique par QR code ou émargement rapide sur tablette
 - [ ] Formulaires de collecte de terrain (enquêtes, adhésions directes hors ligne)
 - [ ] Journalisation des actions terrain par antenne
@@ -2257,3 +2257,6 @@
 - [x] Ajouter un statut de convocation et une preuve de certification de feuille de présence par assemblée.
 - [x] Rendre les présences immuables après certification avec audit du certificateur et empreinte.
 - [x] Intégrer la vue certifiée dans Gouvernance et couvrir le flux par tests accessibles.
+- [x] Ajouter jauge, inscriptions, liste d’attente et suivi de présence pour les événements de terrain.
+- [x] Protéger les transitions d’inscription et auditer les changements de statut.
+- [x] Intégrer la capacité et les présences dans la page Événements avec tests.

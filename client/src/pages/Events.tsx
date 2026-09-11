@@ -18,6 +18,7 @@ interface Event {
   color: string;
   organizer?: string | null;
   attendees?: number | null;
+  capacity?: number | null;
 }
 
 type FilterType = "all" | "past" | "present" | "future";
@@ -70,6 +71,7 @@ export default function Events() {
       registered: rows.filter(({ registration }) => registration.status === "registered").length,
       attended: rows.filter(({ registration }) => registration.status === "attended").length,
       cancelled: rows.filter(({ registration }) => registration.status === "cancelled").length,
+      waitlisted: rows.filter(({ registration }) => registration.status === "waitlisted").length,
       attendanceRate: rows.filter(({ registration }) => registration.status !== "cancelled").length === 0 ? 0 : Math.round((rows.filter(({ registration }) => registration.status === "attended").length / rows.filter(({ registration }) => registration.status !== "cancelled").length) * 100),
     };
   }, [registrationsQuery.data]);
@@ -85,7 +87,7 @@ export default function Events() {
   const [sortBy, setSortBy] = useState<string>("date-asc");
   const [isOpen, setIsOpen] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
-  const [formData, setFormData] = useState({ title: "", description: "", location: "", eventType: "autre" as "reunion" | "formation" | "activite" | "evenement" | "autre", startDate: "", endDate: "", organizer: "", attendees: 0 });
+  const [formData, setFormData] = useState({ title: "", description: "", location: "", eventType: "autre" as "reunion" | "formation" | "activite" | "evenement" | "autre", startDate: "", endDate: "", organizer: "", attendees: 0, capacity: 0 });
 
   // Stabilize `now` reference to prevent infinite useMemo recalculations
   const now = useMemo(() => new Date(), []);
@@ -212,6 +214,7 @@ export default function Events() {
       color: "#1a4d2e",
       organizer: formData.organizer.trim() || undefined,
       attendees: Number(formData.attendees) || 0,
+      capacity: Number(formData.capacity) > 0 ? Number(formData.capacity) : undefined,
     };
     if (editingId) updateEvent.mutate({ id: editingId, ...input });
     else createEvent.mutate(input);
@@ -227,7 +230,7 @@ export default function Events() {
             Gérez les événements passés, présents et futurs de l'association
           </p>
         </div>
-        <Button className="gap-2" onClick={() => { setEditingId(null); setFormData({ title: "", description: "", location: "", eventType: "autre", startDate: "", endDate: "", organizer: "", attendees: 0 }); setIsOpen(true); }}>
+        <Button className="gap-2" onClick={() => { setEditingId(null); setFormData({ title: "", description: "", location: "", eventType: "autre", startDate: "", endDate: "", organizer: "", attendees: 0, capacity: 0 }); setIsOpen(true); }}>
           <Plus className="h-4 w-4" />
           Nouvel événement
         </Button>
@@ -326,12 +329,8 @@ export default function Events() {
                     </div>
                   )}
 
-                  {event.attendees && (
-                    <div className="flex items-center gap-2 text-muted-foreground">
-                      <Users className="h-4 w-4" />
-                      <span>{event.attendees} participants</span>
-                    </div>
-                  )}
+                  {event.attendees && <div className="flex items-center gap-2 text-sm text-muted-foreground"><Users className="h-4 w-4" /><span>{event.attendees} participants</span></div>}
+                  {event.capacity && <div className="mt-2"><div className="flex justify-between text-xs text-muted-foreground"><span>Jauge</span><span>{event.attendees ?? 0}/{event.capacity}</span></div><div className="mt-1 h-2 overflow-hidden rounded-full bg-muted"><div className={`h-full rounded-full ${(event.attendees ?? 0) >= event.capacity ? "bg-amber-500" : "bg-primary"}`} style={{ width: `${Math.min(100, ((event.attendees ?? 0) / event.capacity) * 100)}%` }} /></div></div>}
 
                   {event.organizer && (
                     <div className="text-xs text-muted-foreground">
@@ -364,7 +363,7 @@ export default function Events() {
                     variant="ghost"
                     size="sm"
                     className="flex-1 gap-2"
-                    onClick={() => { const current = events.find((item) => item.id === event.id); if (!current) return; setEditingId(current.id); setFormData({ title: current.title, description: current.description ?? "", location: current.location ?? "", eventType: current.eventType as "reunion" | "formation" | "activite" | "evenement" | "autre", startDate: current.startDate.toISOString().slice(0, 16), endDate: current.endDate.toISOString().slice(0, 16), organizer: current.organizer ?? "", attendees: current.attendees ?? 0 }); setIsOpen(true); }}
+                    onClick={() => { const current = events.find((item) => item.id === event.id); if (!current) return; setEditingId(current.id); setFormData({ title: current.title, description: current.description ?? "", location: current.location ?? "", eventType: current.eventType as "reunion" | "formation" | "activite" | "evenement" | "autre", startDate: current.startDate.toISOString().slice(0, 16), endDate: current.endDate.toISOString().slice(0, 16), organizer: current.organizer ?? "", attendees: current.attendees ?? 0, capacity: current.capacity ?? 0 }); setIsOpen(true); }}
                   >
                     <Edit2 className="h-4 w-4" />
                     Modifier
@@ -392,7 +391,7 @@ export default function Events() {
           </DialogHeader>
           <div className="space-y-4">
             <div className="flex items-center justify-between gap-2">
-              <div><p className="text-sm text-muted-foreground">{registrationSummary.total} inscription(s)</p><p className="text-xs text-muted-foreground">{registrationSummary.registered} inscrit(s) · {registrationSummary.attended} présent(s) · {registrationSummary.cancelled} annulé(s) · {registrationSummary.attendanceRate}% de présence</p></div>
+              <div><p className="text-sm text-muted-foreground">{registrationSummary.total} inscription(s)</p><p className="text-xs text-muted-foreground">{registrationSummary.registered} inscrit(s) · {registrationSummary.waitlisted} en attente · {registrationSummary.attended} présent(s) · {registrationSummary.cancelled} annulé(s) · {registrationSummary.attendanceRate}% de présence</p></div>
               <Button variant="outline" size="sm" disabled={!registrationsQuery.data?.length} onClick={exportRegistrationsCsv}><Download className="mr-2 h-4 w-4" />Exporter CSV</Button>
             </div>
             <div className="flex flex-col gap-2 sm:flex-row">
@@ -422,6 +421,7 @@ export default function Events() {
             <div className="grid gap-3 sm:grid-cols-2">
               <Input placeholder="Lieu" value={formData.location} onChange={(event) => setFormData({ ...formData, location: event.target.value })} />
               <Input type="number" min="0" placeholder="Participants" value={formData.attendees || ""} onChange={(event) => setFormData({ ...formData, attendees: Number(event.target.value) || 0 })} />
+              <Input type="number" min="0" placeholder="Jauge maximale (facultatif)" value={formData.capacity || ""} onChange={(event) => setFormData({ ...formData, capacity: Number(event.target.value) || 0 })} aria-label="Jauge maximale de participants" />
             </div>
             <div className="grid gap-3 sm:grid-cols-2">
               <Input aria-label="Début" type="datetime-local" value={formData.startDate} onChange={(event) => setFormData({ ...formData, startDate: event.target.value })} />

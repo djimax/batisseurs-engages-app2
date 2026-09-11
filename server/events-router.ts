@@ -18,6 +18,7 @@ export const EventInput = z.object({
   color: z.string().regex(/^#[0-9a-fA-F]{6}$/).default("#1a4d2e"),
   organizer: z.string().trim().max(255).optional(),
   attendees: z.number().int().min(0).max(100000).default(0),
+  capacity: z.number().int().positive().max(100000).optional(),
 }).superRefine((value, ctx) => {
   if (new Date(value.endDate) <= new Date(value.startDate)) {
     ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["endDate"], message: "La fin doit être postérieure au début" });
@@ -25,7 +26,7 @@ export const EventInput = z.object({
 });
 
 const EventId = z.object({ id: z.number().int().positive() });
-const RegistrationInput = z.object({ eventId: z.number().int().positive(), memberId: z.number().int().positive() });
+  const RegistrationInput = z.object({ eventId: z.number().int().positive(), memberId: z.number().int().positive() });
 const RegistrationId = z.object({ registrationId: z.number().int().positive() });
 const AttendanceInput = RegistrationId.extend({ status: z.enum(["registered", "attended", "cancelled"]) });
 
@@ -92,7 +93,7 @@ export const eventsRouter = router({
   register: protectedProcedure.input(RegistrationInput).mutation(async ({ input, ctx }) => {
     await assertPermission(ctx.user, "structures.view");
     const db = await requireDb();
-    const event = await db.select({ id: events.id, title: events.title }).from(events).where(eq(events.id, input.eventId)).limit(1);
+    const event = await db.select({ id: events.id, title: events.title, capacity: events.capacity }).from(events).where(eq(events.id, input.eventId)).limit(1);
     if (!event[0]) throw new TRPCError({ code: "NOT_FOUND", message: "Événement introuvable" });
     const member = await db.select().from(members).where(eq(members.id, input.memberId)).limit(1);
     if (!member[0]) throw new TRPCError({ code: "NOT_FOUND", message: "Membre introuvable" });
@@ -105,17 +106,19 @@ export const eventsRouter = router({
     if (existing[0] && existing[0].status !== "cancelled") {
       throw new TRPCError({ code: "CONFLICT", message: "Ce membre est déjà inscrit à cet événement." });
     }
+    const activeRegistrations = await db.select({ id: eventRegistrations.id, status: eventRegistrations.status }).from(eventRegistrations).where(and(eq(eventRegistrations.eventId, input.eventId), eq(eventRegistrations.status, "registered")));
+    const nextStatus = event[0].capacity && activeRegistrations.length >= event[0].capacity ? "waitlisted" : "registered";
     if (existing[0]) {
-      await db.update(eventRegistrations).set({ status: "registered", registeredAt: new Date().toISOString(), attendedAt: null, createdBy: ctx.user.id }).where(eq(eventRegistrations.id, existing[0].id));
-      await logAudit({ userId: ctx.user.id, action: "REGISTER", entityType: "event_registration", entityId: existing[0].id, description: "Inscription réactivée" });
-      if (member[0].userId) await createUserNotification({ userId: member[0].userId, title: "Inscription confirmée", message: `Votre inscription à l’événement « ${event[0].title} » est confirmée.`, type: "success", actionUrl: "/events", eventKey: "event.registration", entityType: "event_registration", entityId: existing[0].id, dedupeKey: `event-registration:${existing[0].id}:${new Date().toISOString()}` });
-      return { id: existing[0].id };
+      await db.update(eventRegistrations).set({ status: nextStatus, registeredAt: new Date().toISOString(), attendedAt: null, createdBy: ctx.user.id }).where(eq(eventRegistrations.id, existing[0].id));
+      await logAudit({ userId: ctx.user.id, action: "REGISTER", entityType: "event_registration", entityId: existing[0].id, description: nextStatus === "waitlisted" ? "Inscription placée en liste d’attente" : "Inscription réactivée", newValue: nextStatus });
+      if (member[0].userId) await createUserNotification({ userId: member[0].userId, title: nextStatus === "waitlisted" ? "Liste d’attente" : "Inscription confirmée", message: nextStatus === "waitlisted" ? `L’événement « ${event[0].title} » est complet. Vous êtes ajouté à la liste d’attente.` : `Votre inscription à l’événement « ${event[0].title} » est confirmée.`, type: nextStatus === "waitlisted" ? "info" : "success", actionUrl: "/events", eventKey: "event.registration", entityType: "event_registration", entityId: existing[0].id, dedupeKey: `event-registration:${existing[0].id}:${nextStatus}:${Date.now()}` });
+      return { id: existing[0].id, status: nextStatus };
     }
-    const [result] = await db.insert(eventRegistrations).values({ ...input, registeredAt: new Date().toISOString(), createdBy: ctx.user.id });
+    const [result] = await db.insert(eventRegistrations).values({ ...input, status: nextStatus, registeredAt: new Date().toISOString(), createdBy: ctx.user.id });
     const id = Number(result.insertId);
-    await logAudit({ userId: ctx.user.id, action: "REGISTER", entityType: "event_registration", entityId: id });
-    if (member[0].userId) await createUserNotification({ userId: member[0].userId, title: "Inscription confirmée", message: `Votre inscription à l’événement « ${event[0].title} » est confirmée.`, type: "success", actionUrl: "/events", eventKey: "event.registration", entityType: "event_registration", entityId: id, dedupeKey: `event-registration:${id}:registered` });
-    return { id };
+    await logAudit({ userId: ctx.user.id, action: "REGISTER", entityType: "event_registration", entityId: id, description: nextStatus === "waitlisted" ? "Inscription placée en liste d’attente" : "Inscription confirmée", newValue: nextStatus });
+    if (member[0].userId) await createUserNotification({ userId: member[0].userId, title: nextStatus === "waitlisted" ? "Liste d’attente" : "Inscription confirmée", message: nextStatus === "waitlisted" ? `L’événement « ${event[0].title} » est complet. Vous êtes ajouté à la liste d’attente.` : `Votre inscription à l’événement « ${event[0].title} » est confirmée.`, type: nextStatus === "waitlisted" ? "info" : "success", actionUrl: "/events", eventKey: "event.registration", entityType: "event_registration", entityId: id, dedupeKey: `event-registration:${id}:${nextStatus}` });
+    return { id, status: nextStatus };
   }),
 
   cancelRegistration: protectedProcedure.input(RegistrationId).mutation(async ({ input, ctx }) => {

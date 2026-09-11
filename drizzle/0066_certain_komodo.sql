@@ -1,0 +1,2 @@
+ALTER TABLE `event_registrations` MODIFY COLUMN `status` enum('registered','waitlisted','attended','cancelled') NOT NULL DEFAULT 'registered';--> statement-breakpoint
+ALTER TABLE `events` ADD `capacity` int;
