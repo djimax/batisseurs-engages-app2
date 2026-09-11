@@ -74,6 +74,7 @@ export default function Governance() {
   });
   const createMandate = trpc.governance.createMandate.useMutation({ onSuccess: () => { setMandateRole(""); setMandateMemberId(""); setMandateStartDate(""); setMandateEndDate(""); void utils.governance.listMandates.invalidate(); } });
   const updateMandateStatus = trpc.governance.updateMandateStatus.useMutation({ onSuccess: () => void utils.governance.listMandates.invalidate() });
+  const certifyAttendance = trpc.governance.certifyAttendance.useMutation({ onSuccess: () => void utils.governance.getById.invalidate() });
 
   const handleCreate = (event: React.FormEvent) => {
     event.preventDefault();
@@ -164,10 +165,13 @@ export default function Governance() {
                     {detailQuery.data.assembly.status === "draft" ? <Button size="sm" onClick={() => updateStatus.mutate({ assemblyId: selectedId ?? 0, status: "scheduled" })}>Planifier</Button> : null}
                     {detailQuery.data.assembly.status === "scheduled" ? <Button size="sm" onClick={() => updateStatus.mutate({ assemblyId: selectedId ?? 0, status: "open" })}>Ouvrir les votes</Button> : null}
                     {detailQuery.data.assembly.status === "open" ? <Button size="sm" variant="destructive" onClick={() => updateStatus.mutate({ assemblyId: selectedId ?? 0, status: "closed" })}>Clôturer</Button> : null}
+                    {detailQuery.data.assembly.status === "closed" && detailQuery.data.assembly.attendanceCertificationStatus !== "certified" ? <Button size="sm" onClick={() => certifyAttendance.mutate({ assemblyId: selectedId ?? 0 })} disabled={certifyAttendance.isPending}>Certifier les présences</Button> : null}
                   </div>
                 </div>
 
-                <div className="grid gap-3 sm:grid-cols-4">
+                  <div className="rounded-lg border bg-muted/30 p-3 text-sm" role="status" aria-live="polite"><span className="font-medium">Feuille de présence : </span>{detailQuery.data.assembly.attendanceCertificationStatus === "certified" ? <><span className="text-emerald-700">certifiée</span><span className="ml-2 text-xs text-muted-foreground">Empreinte : {detailQuery.data.assembly.attendanceProofHash?.slice(0, 16) ?? "—"}…</span></> : <span className="text-amber-700">non certifiée</span>}</div>
+
+                  <div className="grid gap-3 sm:grid-cols-4">
                   <div className="rounded-lg border p-3"><div className="text-xs text-muted-foreground">Éligibles</div><div className="text-2xl font-bold">{detailQuery.data.quorum.eligibleCount}</div></div>
                   <div className="rounded-lg border p-3"><div className="text-xs text-muted-foreground">Présents</div><div className="text-2xl font-bold">{detailQuery.data.quorum.presentCount}</div></div>
                   <div className="rounded-lg border p-3"><div className="text-xs text-muted-foreground">Participation</div><div className="text-2xl font-bold">{detailQuery.data.quorum.attendancePercentage}%</div></div>

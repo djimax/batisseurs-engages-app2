@@ -1616,7 +1616,7 @@
 - [ ] Registre des délibérations et procès-verbaux signés électroniquement
 - [x] Gestion des mandats du bureau (Président, Secrétaire, Trésorier) et renouvellement
 - [x] Registre unique du personnel et des bénévoles actifs (conformité associative)
-- [ ] Suivi des convocations et feuilles de présence certifiées pour les AG
+- [x] Suivi des convocations et feuilles de présence certifiées pour les AG
 
 ### 4. Opérations Terrain, Événements et Présences
 - [ ] Création d'événements de terrain (réunions publiques, chantiers, collectes) avec jauge et inscription
@@ -2254,3 +2254,6 @@
 - [x] Unifier le registre du personnel et des bénévoles actifs avec type de personne, rôle, statut, dates et coordonnées contrôlées.
 - [x] Ajouter une vue de conformité filtrable protégée par permission membres.
 - [x] Couvrir la confidentialité, les statuts et l’audit par des tests.
+- [x] Ajouter un statut de convocation et une preuve de certification de feuille de présence par assemblée.
+- [x] Rendre les présences immuables après certification avec audit du certificateur et empreinte.
+- [x] Intégrer la vue certifiée dans Gouvernance et couvrir le flux par tests accessibles.

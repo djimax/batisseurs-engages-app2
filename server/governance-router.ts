@@ -1,5 +1,6 @@
 import { TRPCError } from "@trpc/server";
 import { and, desc, eq, inArray } from "drizzle-orm";
+import { createHash } from "node:crypto";
 import { z } from "zod";
 import {
   assemblies,
@@ -235,11 +236,29 @@ export const governanceRouter = router({
       return { id: Number(result[0].insertId), ...input };
     }),
 
+  certifyAttendance: protectedProcedure
+    .input(z.object({ assemblyId: z.number().int().positive() }))
+    .mutation(async ({ ctx, input }) => {
+      await assertPermission(ctx.user, "governance.manage");
+      const assembly = await getAssemblyOrThrow(input.assemblyId);
+      if (assembly.attendanceCertificationStatus === "certified") return assembly;
+      if (assembly.status !== "closed") throw new TRPCError({ code: "BAD_REQUEST", message: "Une assemblée doit être clôturée avant certification." });
+      const db = await requireDb();
+      const participants = await db.select({ memberId: assemblyParticipants.memberId, attendance: assemblyParticipants.attendance, checkedInAt: assemblyParticipants.checkedInAt }).from(assemblyParticipants).where(eq(assemblyParticipants.assemblyId, input.assemblyId));
+      const certifiedAt = new Date().toISOString();
+      const proofHash = createHash("sha256").update(JSON.stringify({ assemblyId: input.assemblyId, participants, certifiedAt })).digest("hex");
+      await db.update(assemblies).set({ attendanceCertificationStatus: "certified", attendanceCertifiedAt: certifiedAt, attendanceCertifiedBy: ctx.user.id, attendanceProofHash: proofHash }).where(eq(assemblies.id, input.assemblyId));
+      await logAudit({ userId: ctx.user.id, action: "UPDATE", entityType: "assembly_attendance", entityId: input.assemblyId, description: "Feuille de présence certifiée", newValue: JSON.stringify({ certifiedAt, proofHash, participantCount: participants.length }), status: "success" });
+      return getAssemblyOrThrow(input.assemblyId);
+    }),
+
   setAttendance: protectedProcedure
     .input(z.object({ assemblyId: z.number().int().positive(), memberId: z.number().int().positive(), attendance: z.enum(["invited", "present", "absent", "represented"]) }))
     .mutation(async ({ ctx, input }) => {
       await assertPermission(ctx.user, "governance.manage");
       const db = await requireDb();
+      const assembly = await getAssemblyOrThrow(input.assemblyId);
+      if (assembly.attendanceCertificationStatus === "certified") throw new TRPCError({ code: "CONFLICT", message: "La feuille de présence est certifiée et ne peut plus être modifiée." });
       const existing = await db.select({ id: assemblyParticipants.id }).from(assemblyParticipants).where(and(eq(assemblyParticipants.assemblyId, input.assemblyId), eq(assemblyParticipants.memberId, input.memberId))).limit(1);
       if (!existing[0]) {
         const result = await db.insert(assemblyParticipants).values({ ...input, checkedInAt: input.attendance === "present" ? new Date().toISOString() : undefined });
