@@ -23,7 +23,10 @@ import {
   MapPin,
   FileCheck,
   Building2,
-  ShieldCheck
+  ShieldCheck,
+  Landmark,
+  Megaphone,
+  CreditCard
 } from "lucide-react";
 import { useLocation } from "wouter";
 import { RoleSelector } from "@/components/RoleSelector";
@@ -46,6 +49,7 @@ export default function Home() {
   const { data: stats, isLoading: statsLoading } = trpc.documents.stats.useQuery();
   const { data: categories, isLoading: categoriesLoading } = trpc.categories.list.useQuery();
   const { data: documents, isLoading: documentsLoading } = trpc.documents.list.useQuery({});
+  const { data: dashboardSummary, isLoading: dashboardSummaryLoading } = trpc.dashboard.summary.useQuery();
 
   const recentDocs = documents?.slice(0, 5) || [];
   const urgentDocs = documents?.filter(d => d.priority === "urgent" && d.status !== "completed") || [];
@@ -165,6 +169,32 @@ export default function Home() {
           </div>
         </div>
       </div>
+
+      {/* Vue transversale de coordination */}
+      <section aria-labelledby="coordination-summary-title" className="space-y-4 animate-fade-in-up">
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <h2 id="coordination-summary-title" className="flex items-center gap-2 text-2xl font-bold tracking-tight"><Activity className="h-6 w-6 text-primary" />Vue de coordination</h2>
+            <p className="text-sm text-muted-foreground">Les principaux indicateurs opérationnels, calculés à partir des données enregistrées.</p>
+          </div>
+          <Badge variant="outline" className="w-fit">Actualisé {dashboardSummary?.generatedAt ? new Date(dashboardSummary.generatedAt).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" }) : "—"}</Badge>
+        </div>
+        {dashboardSummaryLoading ? (
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4" aria-live="polite" aria-label="Chargement des indicateurs">
+            {[1, 2, 3, 4].map((item) => <Skeleton key={item} className="h-32 rounded-2xl" />)}
+          </div>
+        ) : dashboardSummary ? (
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <Card className="card-hover border-primary/15 bg-primary/[0.03]"><CardHeader className="pb-2"><CardDescription className="flex items-center gap-2"><Landmark className="h-4 w-4 text-primary" />Antennes</CardDescription></CardHeader><CardContent><p className="text-3xl font-bold">{dashboardSummary.antennas.active}<span className="ml-2 text-sm font-normal text-muted-foreground">actives / {dashboardSummary.antennas.total}</span></p><Button variant="link" className="h-auto p-0 text-xs" onClick={() => setLocation("/antennes")}>Voir les antennes <ArrowRight className="ml-1 h-3 w-3" /></Button></CardContent></Card>
+            <Card className="card-hover border-accent/20 bg-accent/[0.04]"><CardHeader className="pb-2"><CardDescription className="flex items-center gap-2"><Megaphone className="h-4 w-4 text-accent-foreground" />Campagnes actives</CardDescription></CardHeader><CardContent><p className="text-3xl font-bold">{dashboardSummary.campaigns.active}<span className="ml-2 text-sm font-normal text-muted-foreground">{dashboardSummary.campaigns.activeProgress}% de l’objectif</span></p><Button variant="link" className="h-auto p-0 text-xs" onClick={() => setLocation("/campaigns")}>Voir les campagnes <ArrowRight className="ml-1 h-3 w-3" /></Button></CardContent></Card>
+            <Card className="card-hover border-emerald-200/70 bg-emerald-50/50"><CardHeader className="pb-2"><CardDescription className="flex items-center gap-2"><CreditCard className="h-4 w-4 text-emerald-700" />Paiements récents</CardDescription></CardHeader><CardContent><p className="text-3xl font-bold">{dashboardSummary.recentPayments.length}</p><p className="text-xs text-muted-foreground">cotisations payées sur 7 jours</p></CardContent></Card>
+            <Card className="card-hover border-amber-200/70 bg-amber-50/50"><CardHeader className="pb-2"><CardDescription className="flex items-center gap-2"><Users className="h-4 w-4 text-amber-700" />Adhésions</CardDescription></CardHeader><CardContent><p className="text-3xl font-bold">{dashboardSummary.adhesions.active}</p><p className="text-xs text-muted-foreground">actives · {dashboardSummary.adhesions.pending} en attente · {dashboardSummary.adhesions.expired} expirées</p></CardContent></Card>
+          </div>
+        ) : null}
+        {dashboardSummary && dashboardSummary.campaigns.activeList.length > 0 ? (
+          <Card><CardHeader><CardTitle className="text-base">Campagnes à suivre</CardTitle><CardDescription>Les cinq campagnes actives dont l’échéance est la plus proche.</CardDescription></CardHeader><CardContent className="space-y-3">{dashboardSummary.campaigns.activeList.map((campaign) => <div key={campaign.id} className="space-y-2"><div className="flex items-center justify-between gap-3"><span className="truncate text-sm font-medium">{campaign.title}</span><span className="text-xs text-muted-foreground">{campaign.progress}%</span></div><div className="h-2 overflow-hidden rounded-full bg-muted" role="progressbar" aria-valuenow={campaign.progress} aria-valuemin={0} aria-valuemax={100} aria-label={`Progression de ${campaign.title}`}><div className="h-full rounded-full bg-primary transition-all" style={{ width: `${campaign.progress}%` }} /></div></div>)}</CardContent></Card>
+        ) : null}
+      </section>
 
       {/* 🔄 MODE SELECTOR - Affichage toujours visible */}
       <div className="space-y-4">

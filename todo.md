@@ -2278,3 +2278,6 @@
 - [x] Créer un module newsletter avec modèles et blocs dynamiques contrôlés.
 - [x] Ajouter la prévisualisation avec les données réelles d’un membre et un rendu sécurisé.
 - [x] Relier les newsletters aux segments de destinataires et auditer les envois.
+- [x] Ajouter les indicateurs transversaux des antennes, projets et paiements récents.
+- [x] Afficher les campagnes actives avec leur progression réelle.
+- [x] Couvrir les agrégats du dashboard par tests et états accessibles.

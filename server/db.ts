@@ -1845,7 +1845,7 @@ export async function getGlobalDashboardSummary() {
   const nowIso = now.toISOString();
   const sevenDaysAgoIso = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString();
 
-  const [baseStats, documentStats, projectsStats, tasksStats, financeStats, membersStats, activeCampaignRows, campaignTotals, activeAdhesionRows, expiredAdhesionRows, pendingAdhesionRows, recentPayments, settingsRows] = await Promise.all([
+  const [baseStats, documentStats, projectsStats, tasksStats, financeStats, membersStats, activeCampaignRows, campaignTotals, activeCampaignDetails, antennaTotals, activeAntennaTotals, activeAdhesionRows, expiredAdhesionRows, pendingAdhesionRows, recentPayments, settingsRows] = await Promise.all([
     getDashboardStatistics(),
     getDocumentStats(),
     getProjectsStatistics(),
@@ -1862,6 +1862,9 @@ export async function getGlobalDashboardSummary() {
       objective: sql<number>`COALESCE(SUM(CAST(objectif AS DECIMAL(15,2))), 0)`,
       collected: sql<number>`COALESCE(SUM(CAST(montantCollecte AS DECIMAL(15,2))), 0)`,
     }).from(campaigns),
+    db.select({ id: campaigns.id, title: campaigns.title, objectif: campaigns.objectif, montantCollecte: campaigns.montantCollecte, dateFin: campaigns.dateFin, status: campaigns.status }).from(campaigns).where(eq(campaigns.status, "active")).orderBy(asc(campaigns.dateFin)).limit(5),
+    db.select({ count: sql<number>`count(*)` }).from(antennes),
+    db.select({ count: sql<number>`count(*)` }).from(antennes).where(sql`isActive = 1`),
     db.select({ count: sql<number>`count(*)` }).from(adhesions).where(and(
       eq(adhesions.status, "active"),
       gte(adhesions.dateExpiration, nowIso),
@@ -1941,6 +1944,18 @@ export async function getGlobalDashboardSummary() {
       activeObjective: campaignObjective,
       activeCollected: campaignCollected,
       activeProgress: campaignObjective > 0 ? Math.min(100, Math.round((campaignCollected / campaignObjective) * 100)) : 0,
+      activeList: activeCampaignDetails.map((campaign) => ({
+        id: campaign.id,
+        title: campaign.title,
+        objective: Number(campaign.objectif ?? 0),
+        collected: Number(campaign.montantCollecte ?? 0),
+        dateEnd: campaign.dateFin,
+        progress: Number(campaign.objectif ?? 0) > 0 ? Math.min(100, Math.round((Number(campaign.montantCollecte ?? 0) / Number(campaign.objectif ?? 0)) * 100)) : 0,
+      })),
+    },
+    antennas: {
+      total: Number(antennaTotals[0]?.count ?? 0),
+      active: Number(activeAntennaTotals[0]?.count ?? 0),
     },
     adhesions: {
       active: Number(activeAdhesionRows[0]?.count ?? 0),
