@@ -29,7 +29,7 @@ import {
   createProjectTaskComment, getProjectTaskComments, deleteProjectTaskComment, getProjectReport,
   getProjectBudgetItems, createProjectBudgetItem, updateProjectBudgetItem, deleteProjectBudgetItem,
   getProjectImpactIndicators, createProjectImpactIndicator, updateProjectImpactIndicator, deleteProjectImpactIndicator,
-  getDashboardStatistics, getGlobalDashboardSummary, getProjectsStatistics, getTasksStatistics, getFinanceStatistics, getMembersStatistics, getSignatureDeliveryDashboard,
+  getDashboardStatistics, getGlobalDashboardSummary, getAnnualAssociationReport, getProjectsStatistics, getTasksStatistics, getFinanceStatistics, getMembersStatistics, getSignatureDeliveryDashboard,
   createMemberCertificate, getMemberCertificates,
   getAllUsers, getUserById, updateUserRole, getAdminCount, isUserAdmin,
   getAnnouncements, createAnnouncement, updateAnnouncement, deleteAnnouncement,
@@ -2926,6 +2926,16 @@ export const appRouter = router({
       return await getGlobalDashboardSummary();
     }),
 
+    annualReport: protectedProcedure
+      .input(z.object({ year: z.number().int().min(2000).max(2100) }))
+      .query(async ({ ctx, input }) => {
+        await assertPermission(ctx.user, "members.view");
+        await assertPermission(ctx.user, "projects.view");
+        await assertPermission(ctx.user, "finances.view");
+        const report = await getAnnualAssociationReport(input.year);
+        await logAudit({ userId: ctx.user.id, action: "READ", entityType: "annual_association_report", entityName: String(input.year), description: `Rapport annuel consulté pour ${input.year}`, newValue: JSON.stringify({ year: input.year }), status: "success" });
+        return report;
+      }),
     projects: protectedProcedure.query(async ({ ctx }) => {
       await assertPermission(ctx.user, "projects.view");
       return await getProjectsStatistics();

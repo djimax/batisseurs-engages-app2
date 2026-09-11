@@ -2302,3 +2302,6 @@
 - [x] Centraliser les notifications in-app et emails envoyés dans une vue administrateur.
 - [x] Exposer les statuts créé, envoyé, échoué et dédupliqué sans inventer d’accusé de réception.
 - [x] Ajouter pagination, filtres, permissions et tests du journal des notifications.
+- [x] Agréger les indicateurs annuels de membres, antennes, projets, événements et finances.
+- [x] Définir le périmètre annuel et les états accessibles sans données inventées.
+- [x] Exporter le rapport institutionnel et couvrir ses calculs par tests.

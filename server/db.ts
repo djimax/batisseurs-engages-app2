@@ -2338,3 +2338,23 @@ export async function getMemberGrade(memberId: number) {
   const rows = await db.select().from(memberGrades).where(eq(memberGrades.memberId, memberId));
   return rows[0] || { currentGrade: "Membre Adhérent", currentResponsibilities: null, promotedAt: new Date().toISOString() };
 }
+
+export async function getAnnualAssociationReport(year: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const start = `${year}-01-01T00:00:00.000Z`;
+  const end = `${year + 1}-01-01T00:00:00.000Z`;
+  const [membersRow, projectsRow, eventsRow, cotisationRows, donationRows, expenseRows] = await Promise.all([
+    db.select({ total: sql<number>`count(*)`, active: sql<number>`sum(case when ${members.status} = 'active' then 1 else 0 end)` }).from(members).where(and(gte(members.joinedAt, start), lt(members.joinedAt, end))),
+    db.select({ total: sql<number>`count(*)`, completed: sql<number>`sum(case when ${projects.status} = 'completed' then 1 else 0 end)` }).from(projects).where(and(gte(projects.createdAt, start), lt(projects.createdAt, end))),
+    db.select({ total: sql<number>`count(*)` }).from(events).where(and(gte(events.startDate, start), lt(events.startDate, end))),
+    db.select({ amount: cotisations.montant, currency: cotisations.currency }).from(cotisations).where(and(gte(cotisations.datePayment, start), lt(cotisations.datePayment, end), eq(cotisations.statut, "payée"))),
+    db.select({ amount: dons.montant, currency: dons.currency }).from(dons).where(and(gte(dons.date, start), lt(dons.date, end))),
+    db.select({ amount: depenses.montant, currency: depenses.currency }).from(depenses).where(and(gte(depenses.date, start), lt(depenses.date, end))),
+  ]);
+  const sumByCurrency = (rows: Array<{ amount: string; currency: "EUR" | "XOF" }>) => rows.reduce((result, row) => { result[row.currency] += Number(row.amount); return result; }, { EUR: 0, XOF: 0 });
+  const cotisationsTotals = sumByCurrency(cotisationRows);
+  const donationsTotals = sumByCurrency(donationRows);
+  const expensesTotals = sumByCurrency(expenseRows);
+  return { year, period: { start, end }, members: { total: Number(membersRow[0]?.total ?? 0), active: Number(membersRow[0]?.active ?? 0) }, projects: { total: Number(projectsRow[0]?.total ?? 0), completed: Number(projectsRow[0]?.completed ?? 0) }, events: { total: Number(eventsRow[0]?.total ?? 0) }, finance: { cotisations: cotisationsTotals, donations: donationsTotals, expenses: expensesTotals, balance: { EUR: cotisationsTotals.EUR + donationsTotals.EUR - expensesTotals.EUR, XOF: cotisationsTotals.XOF + donationsTotals.XOF - expensesTotals.XOF } } };
+}

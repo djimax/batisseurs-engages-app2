@@ -12,7 +12,7 @@ import {
 describe("Dashboard Permission Contract", () => {
   it("protects each dashboard aggregate with its domain permission", () => {
     const source = readFileSync(new URL("./routers.ts", import.meta.url), "utf8");
-    const dashboardBlock = source.slice(source.indexOf("dashboard: router({"), source.indexOf("dashboard: router({") + 1800);
+    const dashboardBlock = source.slice(source.indexOf("dashboard: router({"), source.indexOf("dashboard: router({") + 3200);
     expect(dashboardBlock).toContain('assertPermission(ctx.user, "members.view")');
     expect(dashboardBlock).toContain('assertPermission(ctx.user, "projects.view")');
     expect(dashboardBlock).toContain('assertPermission(ctx.user, "finances.view")');
