@@ -2314,3 +2314,6 @@
 - [x] Harmoniser la validation des entrées sensibles et des fichiers uploadés.
 - [x] Refuser les types, tailles et noms de fichiers non conformes côté serveur.
 - [x] Ajouter les tests de rejet, permissions et erreurs accessibles.
+- [x] Corriger la fermeture JSX fautive de la page Notifications.
+- [x] Préserver le journal administrateur, ses filtres et ses états d’accès.
+- [x] Vérifier TypeScript, build et rendu compilable après correction.
