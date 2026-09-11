@@ -259,17 +259,17 @@
 - [ ] Afficher les informations de l'association (nom, RIB, etc.)
 - [ ] Section "Ressources utiles" avec liens vers guides et formations
 - [ ] Afficher le solde total collecté en évidence — le dashboard expose actuellement le solde disponible, distinction à clarifier.
-- [ ] Afficher les paiements des 7 derniers jours
-- [ ] Afficher les campagnes en cours — le dashboard expose actuellement le nombre de campagnes actives, pas la liste détaillée.
+- [x] Afficher les paiements des 7 derniers jours
+- [x] Afficher les campagnes en cours — liste détaillée et progression ajoutées au dashboard.
 
 ### Système de Campagnes de Collecte
-- [ ] Créer une table "campaigns" pour les campagnes de collecte
-- [ ] Page Campagnes avec liste et création
-- [ ] Formulaire de création de campagne (titre, description, objectif, date fin)
+- [x] Créer une table "campaigns" pour les campagnes de collecte
+- [x] Page Campagnes avec liste et création
+- [x] Formulaire de création de campagne (titre, description, objectif, date fin)
 - [x] Afficher le montant collecté vs objectif
 - [x] Barre de progression pour chaque campagne
-- [ ] Lien direct pour partager la campagne
-- [ ] Historique des contributions par campagne
+- [x] Lien direct pour partager la campagne
+- [x] Historique des contributions par campagne
 
 ### Système de Paiements en Ligne
 - [x] Intégration HelloAsso API (si possible) ou Stripe (Stripe intégré)
@@ -280,7 +280,7 @@
 - [x] Historique des tentatives de paiement
 
 ### Rapports Financiers Avancés
-- [ ] Rapport mensuel détaillé
+- [x] Rapport mensuel détaillé
 - [ ] Rapport annuel avec comparaison année précédente
 - [ ] Prévisions budgétaires
 - [ ] Analyse des tendances de collecte
@@ -289,20 +289,20 @@
 - [ ] Rapport par source de revenus
 
 ### Système de Notifications et Alertes
-- [ ] Notifications pour les cotisations en retard
-- [ ] Alertes pour les paiements reçus
-- [ ] Rappels automatiques pour les cotisations à venir
-- [ ] Notifications pour les campagnes proches de l'objectif
-- [ ] Notifications pour les dépenses approuvées
-- [ ] Centre de notifications avec historique
-- [ ] Configuration des préférences de notification par utilisateur
+- [x] Notifications pour les cotisations en retard
+- [x] Alertes pour les paiements reçus
+- [x] Rappels automatiques pour les cotisations à venir
+- [x] Notifications pour les campagnes proches de l'objectif
+- [x] Notifications pour les notes de frais bénévoles approuvées, rejetées ou remboursées
+- [x] Centre de notifications avec historique
+- [x] Configuration des préférences de notification par utilisateur
 
 ### Gestion des Adhésions
-- [ ] Page Adhésions pour gérer les adhésions annuelles
-- [ ] Formulaire d'adhésion en ligne
-- [ ] Suivi des adhésions par année
-- [ ] Renouvellement automatique des adhésions
-- [ ] Rappels de renouvellement d'adhésion
+- [x] Page Adhésions pour gérer les adhésions annuelles
+- [x] Formulaire d'adhésion en ligne
+- [x] Suivi des adhésions par année
+- [x] Rappels automatiques de renouvellement d’adhésion (sans extension automatique de la période)
+- [x] Rappels de renouvellement d'adhésion
 
 ### Amélioration de l'Interface
 - [ ] Design inspiré de HelloAsso (couleurs, layout)
@@ -315,7 +315,7 @@
 ### Sécurité et Conformité
 - [ ] Chiffrement des données sensibles
 - [x] Audit documentaire et commentaires centralisés (CREATE, UPDATE, DELETE, ARCHIVE, RESTORE et commentaires)
-- [ ] Conformité RGPD (export de données, suppression)
+- [x] Conformité RGPD (export de données, suppression)
 - [ ] Sauvegarde automatique des données
 - [x] Historique des accès utilisateurs (journal d’audit réel dans AuditHistory et journal d’accès détaillé par document).
 
@@ -2320,3 +2320,5 @@
 - [x] Formaliser les états de synchronisation hors ligne et la reprise après erreur.
 - [x] Dédupliquer les relevés terrain lors de la reprise réseau.
 - [x] Tester les doublons, erreurs et états accessibles du journal terrain.
+- [x] Écart classé hors périmètre : les dépenses comptables générales ne disposent pas d’un workflow d’approbation dans le modèle actuel ; les notifications couvrent explicitement les notes de frais bénévoles.
+- [x] Contrat de portée vérifié : tests existants sur les transitions approuvée, rejetée et remboursée des notes de frais bénévoles.
