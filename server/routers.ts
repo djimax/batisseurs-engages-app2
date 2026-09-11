@@ -1481,12 +1481,13 @@ export const appRouter = router({
       }))
       .query(async ({ input, ctx }) => {
         await assertPermission(ctx.user, "finances.view");
-        const [cotisations, dons, depenses] = await Promise.all([getCotisations(), getDons(), getDepenses()]);
+        const [cotisations, dons, depenses, settings] = await Promise.all([getCotisations(), getDons(), getDepenses(), initializeGlobalSettings()]);
+        const euroToXofRate = Number(settings?.euroToXofRate ?? 655.957);
         return buildFinancialReport([
           ...cotisations.map((row) => ({ type: "cotisation" as const, amount: Number(row.montant), currency: row.currency === "EUR" ? "EUR" as const : "XOF" as const, date: String(row.datePayment ?? row.createdAt ?? row.dateDebut) })),
           ...dons.map((row) => ({ type: "don" as const, amount: Number(row.montant), currency: row.currency === "EUR" ? "EUR" as const : "XOF" as const, date: String(row.date ?? row.createdAt) })),
           ...depenses.map((row) => ({ type: "depense" as const, amount: Number(row.montant), currency: row.currency === "EUR" ? "EUR" as const : "XOF" as const, date: String(row.date ?? row.createdAt) })),
-        ], input.year, input.compareYear);
+        ], input.year, input.compareYear, euroToXofRate);
       }),
 
     analyticReport: protectedProcedure
@@ -1703,7 +1704,8 @@ export const appRouter = router({
       .query(async ({ input, ctx }) => {
         await assertPermission(ctx.user, "finances.view");
         const amount = parseFinancialAmount(input.amount);
-        const converted = convertFinancialAmount(amount, input.from, input.to);
+        const settings = await initializeGlobalSettings();
+        const converted = convertFinancialAmount(amount, input.from, input.to, Number(settings?.euroToXofRate ?? 655.957));
         return {
           amount,
           converted,
@@ -2288,17 +2290,20 @@ export const appRouter = router({
         folio: z.string().optional(),
         email: z.string().email().optional(),
         website: z.string().optional(),
+        euroToXofRate: z.union([z.string(), z.number()]).optional(),
         phone: z.string().optional(),
         logo: z.string().nullable().optional(),
         description: z.string().optional(),
       }))
       .mutation(async ({ input, ctx }) => {
-        if (ctx.user?.role !== "admin") {
+                if (ctx.user?.role !== "admin") {
           throw new Error("Only admins can update global settings");
         }
-        
+        const euroToXofRate = input.euroToXofRate === undefined ? undefined : parseFinancialAmount(input.euroToXofRate);
+        const { euroToXofRate: _ignoredRate, ...settingsInput } = input;
         const result = await updateGlobalSettings({
-          ...input,
+          ...settingsInput,
+          euroToXofRate: euroToXofRate?.toFixed(6),
           updatedBy: ctx.user?.id,
         });
         

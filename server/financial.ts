@@ -15,9 +15,10 @@ export function parseFinancialAmount(value: string | number) {
   return Math.round(amount * 100) / 100;
 }
 
-export function convertFinancialAmount(amount: number, from: FinancialCurrency, to: FinancialCurrency) {
+export function convertFinancialAmount(amount: number, from: FinancialCurrency, to: FinancialCurrency, euroToXofRate = EURO_TO_XOF) {
   if (from === to) return Math.round(amount * 100) / 100;
-  const converted = from === "EUR" ? amount * EURO_TO_XOF : amount / EURO_TO_XOF;
+  const rate = Number.isFinite(euroToXofRate) && euroToXofRate > 0 ? euroToXofRate : EURO_TO_XOF;
+  const converted = from === "EUR" ? amount * rate : amount / rate;
   return Math.round(converted * 100) / 100;
 }
 
@@ -143,7 +144,7 @@ export type FinancialReport = {
   comparison: { year: number; totalXof: number; totalEur: number; variationXof: number | null; variationEur: number | null } | null;
 };
 
-export function buildFinancialReport(entries: FinancialReportEntry[], year: number, compareYear?: number): FinancialReport {
+export function buildFinancialReport(entries: FinancialReportEntry[], year: number, compareYear?: number, euroToXofRate = EURO_TO_XOF): FinancialReport {
   const periods = new Map<string, FinancialReportPeriod>();
   const breakdown: FinancialReportBreakdown = {
     cotisation: { amount: 0, amountXof: 0, amountEur: 0 },
@@ -170,8 +171,8 @@ export function buildFinancialReport(entries: FinancialReportEntry[], year: numb
     const row = periods.get(period) ?? createPeriod(period);
     const amount = parseFinancialAmount(entry.amount);
     const isExpense = entry.type === "depense";
-    const amountXof = convertFinancialAmount(amount, entry.currency, "XOF");
-    const amountEur = convertFinancialAmount(amount, entry.currency, "EUR");
+    const amountXof = convertFinancialAmount(amount, entry.currency, "XOF", euroToXofRate);
+    const amountEur = convertFinancialAmount(amount, entry.currency, "EUR", euroToXofRate);
     breakdown[entry.type].amount = Math.round((breakdown[entry.type].amount + amount) * 100) / 100;
     breakdown[entry.type].amountXof = Math.round((breakdown[entry.type].amountXof + amountXof) * 100) / 100;
     breakdown[entry.type].amountEur = Math.round((breakdown[entry.type].amountEur + amountEur) * 100) / 100;
@@ -206,7 +207,7 @@ export function buildFinancialReport(entries: FinancialReportEntry[], year: numb
 
   let comparison: { year: number; totalXof: number; totalEur: number; variationXof: number | null; variationEur: number | null } | null = null;
   if (compareYear !== undefined) {
-    const previous = buildFinancialReport(entries, compareYear).total;
+    const previous = buildFinancialReport(entries, compareYear, undefined, euroToXofRate).total;
     comparison = {
       year: compareYear,
       totalXof: previous.balanceXof,

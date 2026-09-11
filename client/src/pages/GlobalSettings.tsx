@@ -15,6 +15,7 @@ const DEFAULT_FORM = {
   folio: "10512",
   email: "contact.lesbatisseursengages@gmail.com",
   website: "www.lesbatisseursengage.com",
+  euroToXofRate: "655.957",
   phone: "",
   description: "",
 };
@@ -37,6 +38,7 @@ export default function GlobalSettings() {
       folio: settings.folio || "",
       email: settings.email || "",
       website: settings.website || "",
+      euroToXofRate: settings.euroToXofRate || "655.957",
       phone: settings.phone || "",
       description: settings.description || "",
     });
@@ -137,6 +139,7 @@ export default function GlobalSettings() {
               <div className="space-y-2"><Label htmlFor="email" className="flex items-center gap-2"><Mail className="h-4 w-4" />Email officiel</Label><Input id="email" name="email" type="email" value={formData.email} onChange={handleInputChange} /></div>
               <div className="space-y-2"><Label htmlFor="phone">Téléphone</Label><Input id="phone" name="phone" value={formData.phone} onChange={handleInputChange} /></div>
               <div className="space-y-2 md:col-span-2"><Label htmlFor="website" className="flex items-center gap-2"><Globe className="h-4 w-4" />Site web</Label><Input id="website" name="website" value={formData.website} onChange={handleInputChange} placeholder="https://…" /></div>
+              <div className="space-y-2"><Label htmlFor="euroToXofRate">Taux EUR → F CFA</Label><Input id="euroToXofRate" name="euroToXofRate" type="number" min="0.000001" step="0.000001" value={formData.euroToXofRate} onChange={handleInputChange} /><p className="text-xs text-muted-foreground">1 € = ce montant en F CFA. La valeur est utilisée dans les rapports et conversions.</p></div>
               <div className="space-y-2 md:col-span-2"><Label htmlFor="description">Présentation courte</Label><Textarea id="description" name="description" value={formData.description} onChange={handleInputChange} rows={4} placeholder="Quelques mots sur la mission de l’association…" /></div>
             </div>
             <div className="flex flex-col gap-2 border-t pt-5 sm:flex-row sm:justify-end"><Button variant="outline" onClick={handleReset} className="gap-2"><RotateCcw className="h-4 w-4" />Réinitialiser</Button><Button onClick={handleSave} disabled={isSaving || updateMutation.isPending} className="gap-2">{isSaving || updateMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}{isSaving || updateMutation.isPending ? "Enregistrement…" : "Enregistrer"}</Button></div>

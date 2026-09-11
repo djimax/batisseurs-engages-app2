@@ -1,0 +1,1 @@
+ALTER TABLE `global_settings` ADD `euroToXofRate` varchar(20) DEFAULT '655.957' NOT NULL;

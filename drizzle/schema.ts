@@ -611,6 +611,7 @@ export const globalSettings = mysqlTable("global_settings", {
 	folio: varchar({ length: 100 }).default('10512').notNull(),
 	email: varchar({ length: 320 }).default('contact.lesbatisseursengages@gmail.com').notNull(),
 	website: varchar({ length: 500 }).default('www.lesbatisseursengage.com').notNull(),
+	euroToXofRate: varchar({ length: 20 }).default('655.957').notNull(),
 	phone: varchar({ length: 20 }),
 	logo: text(),
 	description: text(),

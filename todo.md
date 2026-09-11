@@ -1610,7 +1610,7 @@
 - [x] Ventilation analytique des dépenses et recettes par projet, antenne et catégo. budgétaire
 - [x] Module de rapprochement bancaire (import relevé / lettrage des paiements Stripe & HelloAsso)
 - [ ] Gestion des notes de frais et justificatifs de déplacement pour les bénévoles
-- [ ] Tableau de bord financier multi-devises (EUR / FCFA) avec taux de change administrable
+- [x] Tableau de bord financier multi-devises (EUR / FCFA) avec taux de change administrable
 
 ### 3. Gouvernance, Décisions et Conformité
 - [ ] Registre des délibérations et procès-verbaux signés électroniquement
@@ -2247,3 +2247,4 @@
 - [x] Ajouter une notification personnalisée avec message, priorité, destinataire ou diffusion ciblée, lien d’action et temps réel.
 - [x] Protéger la création de notifications personnalisées par permission et auditer l’opération.
 - [x] Ajouter l’interface de création et les contrats d’accessibilité de la notification personnalisée.
+- [x] Ajouter un taux EUR/XOF administrable dans les paramètres globaux et l’utiliser dans les rapports financiers.
