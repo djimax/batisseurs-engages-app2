@@ -16,5 +16,8 @@ describe("Field collection contract", () => {
     expect(page).toContain("Synchroniser");
     expect(page).toContain("hors ligne");
     expect(page).toContain('role="status" aria-live="polite"');
+    expect(page).toContain("Journal des actions terrain");
+    expect(page).toContain("Filtrer le journal par antenne");
+    expect(page).toContain("filteredItems");
   });
 });

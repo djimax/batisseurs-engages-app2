@@ -1622,7 +1622,7 @@
 - [x] Création d'événements de terrain (réunions publiques, chantiers, collectes) avec jauge et inscription
 - [x] Feuille de présence numérique par QR code ou émargement rapide sur tablette
 - [x] Formulaires de collecte de terrain (enquêtes, adhésions directes hors ligne)
-- [ ] Journalisation des actions terrain par antenne
+- [x] Journalisation des actions terrain par antenne
 
 ### 5. Communication Ciblée et Automatisation
 - [ ] Segmentation fine pour l'envoi d'e-mails (par antenne, par niveau de cotisation, par projet)
@@ -2266,3 +2266,6 @@
 - [x] Ajouter un formulaire de collecte terrain validé avec antenne, consentement et données minimales.
 - [x] Ajouter une file locale de brouillons et une synchronisation idempotente lors du retour en ligne.
 - [x] Afficher les états hors ligne, en attente, synchronisé et en erreur avec tests.
+- [x] Ajouter un journal des actions terrain rattaché à une antenne et à un opérateur.
+- [x] Exposer des filtres sécurisés par antenne, période et type d’action.
+- [x] Intégrer la consultation et les tests de confidentialité du journal terrain.
