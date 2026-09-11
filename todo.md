@@ -2290,3 +2290,6 @@
 - [x] Notifier le membre lors de l’approbation, du rejet ou du remboursement d’une note de frais.
 - [x] Respecter les préférences de notification et dédupliquer chaque transition.
 - [x] Ajouter les tests de contrat du workflow de notification des frais.
+- [x] Couvrir les paiements Stripe reçus par une notification ciblée et dédupliquée.
+- [x] Vérifier les préférences et les événements de paiement traités.
+- [x] Ajouter les contrats de tests des alertes de paiement reçu.
