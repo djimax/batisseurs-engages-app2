@@ -2308,3 +2308,6 @@
 - [x] Définir le périmètre national et le périmètre antenne dans les agrégats dashboard.
 - [x] Restreindre les données sensibles selon l’antenne autorisée de l’utilisateur.
 - [x] Tester les refus inter-périmètres et afficher le périmètre actif.
+- [x] Agréger budgets, tâches, jalons et indicateurs d’impact par projet.
+- [x] Respecter les permissions projects.view/manage et le périmètre attribué.
+- [x] Ajouter une vue projet exportable et couvrir les calculs par tests.
