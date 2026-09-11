@@ -22,6 +22,7 @@ import Campaigns from "./pages/Campaigns";
 import PublicCampaign from "./pages/PublicCampaign";
 import Adhesions from "./pages/Adhesions";
 import Events from "./pages/Events";
+import FieldCollection from "./pages/FieldCollection";
 import ProtectedUserManagement from "./pages/ProtectedUserManagement";
 import AdminPortal from "./pages/AdminPortal";
 import ForgotPassword from "./pages/ForgotPassword";
@@ -84,6 +85,7 @@ function OnlineRouter({ isAuthenticated, error, onLogin, onLogout, onForgotPassw
         <Route path="/campaigns" component={Campaigns} />
         <Route path="/adhesions" component={Adhesions} />
         <Route path="/events" component={Events} />
+        <Route path="/field-collection" component={FieldCollection} />
         <Route path="/users" component={ProtectedUserManagement} />
         <Route path="/admin-portal" component={AdminPortal} />
         <Route path="/announcements" component={Announcements} />

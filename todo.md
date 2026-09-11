@@ -1621,7 +1621,7 @@
 ### 4. Opérations Terrain, Événements et Présences
 - [x] Création d'événements de terrain (réunions publiques, chantiers, collectes) avec jauge et inscription
 - [x] Feuille de présence numérique par QR code ou émargement rapide sur tablette
-- [ ] Formulaires de collecte de terrain (enquêtes, adhésions directes hors ligne)
+- [x] Formulaires de collecte de terrain (enquêtes, adhésions directes hors ligne)
 - [ ] Journalisation des actions terrain par antenne
 
 ### 5. Communication Ciblée et Automatisation
@@ -2263,3 +2263,6 @@
 - [x] Ajouter un jeton d’émargement QR temporaire et révocable par événement.
 - [x] Permettre la validation tablette d’une inscription avec anti-abus et audit de présence.
 - [x] Intégrer le QR et le tableau d’émargement dans Événements avec tests accessibles.
+- [x] Ajouter un formulaire de collecte terrain validé avec antenne, consentement et données minimales.
+- [x] Ajouter une file locale de brouillons et une synchronisation idempotente lors du retour en ligne.
+- [x] Afficher les états hors ligne, en attente, synchronisé et en erreur avec tests.
