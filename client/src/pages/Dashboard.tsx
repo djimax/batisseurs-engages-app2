@@ -107,6 +107,7 @@ export default function Dashboard() {
   const { data: signatureDelivery, isLoading: signatureDeliveryLoading } = trpc.dashboard.signatureDelivery.useQuery();
   const annualYear = new Date().getUTCFullYear();
   const { data: annualReport, isLoading: annualReportLoading } = trpc.dashboard.annualReport.useQuery({ year: annualYear });
+  const { data: myScopes } = trpc.dashboard.myScopes.useQuery();
   const globalFinanceChartConfig = {
     collected: { label: "Cotisations", color: "var(--chart-1)" },
     expenses: { label: "Dépenses", color: "var(--chart-2)" },
@@ -217,7 +218,7 @@ export default function Dashboard() {
       )}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold">Tableau de Bord</h1>
+          <div className="flex flex-wrap items-center gap-3"><h1 className="text-3xl font-bold">Tableau de Bord</h1>{myScopes && <span className="rounded-full border bg-muted/40 px-3 py-1 text-xs font-medium">Périmètre : {myScopes.isNational ? "National" : myScopes.grants.length === 0 ? "Non attribué" : `${myScopes.grants.filter((grant) => grant.scopeType === "antenne").length} antenne(s)`}</span>}</div>
           <p className="text-muted-foreground mt-1">
             Bienvenue sur votre tableau de bord personnalisable
           </p>

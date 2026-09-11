@@ -1,4 +1,5 @@
 import { COOKIE_NAME } from "@shared/const";
+import { getUserScopeGrants } from "./authorization";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
 import { publicProcedure, protectedProcedure, adminProcedure, router } from "./_core/trpc";
@@ -2926,6 +2927,7 @@ export const appRouter = router({
       return await getGlobalDashboardSummary();
     }),
 
+    myScopes: protectedProcedure.query(async ({ ctx }) => ({ userId: ctx.user.id, isNational: ctx.user.role === "admin" || (await getUserScopeGrants(ctx.user.id)).some((grant) => grant.scopeType === "national"), grants: await getUserScopeGrants(ctx.user.id) })),
     annualReport: protectedProcedure
       .input(z.object({ year: z.number().int().min(2000).max(2100) }))
       .query(async ({ ctx, input }) => {

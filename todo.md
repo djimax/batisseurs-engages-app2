@@ -2305,3 +2305,6 @@
 - [x] Agréger les indicateurs annuels de membres, antennes, projets, événements et finances.
 - [x] Définir le périmètre annuel et les états accessibles sans données inventées.
 - [x] Exporter le rapport institutionnel et couvrir ses calculs par tests.
+- [x] Définir le périmètre national et le périmètre antenne dans les agrégats dashboard.
+- [x] Restreindre les données sensibles selon l’antenne autorisée de l’utilisateur.
+- [x] Tester les refus inter-périmètres et afficher le périmètre actif.
