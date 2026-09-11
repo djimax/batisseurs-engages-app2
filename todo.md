@@ -2293,3 +2293,6 @@
 - [x] Couvrir les paiements Stripe reçus par une notification ciblée et dédupliquée.
 - [x] Vérifier les préférences et les événements de paiement traités.
 - [x] Ajouter les contrats de tests des alertes de paiement reçu.
+- [x] Déclencher des notifications ciblées pour les cotisations en retard.
+- [x] Dédupliquer les rappels par adhésion et fenêtre de retard.
+- [x] Tester le déclenchement administrable et l’affichage dans Finance.
