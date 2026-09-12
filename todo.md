@@ -2343,3 +2343,7 @@
 - [x] Réduire le travail de démarrage non essentiel et différer les animations lourdes au profit du contenu fonctionnel.
 - [x] Clarifier « Mon profil adhérent » avec un panneau d’aide et un exemple compréhensible, sans exposer de données personnelles d’un autre membre.
 - [x] Tester les vues liste/damier, la numérotation, le démarrage rapide et l’aide du profil adhérent.
+
+- [x] Optimiser la navigation mobile pour faire émerger les actions terrain essentielles sans alourdir le démarrage.
+- [x] Ajouter un accès terrain rapide aux relevés hors ligne, aux bénévoles, aux membres et à la synchronisation.
+- [x] Vérifier les zones tactiles, les états hors ligne, la reprise réseau et les vues responsive sur petits écrans.

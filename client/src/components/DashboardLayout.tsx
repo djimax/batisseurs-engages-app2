@@ -435,13 +435,23 @@ function DashboardLayoutContent({
               <span>Plateforme associative</span>
             </div>
           </div>
-          <main className="flex-1 overflow-auto">
+          <main className={`flex-1 overflow-auto ${isMobile ? "pb-20" : ""}`}>
             <div className="app-page p-4 sm:p-6 lg:p-8">
               {children}
             </div>
           </main>
         </div>
       </SidebarInset>
+      {isMobile ? (
+        <nav aria-label="Accès rapide terrain" className="fixed inset-x-0 bottom-0 z-40 border-t border-border/80 bg-background/95 px-2 pb-[env(safe-area-inset-bottom)] pt-2 shadow-[0_-10px_30px_-24px_oklch(0.2_0.04_180_/_0.8)] backdrop-blur-xl">
+          <div className="mx-auto grid max-w-lg grid-cols-5 gap-1">
+            {[{ label: "Accueil", path: "/dashboard", icon: LayoutDashboard }, { label: "Collecte", path: "/field-collection", icon: MapPin }, { label: "Membres", path: "/members", icon: Users }, { label: "Bénévoles", path: "/volunteers", icon: HandHeart }, { label: "Profil", path: "/member-portal", icon: UserCheck }].map(({ label, path, icon: Icon }) => {
+              const active = location === path;
+              return <button key={path} type="button" aria-label={label} aria-current={active ? "page" : undefined} onClick={() => setLocation(path)} className={`flex min-h-12 flex-col items-center justify-center gap-1 rounded-xl px-1 text-[10px] font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ${active ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-muted hover:text-foreground"}`}><Icon className="h-4 w-4" aria-hidden="true" /><span>{label}</span></button>;
+            })}
+          </div>
+        </nav>
+      ) : null}
     </>
   );
 }

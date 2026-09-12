@@ -39,3 +39,16 @@ describe("Field collection queue resilience", () => {
     expect(page).toContain('aria-live="polite"');
   });
 });
+
+
+describe("Mobile field navigation contract", () => {
+  it("exposes quick links for the core field workflows", () => {
+    const layout = readFileSync(new URL("../client/src/components/DashboardLayout.tsx", import.meta.url), "utf8");
+    expect(layout).toContain('aria-label="Accès rapide terrain"');
+    expect(layout).toContain('path: "/field-collection"');
+    expect(layout).toContain('path: "/volunteers"');
+    expect(layout).toContain('path: "/member-portal"');
+    expect(layout).toContain('isMobile ? "pb-20" : ""');
+    expect(layout).toContain('aria-current={active ? "page" : undefined}');
+  });
+});
