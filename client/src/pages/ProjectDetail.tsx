@@ -48,7 +48,7 @@ export function ProjectDetail() {
   const { data: impactIndicators, refetch: refetchImpactIndicators } = trpc.projects.getImpactIndicators.useQuery({ projectId });
   const { data: report } = trpc.projects.report.useQuery({ projectId });
   const { data: taskComments, refetch: refetchTaskComments } = trpc.projects.getTaskComments.useQuery(
-    { taskId: selectedTaskId ?? 0 },
+    { projectId, taskId: selectedTaskId ?? 0 },
     { enabled: Boolean(selectedTaskId) },
   );
 
@@ -370,9 +370,18 @@ export function ProjectDetail() {
                   ) : (
                     <div className="rounded-xl border border-dashed border-primary/20 bg-primary/5 p-6 text-center text-sm text-muted-foreground">Aucune échéance planifiée pour le moment.</div>
                   )}
+                  {projectTimeline.items.length > 0 ? <details className="mt-4 rounded-xl border bg-background/70 p-3">
+                    <summary className="cursor-pointer text-sm font-medium">Afficher le détail accessible de la planification</summary>
+                    <div className="mt-3 overflow-x-auto">
+                      <table className="w-full text-sm">
+                        <caption className="sr-only">Détail tabulaire de la timeline du projet</caption>
+                        <thead className="bg-muted/50"><tr><th className="p-2 text-left">Élément</th><th className="p-2 text-left">Type</th><th className="p-2 text-left">Échéance</th><th className="p-2 text-left">Position</th></tr></thead>
+                        <tbody>{projectTimeline.items.map((item) => <tr key={`accessible-${item.id}`} className="border-t"><td className="p-2 font-medium">{item.label}</td><td className="p-2">{item.kind === "milestone" ? "Jalon" : "Tâche"}</td><td className="p-2">{item.date ? item.date.toLocaleDateString("fr-FR") : "Non renseignée"}</td><td className="p-2">{item.position === null ? "Sans date" : `${item.position}%`}</td></tr>)}</tbody>
+                      </table>
+                    </div>
+                  </details> : null}
                 </CardContent>
               </Card>
-
               <Card className="border-accent/20">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2"><WalletCards className="h-5 w-5 text-accent-foreground" />Suivi du budget</CardTitle>
@@ -498,7 +507,7 @@ export function ProjectDetail() {
           {selectedTaskId ? <Card className="border-primary/30 bg-primary/5">
             <CardHeader><CardTitle className="flex items-center gap-2"><MessageCircle className="h-5 w-5 text-primary" />Discussion de la tâche</CardTitle><CardDescription>{tasks?.find((task: any) => task.id === selectedTaskId)?.title || `Tâche #${selectedTaskId}`}</CardDescription></CardHeader>
             <CardContent className="space-y-4">
-              <div className="space-y-2">{taskComments?.map((comment: any) => <div key={comment.id} className="rounded-lg border bg-background p-3"><div className="flex justify-between gap-3 text-xs text-muted-foreground"><span>Auteur #{comment.authorId}</span><span>{new Date(comment.createdAt).toLocaleString("fr-FR")}</span></div><p className="mt-2 whitespace-pre-wrap text-sm">{comment.content}</p><div className="mt-2 text-right"><Button variant="ghost" size="sm" onClick={() => { if (window.confirm("Supprimer ce commentaire ?")) deleteTaskCommentMutation.mutate({ id: comment.id }); }}>Supprimer</Button></div></div>)}{!taskComments?.length ? <p className="text-sm text-muted-foreground">Aucun commentaire pour cette tâche.</p> : null}</div>
+              <div className="space-y-2">{taskComments?.map((comment: any) => <div key={comment.id} className="rounded-lg border bg-background p-3"><div className="flex justify-between gap-3 text-xs text-muted-foreground"><span>Auteur #{comment.authorId}</span><span>{new Date(comment.createdAt).toLocaleString("fr-FR")}</span></div><p className="mt-2 whitespace-pre-wrap text-sm">{comment.content}</p><div className="mt-2 text-right"><Button variant="ghost" size="sm" onClick={() => { if (window.confirm("Supprimer ce commentaire ?")) deleteTaskCommentMutation.mutate({ id: comment.id, projectId }); }}>Supprimer</Button></div></div>)}{!taskComments?.length ? <p className="text-sm text-muted-foreground">Aucun commentaire pour cette tâche.</p> : null}</div>
               <div className="space-y-2"><Label htmlFor="task-comment">Ajouter un commentaire</Label><Textarea id="task-comment" value={commentDraft} onChange={(event) => setCommentDraft(event.target.value)} placeholder="Décrivez l’avancement, un blocage ou une décision…" /><Button onClick={handleAddComment} disabled={addTaskCommentMutation.isPending || !commentDraft.trim()}>{addTaskCommentMutation.isPending ? "Envoi…" : "Publier le commentaire"}</Button></div>
             </CardContent>
           </Card> : null}

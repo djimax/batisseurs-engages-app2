@@ -2334,9 +2334,9 @@
 - [x] Ajouter une analyse des tendances financières et une prévision budgétaire prudente à partir des flux réels, séparée par devise et explicitement présentée comme estimation.
 - [x] Ajouter les contrôles de permissions, l’audit, les tests de bornes et les états UI du module de tendances financières.
 
-- [ ] Ajouter une vue Gantt accessible dans le détail d’un projet à partir des tâches et jalons existants, sans dépendance graphique lourde.
-- [ ] Structurer les discussions de tâches avec affichage, ajout, permissions et audit cohérents avec les commentaires existants.
-- [ ] Couvrir le contrat projet, les permissions, les états vides/chargement et la compilation de la vue enrichie.
+- [x] Ajouter une vue Gantt accessible dans le détail d’un projet à partir des tâches et jalons existants, sans dépendance graphique lourde.
+- [x] Structurer les discussions de tâches avec affichage, ajout, permissions et audit cohérents avec les commentaires existants.
+- [x] Couvrir le contrat projet, les permissions, les états vides/chargement et la compilation de la vue enrichie.
 
 - [x] Ajouter un sélecteur liste/damier réutilisable pour l’annuaire membres, le portail bénévoles et les écrans similaires.
 - [x] Ajouter une numérotation explicite de 1 à X dans les vues en liste, indépendante des identifiants internes.

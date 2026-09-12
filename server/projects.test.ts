@@ -32,7 +32,7 @@ import {
 describe("Projects permission integrity", () => {
   it("protects project subresources with view/manage permissions", () => {
     const source = readFileSync(new URL("../server/routers.ts", import.meta.url), "utf8");
-    const projectBlock = source.slice(source.indexOf("projects: router({"), source.indexOf("projects: router({") + 15000);
+    const projectBlock = source.slice(source.indexOf("projects: router({"), source.indexOf("projects: router({") + 19000);
     expect(projectBlock).toContain('assertPermission(ctx.user, "projects.view")');
     expect(projectBlock).toContain('assertPermission(ctx.user, "projects.manage")');
     expect(projectBlock).toContain("getTasks: protectedProcedure");
@@ -465,5 +465,20 @@ describe("Projects Management", () => {
     afterAll(async () => {
       await deleteProject(reportProjectId);
     });
+  });
+});
+
+
+describe("Project planning and task discussion hardening", () => {
+  it("validates task-project ownership and audits discussion mutations", () => {
+    const router = readFileSync(new URL("./routers.ts", import.meta.url), "utf8");
+    const page = readFileSync(new URL("../client/src/pages/ProjectDetail.tsx", import.meta.url), "utf8");
+    expect(router).toContain("assertProjectTaskBelongsToProject");
+    expect(router).toContain('entityType: "project_task_comment"');
+    expect(router).toContain("Commentaire introuvable dans ce projet.");
+    expect(page).toContain("Afficher le détail accessible de la planification");
+    expect(page).toContain("Détail tabulaire de la timeline du projet");
+    expect(page).toContain("projectId, taskId: selectedTaskId ?? 0");
+    expect(page).toContain("projectId });");
   });
 });

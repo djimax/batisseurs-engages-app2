@@ -1449,6 +1449,13 @@ export async function getProjectTasks(projectId: number) {
   return await db.select().from(projectTasks).where(eq(projectTasks.projectId, projectId)).orderBy(desc(projectTasks.createdAt));
 }
 
+export async function getProjectTaskById(id: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const rows = await db.select().from(projectTasks).where(eq(projectTasks.id, id)).limit(1);
+  return rows[0];
+}
+
 export async function updateProjectTask(id: number, data: Partial<InsertProjectTask>) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
@@ -1574,6 +1581,13 @@ export async function getProjectTaskComments(taskId: number) {
   return await db.select().from(projectTaskComments)
     .where(eq(projectTaskComments.taskId, taskId))
     .orderBy(projectTaskComments.createdAt);
+}
+
+export async function getProjectTaskCommentById(id: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const rows = await db.select().from(projectTaskComments).where(eq(projectTaskComments.id, id)).limit(1);
+  return rows[0];
 }
 
 export async function deleteProjectTaskComment(id: number) {

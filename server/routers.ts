@@ -24,10 +24,10 @@ import {
   getDb,
   createProject, getProject, listProjects, updateProject, deleteProject,
   addProjectMember, getProjectMembers, removeProjectMember,
-  createProjectTask, getProjectTasks, updateProjectTask, deleteProjectTask,
+  createProjectTask, getProjectTasks, getProjectTaskById, updateProjectTask, deleteProjectTask,
   createProjectMilestone, getProjectMilestones, updateProjectMilestone, deleteProjectMilestone,
   createProjectUpdate, getProjectUpdates,
-  createProjectTaskComment, getProjectTaskComments, deleteProjectTaskComment, getProjectReport,
+  createProjectTaskComment, getProjectTaskComments, getProjectTaskCommentById, deleteProjectTaskComment, getProjectReport,
   getProjectBudgetItems, createProjectBudgetItem, updateProjectBudgetItem, deleteProjectBudgetItem,
   getProjectImpactIndicators, createProjectImpactIndicator, updateProjectImpactIndicator, deleteProjectImpactIndicator,
   getDashboardStatistics, getGlobalDashboardSummary, getAnnualAssociationReport, getProjectsStatistics, getTasksStatistics, getFinanceStatistics, getMembersStatistics, getSignatureDeliveryDashboard,
@@ -66,6 +66,14 @@ async function assertDocumentCapability(user: { id: number; role?: string | null
   if (user.role === "admin") return;
   const permission = await getDocumentPermissionForUser(documentId, user.id);
   if (!permission || permission[capability] !== 1) throw new TRPCError({ code: "FORBIDDEN", message: "Vous n’avez pas accès à cette opération sur ce document." });
+}
+
+async function assertProjectTaskBelongsToProject(projectId: number, taskId: number) {
+  const task = await getProjectTaskById(taskId);
+  if (!task || task.projectId !== projectId) {
+    throw new TRPCError({ code: "NOT_FOUND", message: "Cette tâche n’est pas rattachée au projet demandé." });
+  }
+  return task;
 }
 
 export const appRouter = router({
@@ -2789,27 +2797,37 @@ export const appRouter = router({
       }),
 
     getTaskComments: protectedProcedure
-      .input(z.object({ taskId: z.number() }))
+      .input(z.object({ projectId: z.number().int().positive(), taskId: z.number().int().positive() }))
       .query(async ({ input, ctx }) => {
         await assertPermission(ctx.user, "projects.view");
+        await assertProjectTaskBelongsToProject(input.projectId, input.taskId);
         return await getProjectTaskComments(input.taskId);
       }),
 
     addTaskComment: protectedProcedure
-      .input(z.object({ projectId: z.number(), taskId: z.number(), content: z.string().trim().min(1).max(5000) }))
+      .input(z.object({ projectId: z.number().int().positive(), taskId: z.number().int().positive(), content: z.string().trim().min(1).max(5000) }))
       .mutation(async ({ input, ctx }) => {
         await assertPermission(ctx.user, "projects.manage");
-        return await createProjectTaskComment({
+        const task = await assertProjectTaskBelongsToProject(input.projectId, input.taskId);
+        const comment = await createProjectTaskComment({
           ...input,
           authorId: ctx.user?.id || 0,
         });
+        await logAudit({ userId: ctx.user.id, action: "CREATE", entityType: "project_task_comment", entityId: comment.id as number, entityName: task.title, description: `Commentaire ajouté à la tâche « ${task.title} »`, newValue: JSON.stringify({ projectId: input.projectId, taskId: input.taskId }), status: "success" });
+        return comment;
       }),
 
     deleteTaskComment: protectedProcedure
-      .input(z.object({ id: z.number() }))
+      .input(z.object({ id: z.number().int().positive(), projectId: z.number().int().positive() }))
       .mutation(async ({ input, ctx }) => {
         await assertPermission(ctx.user, "projects.manage");
-        return await deleteProjectTaskComment(input.id);
+        const comment = await getProjectTaskCommentById(input.id);
+        if (!comment || comment.projectId !== input.projectId) {
+          throw new TRPCError({ code: "NOT_FOUND", message: "Commentaire introuvable dans ce projet." });
+        }
+        const result = await deleteProjectTaskComment(input.id);
+        await logAudit({ userId: ctx.user.id, action: "DELETE", entityType: "project_task_comment", entityId: input.id, entityName: `Tâche #${comment.taskId}`, description: "Commentaire de tâche supprimé", oldValue: JSON.stringify({ projectId: comment.projectId, taskId: comment.taskId, content: comment.content }), status: "success" });
+        return result;
       }),
 
     report: protectedProcedure
