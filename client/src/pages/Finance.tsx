@@ -148,6 +148,7 @@ export default function Finance() {
   const reportInput = useMemo(() => ({ year: reportYear, compareYear }), [reportYear, compareYear]);
   const { data: financialReport, isFetching: isReportFetching } = trpc.finances.report.useQuery(reportInput);
   const { data: analyticReport = [], isFetching: isAnalyticFetching } = trpc.finances.analyticReport.useQuery();
+  const { data: financialForecast, isFetching: isForecastFetching } = trpc.finances.forecast.useQuery({ horizonMonths: 3 });
   const { data: reconciliationRows = [], isFetching: isReconciliationFetching } = trpc.finances.listReconciliations.useQuery({ status: "unmatched" });
   const { data: expenseClaims = [], isFetching: isExpenseClaimsFetching } = trpc.finances.listExpenseClaims.useQuery();
   const transitionExpenseClaim = trpc.finances.transitionExpenseClaim.useMutation({ onSuccess: () => { void utils.finances.listExpenseClaims.invalidate({ status: "submitted" }); toast.success("Note de frais mise à jour"); }, onError: (error) => toast.error(error.message) });
@@ -444,6 +445,7 @@ export default function Finance() {
           <TabsTrigger value="dons">Dons</TabsTrigger>
           <TabsTrigger value="depenses">Dépenses</TabsTrigger>
           <TabsTrigger value="rapport">Rapport</TabsTrigger>
+          <TabsTrigger value="previsions">Prévisions</TabsTrigger>
           <TabsTrigger value="analytique">Analytique</TabsTrigger>
           <TabsTrigger value="rapprochement">Rapprochement</TabsTrigger>
           <TabsTrigger value="frais">Notes de frais</TabsTrigger>
@@ -923,6 +925,18 @@ export default function Finance() {
                 {financialReport.comparison && <p className="text-sm text-muted-foreground">Variation du solde par rapport à {financialReport.comparison.year} : {financialReport.comparison.variationXof === null ? "référence indisponible" : `${financialReport.comparison.variationXof > 0 ? "+" : ""}${financialReport.comparison.variationXof.toLocaleString("fr-FR")} %`} en F CFA, soit {financialReport.comparison.variationEur === null ? "référence indisponible" : `${financialReport.comparison.variationEur > 0 ? "+" : ""}${financialReport.comparison.variationEur.toLocaleString("fr-FR")} %`} en €.</p>}
                 <div className="overflow-x-auto"><table className="w-full text-sm"><thead><tr className="border-b text-left"><th className="p-2">Période</th><th className="p-2">Recettes (F CFA)</th><th className="p-2">Dépenses (F CFA)</th><th className="p-2">Solde (F CFA)</th></tr></thead><tbody>{financialReport.monthly.map((row) => <tr key={row.period} className="border-b"><td className="p-2">{row.period}</td><td className="p-2">{row.incomeXof.toLocaleString("fr-FR")}</td><td className="p-2">{row.expensesXof.toLocaleString("fr-FR")}</td><td className="p-2 font-medium">{row.balanceXof.toLocaleString("fr-FR")}</td></tr>)}</tbody></table></div>
               </> : <p className="text-sm text-muted-foreground">Aucune donnée disponible pour cette période.</p>}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="previsions" className="space-y-6">
+          <Card>
+            <CardHeader><CardTitle className="flex items-center gap-2"><TrendingUp className="h-5 w-5 text-primary" />Prévisions budgétaires</CardTitle><CardDescription>Estimation prudente fondée sur la moyenne des trois derniers mois complets. Elle ne remplace pas une décision budgétaire validée.</CardDescription></CardHeader>
+            <CardContent className="space-y-5">
+              {isForecastFetching ? <p className="text-sm text-muted-foreground" role="status">Calcul de la tendance…</p> : financialForecast ? <>
+                <div className="grid gap-3 sm:grid-cols-3"><div className="rounded-xl border p-4"><p className="text-xs text-muted-foreground">Tendance recettes</p><p className="mt-1 text-lg font-semibold">{financialForecast.trend.incomeXofPercent === null ? "Référence indisponible" : `${financialForecast.trend.incomeXofPercent > 0 ? "+" : ""}${financialForecast.trend.incomeXofPercent.toLocaleString("fr-FR")} %`}</p><p className="text-xs text-muted-foreground">comparaison moyenne précédente</p></div><div className="rounded-xl border p-4"><p className="text-xs text-muted-foreground">Tendance dépenses</p><p className="mt-1 text-lg font-semibold">{financialForecast.trend.expensesXofPercent === null ? "Référence indisponible" : `${financialForecast.trend.expensesXofPercent > 0 ? "+" : ""}${financialForecast.trend.expensesXofPercent.toLocaleString("fr-FR")} %`}</p><p className="text-xs text-muted-foreground">comparaison moyenne précédente</p></div><div className="rounded-xl border p-4"><p className="text-xs text-muted-foreground">Référence</p><p className="mt-1 text-lg font-semibold">{financialForecast.referencePeriod}</p><p className="text-xs text-muted-foreground">{financialForecast.historyMonths} mois observés · taux {financialForecast.euroToXofRate.toLocaleString("fr-FR")} XOF/€</p></div></div>
+                <div className="overflow-x-auto"><table className="w-full text-sm"><thead><tr className="border-b text-left"><th className="p-2">Période estimée</th><th className="p-2">Recettes</th><th className="p-2">Dépenses</th><th className="p-2">Solde</th></tr></thead><tbody>{financialForecast.forecast.map((row) => <tr key={row.period} className="border-b"><td className="p-2 font-medium">{row.period}</td><td className="p-2">{row.incomeXof.toLocaleString("fr-FR")} F CFA <span className="text-xs text-muted-foreground">({row.incomeEur.toLocaleString("fr-FR", { maximumFractionDigits: 2 })} €)</span></td><td className="p-2">{row.expensesXof.toLocaleString("fr-FR")} F CFA <span className="text-xs text-muted-foreground">({row.expensesEur.toLocaleString("fr-FR", { maximumFractionDigits: 2 })} €)</span></td><td className="p-2 font-semibold">{row.balanceXof.toLocaleString("fr-FR")} F CFA <span className="text-xs text-muted-foreground">({row.balanceEur.toLocaleString("fr-FR", { maximumFractionDigits: 2 })} €)</span></td></tr>)}</tbody></table></div>
+              </> : <p className="rounded-xl border border-dashed p-6 text-sm text-muted-foreground">Aucune donnée historique suffisante pour produire une estimation.</p>}
             </CardContent>
           </Card>
         </TabsContent>

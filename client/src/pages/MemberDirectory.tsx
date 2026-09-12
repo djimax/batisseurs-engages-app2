@@ -31,6 +31,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Pagination } from "@/components/Pagination";
+import { ViewModeToggle, type ViewMode } from "@/components/ViewModeToggle";
 
 type DirectoryMember = {
   id: number;
@@ -98,6 +99,7 @@ export default function MemberDirectory() {
   const [page, setPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(20);
   const [selectedMember, setSelectedMember] = useState<DirectoryMember | null>(null);
+  const [viewMode, setViewMode] = useState<ViewMode>("grid");
 
   const queryInput = useMemo(() => ({
     search: search.trim() || undefined,
@@ -208,6 +210,7 @@ export default function MemberDirectory() {
                     <X className="mr-2 h-4 w-4" /> Réinitialiser
                   </Button>
                 )}
+                <ViewModeToggle value={viewMode} onChange={setViewMode} label="Mode d’affichage de l’annuaire membres" />
               </div>
             </div>
           </CardContent>
@@ -236,13 +239,13 @@ export default function MemberDirectory() {
           </Card>
         ) : (
           <>
-            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+            {viewMode === "list" ? <div className="overflow-x-auto rounded-xl border"><table className="w-full text-sm"><caption className="sr-only">Liste numérotée des membres actifs</caption><thead className="bg-muted/50"><tr><th className="w-14 p-3 text-left">N°</th><th className="p-3 text-left">Membre</th><th className="p-3 text-left">Catégorie</th><th className="p-3 text-left">Fonction</th><th className="p-3 text-left">Contributions</th><th className="p-3 text-right">Action</th></tr></thead><tbody>{visibleMembers.map((member, index) => <tr key={member.id} className="border-t"><td className="p-3 font-mono text-xs text-muted-foreground">{(safePage - 1) * itemsPerPage + index + 1}</td><td className="p-3 font-medium">{member.firstName} {member.lastName}<div className="text-xs text-muted-foreground">{member.memberId || "ID non renseigné"}</div></td><td className="p-3">{formatCategory(member.membershipCategory)}</td><td className="p-3">{member.function || member.role || "Non renseignée"}</td><td className="p-3">{member.contributions?.cotisationsCount ?? 0} cotisation(s) · {member.contributions?.historyCount ?? 0} activité(s)</td><td className="p-3 text-right"><Button size="sm" variant="outline" onClick={() => setSelectedMember(member)}>Voir</Button></td></tr>)}</tbody></table></div> : <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
               {visibleMembers.map((member, index) => (
-                <Card key={member.id} className="group overflow-hidden border-border/60 transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/25 hover:shadow-[0_18px_40px_-26px_rgba(9,78,75,0.5)]" style={{ animationDelay: `${index * 35}ms` }}>
+                <Card key={member.id} className="group overflow-hidden border-border/60 transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/25 hover:shadow-[0_18px_40px_-26px_rgba(9,78,75,0.5)]">
                   <CardContent className="p-5">
                     <div className="flex items-start justify-between gap-3">
                       <div className="flex min-w-0 items-center gap-3">
-                        {member.photo ? <img src={member.photo} alt="" className="h-14 w-14 shrink-0 rounded-2xl object-cover ring-2 ring-primary/10" /> : <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-primary/10 text-lg font-semibold text-primary">{initials(member)}</div>}
+                        {member.photo ? <img src={member.photo} alt="" loading="lazy" decoding="async" className="h-14 w-14 shrink-0 rounded-2xl object-cover ring-2 ring-primary/10" /> : <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-primary/10 text-lg font-semibold text-primary">{initials(member)}</div>}
                         <div className="min-w-0">
                           <h2 className="truncate font-semibold text-foreground">{member.firstName} {member.lastName}</h2>
                           <p className="truncate text-xs text-muted-foreground">{member.memberId || "ID non renseigné"}</p>
@@ -267,7 +270,7 @@ export default function MemberDirectory() {
                   </CardContent>
                 </Card>
               ))}
-            </div>
+            </div>}
             <Pagination
               currentPage={safePage}
               totalPages={totalPages}

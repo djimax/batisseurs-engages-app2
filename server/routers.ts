@@ -50,7 +50,7 @@ import { notifyOwner } from "./_core/notification";
 import { nanoid } from "nanoid";
 import { createHash } from "node:crypto";
 import { membersAdhesionsRouter } from "./members-adhesions-router";
-import { buildDonationDocumentHtml, buildFinancialReport, convertFinancialAmount, createTaxReceipt, FINANCIAL_CURRENCIES, formatFinancialAmount, listTaxReceipts, parseFinancialAmount } from "./financial";
+import { buildDonationDocumentHtml, buildFinancialForecast, buildFinancialReport, convertFinancialAmount, createTaxReceipt, FINANCIAL_CURRENCIES, formatFinancialAmount, listTaxReceipts, parseFinancialAmount } from "./financial";
 import { antennasRouter, groupesRouter } from "./antennes-groupes-router";
 import { canAssignMemberGrade, MEMBER_GRADE_LEVELS } from "../shared/memberProgression";
 import { governanceRouter } from "./governance-router";
@@ -1596,6 +1596,21 @@ export const appRouter = router({
           ...dons.map((row) => ({ type: "don" as const, amount: Number(row.montant), currency: row.currency === "EUR" ? "EUR" as const : "XOF" as const, date: String(row.date ?? row.createdAt) })),
           ...depenses.map((row) => ({ type: "depense" as const, amount: Number(row.montant), currency: row.currency === "EUR" ? "EUR" as const : "XOF" as const, date: String(row.date ?? row.createdAt) })),
         ], input.year, input.compareYear, euroToXofRate);
+      }),
+
+    forecast: protectedProcedure
+      .input(z.object({ horizonMonths: z.number().int().min(1).max(12).default(3) }).optional())
+      .query(async ({ input, ctx }) => {
+        await assertPermission(ctx.user, "finances.view");
+        const [cotisations, dons, depenses, settings] = await Promise.all([getCotisations(), getDons(), getDepenses(), initializeGlobalSettings()]);
+        const euroToXofRate = Number(settings?.euroToXofRate ?? 655.957);
+        const forecast = buildFinancialForecast([
+          ...cotisations.map((row) => ({ type: "cotisation" as const, amount: Number(row.montant), currency: row.currency === "EUR" ? "EUR" as const : "XOF" as const, date: String(row.datePayment ?? row.createdAt ?? row.dateDebut) })),
+          ...dons.map((row) => ({ type: "don" as const, amount: Number(row.montant), currency: row.currency === "EUR" ? "EUR" as const : "XOF" as const, date: String(row.date ?? row.createdAt) })),
+          ...depenses.map((row) => ({ type: "depense" as const, amount: Number(row.montant), currency: row.currency === "EUR" ? "EUR" as const : "XOF" as const, date: String(row.date ?? row.createdAt) })),
+        ], new Date(), input?.horizonMonths ?? 3, euroToXofRate);
+        await logAudit({ userId: ctx.user.id, action: "READ", entityType: "financial_forecast", description: `Prévision financière consultée sur ${forecast.horizonMonths} mois`, newValue: JSON.stringify({ method: forecast.method, referencePeriod: forecast.referencePeriod, rate: euroToXofRate }), status: "success" });
+        return { ...forecast, euroToXofRate };
       }),
 
     analyticReport: protectedProcedure

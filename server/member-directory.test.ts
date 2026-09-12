@@ -56,3 +56,14 @@ describe("Internal member directory", () => {
     expect(directory.every((member) => member.contributions.historyCount >= 0)).toBe(true);
   });
 });
+
+
+describe("Internal member directory presentation", () => {
+  it("offers list and grid modes with stable visible numbering", async () => {
+    const page = await import("node:fs").then(({ readFileSync }) => readFileSync(new URL("../client/src/pages/MemberDirectory.tsx", import.meta.url), "utf8"));
+    expect(page).toContain("ViewModeToggle");
+    expect(page).toContain("Liste numérotée des membres actifs");
+    expect(page).toContain("safePage - 1");
+    expect(page).toContain('loading="lazy"');
+  });
+});

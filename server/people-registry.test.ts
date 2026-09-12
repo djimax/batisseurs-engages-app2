@@ -18,6 +18,9 @@ describe("People compliance registry contract", () => {
     expect(page).toContain('id="registry-status"');
     expect(page).toContain('id="registry-type"');
     expect(page).toContain("Les coordonnées sont affichées uniquement dans cet espace protégé.");
+    expect(page).toContain("ViewModeToggle");
+    expect(page).toContain("Annuaire numéroté des personnes enregistrées");
+    expect(page).toContain("index + 1");
     expect(app).toContain('path="/people-registry" component={PeopleRegistry}');
   });
 });

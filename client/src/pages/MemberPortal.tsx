@@ -9,7 +9,7 @@ import { getErrorMessage } from "@/lib/uxFeedback";
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
 import { useLocation } from "wouter";
-import { CreditCard, History, QrCode, Save, Settings2, ShieldCheck, UserRound } from "lucide-react";
+import { CircleHelp, CreditCard, History, QrCode, Save, Settings2, ShieldCheck, UserRound } from "lucide-react";
 
 const STATUS_LABELS: Record<string, string> = {
   active: "Actif",
@@ -88,6 +88,17 @@ export default function MemberPortal() {
         </div>
         <Button variant="outline" onClick={() => setLocation("/settings")} className="gap-2 self-start sm:self-auto"><Settings2 className="h-4 w-4" />Préférences</Button>
       </header>
+
+      <Card className="border-primary/20 bg-primary/5">
+        <CardContent className="flex gap-3 p-4 text-sm">
+          <CircleHelp className="mt-0.5 h-5 w-5 shrink-0 text-primary" aria-hidden="true" />
+          <div className="space-y-1">
+            <p className="font-semibold">À quoi sert cet espace ?</p>
+            <p className="text-muted-foreground">« Mon profil adhérent » est votre espace personnel : vous pouvez corriger vos coordonnées, vérifier votre statut d’adhésion, présenter votre carte QR lors d’une activité et consulter l’historique de vos changements.</p>
+            <p className="text-muted-foreground"><span className="font-medium text-foreground">Exemple :</span> si votre numéro de téléphone change, modifiez-le ici puis cliquez sur « Enregistrer ». L’équipe disposera de la nouvelle information sans vous demander de modifier un formulaire papier.</p>
+          </div>
+        </CardContent>
+      </Card>
 
       <div className="grid gap-6 xl:grid-cols-[1.4fr_0.8fr]">
         <Card>

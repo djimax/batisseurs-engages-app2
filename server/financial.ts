@@ -218,3 +218,92 @@ export function buildFinancialReport(entries: FinancialReportEntry[], year: numb
   }
   return { year, monthly, total, breakdown, comparison };
 }
+
+
+export type FinancialForecastPoint = {
+  period: string;
+  incomeXof: number;
+  expensesXof: number;
+  balanceXof: number;
+  incomeEur: number;
+  expensesEur: number;
+  balanceEur: number;
+  isForecast: true;
+};
+
+export type FinancialForecast = {
+  method: "moyenne_glissante_3_mois";
+  horizonMonths: number;
+  referencePeriod: string;
+  historyMonths: number;
+  trend: {
+    incomeXofPercent: number | null;
+    expensesXofPercent: number | null;
+    balanceXofPercent: number | null;
+  };
+  forecast: FinancialForecastPoint[];
+};
+
+/**
+ * Produit une estimation prudente à partir des trois derniers mois complets.
+ * Les périodes sans écriture sont conservées afin de ne pas gonfler artificiellement la moyenne.
+ */
+export function buildFinancialForecast(
+  entries: FinancialReportEntry[],
+  now = new Date(),
+  horizonMonths = 3,
+  euroToXofRate = EURO_TO_XOF,
+): FinancialForecast {
+  const safeHorizon = Math.min(Math.max(Math.trunc(horizonMonths), 1), 12);
+  const currentMonthStart = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
+  const firstHistoryMonth = new Date(Date.UTC(currentMonthStart.getUTCFullYear(), currentMonthStart.getUTCMonth() - 6, 1));
+  const periods = new Map<string, { incomeXof: number; expensesXof: number; balanceXof: number; incomeEur: number; expensesEur: number; balanceEur: number }>();
+  for (let offset = 0; offset < 6; offset += 1) {
+    const date = new Date(Date.UTC(firstHistoryMonth.getUTCFullYear(), firstHistoryMonth.getUTCMonth() + offset, 1));
+    periods.set(`${date.getUTCFullYear()}-${String(date.getUTCMonth() + 1).padStart(2, "0")}`, { incomeXof: 0, expensesXof: 0, balanceXof: 0, incomeEur: 0, expensesEur: 0, balanceEur: 0 });
+  }
+  for (const entry of entries) {
+    const date = new Date(entry.date);
+    if (!Number.isFinite(date.getTime()) || date < firstHistoryMonth || date >= currentMonthStart) continue;
+    const period = `${date.getUTCFullYear()}-${String(date.getUTCMonth() + 1).padStart(2, "0")}`;
+    const row = periods.get(period);
+    if (!row) continue;
+    const amount = parseFinancialAmount(entry.amount);
+    const income = entry.type !== "depense";
+    const amountXof = convertFinancialAmount(amount, entry.currency, "XOF", euroToXofRate);
+    const amountEur = convertFinancialAmount(amount, entry.currency, "EUR", euroToXofRate);
+    if (income) {
+      row.incomeXof += amountXof;
+      row.incomeEur += amountEur;
+    } else {
+      row.expensesXof += amountXof;
+      row.expensesEur += amountEur;
+    }
+    row.balanceXof = row.incomeXof - row.expensesXof;
+    row.balanceEur = row.incomeEur - row.expensesEur;
+  }
+  const history = Array.from(periods.entries()).map(([period, value]) => ({ period, ...value }));
+  const recent = history.slice(-3);
+  const prior = history.slice(-6, -3);
+  const average = (rows: typeof history, key: "incomeXof" | "expensesXof" | "balanceXof" | "incomeEur" | "expensesEur" | "balanceEur") => rows.length ? rows.reduce((sum, row) => sum + row[key], 0) / rows.length : 0;
+  const pct = (current: number, base: number) => base === 0 ? null : Math.round(((current - base) / Math.abs(base)) * 10000) / 100;
+  const recentIncomeXof = average(recent, "incomeXof");
+  const recentExpensesXof = average(recent, "expensesXof");
+  const recentBalanceXof = average(recent, "balanceXof");
+  const priorIncomeXof = average(prior, "incomeXof");
+  const priorExpensesXof = average(prior, "expensesXof");
+  const priorBalanceXof = average(prior, "balanceXof");
+  const forecast = Array.from({ length: safeHorizon }, (_, index) => {
+    const date = new Date(Date.UTC(currentMonthStart.getUTCFullYear(), currentMonthStart.getUTCMonth() + index + 1, 1));
+    const period = `${date.getUTCFullYear()}-${String(date.getUTCMonth() + 1).padStart(2, "0")}`;
+    return { period, incomeXof: Math.round(recentIncomeXof * 100) / 100, expensesXof: Math.round(recentExpensesXof * 100) / 100, balanceXof: Math.round(recentBalanceXof * 100) / 100, incomeEur: Math.round(average(recent, "incomeEur") * 100) / 100, expensesEur: Math.round(average(recent, "expensesEur") * 100) / 100, balanceEur: Math.round(average(recent, "balanceEur") * 100) / 100, isForecast: true as const };
+  });
+  return {
+    method: "moyenne_glissante_3_mois",
+    horizonMonths: safeHorizon,
+    referencePeriod: history[history.length - 1]?.period ?? `${currentMonthStart.getUTCFullYear()}-${String(currentMonthStart.getUTCMonth()).padStart(2, "0")}`,
+    historyMonths: history.length,
+    trend: { incomeXofPercent: pct(recentIncomeXof, priorIncomeXof), expensesXofPercent: pct(recentExpensesXof, priorExpensesXof), balanceXofPercent: pct(recentBalanceXof, priorBalanceXof) },
+    forecast,
+  };
+}

@@ -6,15 +6,15 @@ import ErrorBoundary from "./components/ErrorBoundary";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import DashboardLayout from "./components/DashboardLayout";
 import Home from "./pages/Home";
-import Documents from "./pages/Documents";
+const Documents = lazy(() => import("./pages/Documents"));
 import Categories from "./pages/Categories";
-import Members from "./pages/Members";
-import MemberDirectory from "./pages/MemberDirectory";
-import VolunteerPortal from "./pages/VolunteerPortal";
-import PeopleRegistry from "./pages/PeopleRegistry";
+const Members = lazy(() => import("./pages/Members"));
+const MemberDirectory = lazy(() => import("./pages/MemberDirectory"));
+const VolunteerPortal = lazy(() => import("./pages/VolunteerPortal"));
+const PeopleRegistry = lazy(() => import("./pages/PeopleRegistry"));
 import Activity from "./pages/Activity";
 import Archives from "./pages/Archives";
-import Finance from "./pages/Finance";
+const Finance = lazy(() => import("./pages/Finance"));
 import Offline from "./pages/Offline";
 import ModeSelector from "./pages/ModeSelector";
 import Settings from "./pages/Settings";
@@ -46,16 +46,16 @@ import CRMActivities from "./pages/CRMActivities";
 import CRMReports from "./pages/CRMReports";
 import GlobalSettings from "./pages/GlobalSettings";
 import { AdminPasswordResets } from "./pages/AdminPasswordResets";
-import { Projects } from "./pages/Projects";
+const Projects = lazy(() => import("./pages/Projects").then((module) => ({ default: module.Projects })));
 import Purchases from "./pages/Purchases";
-import { ProjectDetail } from "./pages/ProjectDetail";
-import Dashboard from "./pages/Dashboard";
+const ProjectDetail = lazy(() => import("./pages/ProjectDetail").then((module) => ({ default: module.ProjectDetail })));
+const Dashboard = lazy(() => import("./pages/Dashboard"));
 import AdhesionsList from "./pages/AdhesionsList";
 import GroupesAntennes from "./pages/GroupesAntennes";
 import { Antennes } from "./pages/Antennes";
 import { AntenneDetail } from "./pages/AntenneDetail";
 import { usePasswordAuth } from "./hooks/usePasswordAuth";
-import { useState, useEffect } from "react";
+import { lazy, Suspense, useState, useEffect } from "react";
 
 function OnlineRouter({ isAuthenticated, error, onLogin, onLogout, onForgotPassword }: any) {
   const [showForgotPassword, setShowForgotPassword] = useState(false);
@@ -66,6 +66,7 @@ function OnlineRouter({ isAuthenticated, error, onLogin, onLogout, onForgotPassw
 
   return (
     <DashboardLayout onLogout={onLogout}>
+      <Suspense fallback={<div className="flex min-h-[40vh] items-center justify-center p-8 text-sm text-muted-foreground" role="status">Ouverture de l’espace…</div>}>
       <Switch>
         <Route path="/dashboard" component={Dashboard} />
         <Route path="/" component={Home} />
@@ -116,6 +117,7 @@ function OnlineRouter({ isAuthenticated, error, onLogin, onLogout, onForgotPassw
         <Route path="/404" component={NotFound} />
         <Route component={NotFound} />
       </Switch>
+      </Suspense>
     </DashboardLayout>
   );
 }

@@ -2330,3 +2330,16 @@
 - [x] Ajouter une section de ressources utiles réellement actionnables vers les espaces internes existants, avec états accessibles.
 - [x] Tester le contrat dashboard institutionnel, les permissions, TypeScript, Vitest et le rendu responsive.
 
+
+- [x] Ajouter une analyse des tendances financières et une prévision budgétaire prudente à partir des flux réels, séparée par devise et explicitement présentée comme estimation.
+- [x] Ajouter les contrôles de permissions, l’audit, les tests de bornes et les états UI du module de tendances financières.
+
+- [ ] Ajouter une vue Gantt accessible dans le détail d’un projet à partir des tâches et jalons existants, sans dépendance graphique lourde.
+- [ ] Structurer les discussions de tâches avec affichage, ajout, permissions et audit cohérents avec les commentaires existants.
+- [ ] Couvrir le contrat projet, les permissions, les états vides/chargement et la compilation de la vue enrichie.
+
+- [x] Ajouter un sélecteur liste/damier réutilisable pour l’annuaire membres, le portail bénévoles et les écrans similaires.
+- [x] Ajouter une numérotation explicite de 1 à X dans les vues en liste, indépendante des identifiants internes.
+- [x] Réduire le travail de démarrage non essentiel et différer les animations lourdes au profit du contenu fonctionnel.
+- [x] Clarifier « Mon profil adhérent » avec un panneau d’aide et un exemple compréhensible, sans exposer de données personnelles d’un autre membre.
+- [x] Tester les vues liste/damier, la numérotation, le démarrage rapide et l’aide du profil adhérent.

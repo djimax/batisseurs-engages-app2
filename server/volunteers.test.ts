@@ -35,6 +35,10 @@ describe("Volunteer coordination", () => {
     const source = readFileSync(new URL("../client/src/pages/VolunteerPortal.tsx", import.meta.url), "utf8");
     expect(source).toContain("volunteerStatusLabel(volunteer.status)");
     expect(source).toContain("volunteerStatusClass(volunteer.status)");
+    expect(source).toContain("ViewModeToggle");
+    expect(source).toContain("Liste numérotée des bénévoles");
+    expect(source).toContain("safePage - 1");
+    expect(source).toContain('loading="lazy"');
     expect(source).not.toContain('>Actif</Badge>');
   });
 

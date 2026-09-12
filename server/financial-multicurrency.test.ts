@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
-import { EURO_TO_XOF, buildDonationDocumentHtml, buildFinancialReport, convertFinancialAmount, formatFinancialAmount, parseFinancialAmount } from "./financial";
+import { EURO_TO_XOF, buildDonationDocumentHtml, buildFinancialForecast, buildFinancialReport, convertFinancialAmount, formatFinancialAmount, parseFinancialAmount } from "./financial";
 
 describe("Financial multi-currency helpers", () => {
   it("parses and rounds positive amounts", () => {
@@ -46,6 +46,10 @@ describe("Financial multi-currency helpers", () => {
     expect(financePageSource).toContain("Ventilation analytique");
     expect(routerSource).toContain("buildFinancialReport");
     expect(routerSource).toContain("analyticReport: protectedProcedure");
+    expect(routerSource).toContain("forecast: protectedProcedure");
+    expect(routerSource).toContain('entityType: "financial_forecast"');
+    expect(financePageSource).toContain("trpc.finances.forecast.useQuery");
+    expect(financePageSource).toContain('TabsTrigger value="previsions"');
     expect(routerSource).toContain('assertPermission(ctx.user, "finances.view")');
   });
 
@@ -66,6 +70,20 @@ describe("Financial multi-currency helpers", () => {
     expect(report.breakdown.don.amountXof).toBe(65595.7);
     expect(report.breakdown.depense.amountEur).toBe(50);
     expect(report.comparison).toEqual({ year: 2025, totalXof: 65595.7, totalEur: 100, variationXof: 50, variationEur: 50 });
+  });
+
+  it("builds a bounded forecast from six completed months without inventing missing activity", () => {
+    const forecast = buildFinancialForecast([
+      { type: "cotisation", amount: 100, currency: "EUR", date: "2026-01-05T00:00:00.000Z" },
+      { type: "depense", amount: 20, currency: "EUR", date: "2026-02-05T00:00:00.000Z" },
+      { type: "don", amount: 65595.7, currency: "XOF", date: "2026-03-05T00:00:00.000Z" },
+    ], new Date("2026-04-15T00:00:00.000Z"), 20);
+    expect(forecast.horizonMonths).toBe(12);
+    expect(forecast.historyMonths).toBe(6);
+    expect(forecast.forecast).toHaveLength(12);
+    expect(forecast.forecast.every((row) => row.isForecast)).toBe(true);
+    expect(forecast.forecast[0]?.incomeEur).toBeCloseTo(66.67, 2);
+    expect(forecast.method).toBe("moyenne_glissante_3_mois");
   });
 
   it("builds a printable donation document with original and equivalent amounts", () => {
